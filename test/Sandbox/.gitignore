@@ -1,0 +1,6 @@
+*
+
+!.gitignore
+
+!Program.cs
+!Sandbox.csproj

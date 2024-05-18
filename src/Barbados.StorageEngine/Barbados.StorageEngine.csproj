@@ -1,0 +1,20 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<TargetFramework>net8.0</TargetFramework>
+		<Nullable>enable</Nullable>
+
+		<Version>0.2.0</Version>
+		
+		<Authors>Memonia</Authors>
+		<PackageId>Memonia.Barbados.StorageEngine</PackageId>
+		<Description>An embedded document store for .NET</Description>
+		<RepositoryUrl>https://github.com/Memonia/Barbados</RepositoryUrl>
+		<RepositoryType>git</RepositoryType>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<InternalsVisibleTo Include="Sandbox" />
+		<InternalsVisibleTo Include="Barbados.StorageEngine.Tests" />
+		<InternalsVisibleTo Include="Barbados.StorageEngine.Tests.Integration" />
+	</ItemGroup>
+</Project>

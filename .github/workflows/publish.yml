@@ -1,0 +1,30 @@
+name: publish
+on:
+  push:
+    tags:
+      - v*
+
+jobs:
+  test:
+    uses: ./.github/workflows/run-test.yml
+    
+  publish:
+    name: Publish to NuGet
+    needs: [test]
+    runs-on: ubuntu-latest
+    steps:    
+    - uses: actions/checkout@v4
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 8.0.x
+    - name: Restore dependencies
+      run: dotnet restore
+    - name: Build
+      run: dotnet build -c Release --no-restore
+    - name: Pack
+      run: dotnet pack -c Release --output nupkgs --no-restore --no-build
+    - name: Publish
+      run: | 
+        dotnet nuget push nupkgs/Memonia.Barbados.QueryEngine.*.nupkg -k ${{ secrets.NUGET_API_KEY }} -s https://api.nuget.org/v3/index.json
+        dotnet nuget push nupkgs/Memonia.Barbados.StorageEngine.*.nupkg -k ${{ secrets.NUGET_API_KEY }} -s https://api.nuget.org/v3/index.json
