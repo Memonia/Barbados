@@ -14,7 +14,7 @@ namespace Barbados.StorageEngine
 	internal sealed partial class BarbadosController : IBarbadosController
 	{
 		public PagePool Pool { get; }
-		public LockManager Lock { get; }
+		private LockManager Lock { get; }
 
 		private readonly object _sync;
 		private readonly ConcurrentDictionary<string, AbstractCollection> _instances;
@@ -26,6 +26,18 @@ namespace Barbados.StorageEngine
 
 			_sync = new();
 			_instances = [];
+		}
+
+		public ObjectLock GetLock(string name, LockMode mode)
+		{
+			return Lock.GetLock(name, mode);
+		}
+
+		public ObjectLock AcquireLock(string name, LockMode mode)
+		{
+			var @lock = GetLock(name, mode);
+			@lock.Acquire();
+			return @lock;
 		}
 
 		public BTreeIndex GetIndex(BarbadosIdentifier collection, BarbadosIdentifier field)
@@ -89,12 +101,12 @@ namespace Barbados.StorageEngine
 				}
 
 				var meta = GetMetaCollection();
-				if(!meta.Find(name, out var document))
+				if (!meta.Find(name, out var document))
 				{
 					collection = default!;
 					return false;
 				}
-				
+
 				collection = MetaCollection.CreateCollectionInstance(document, this);
 
 				Lock.AddLockable(name);

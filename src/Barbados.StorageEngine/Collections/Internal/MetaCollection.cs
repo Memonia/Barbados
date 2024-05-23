@@ -46,34 +46,34 @@ namespace Barbados.StorageEngine.Collections.Internal
 				return false;
 			}
 
-			return TryLockableRead(ids[0], ValueSelector.SelectAll, toLock: true, out document);
+			return TryRead(ids[0], out document);
 		}
 
 		public BarbadosDocument Create(string collection)
 		{
-			Controller.Lock.Acquire(Name, LockMode.Write);
+			using (Controller.AcquireLock(Name, LockMode.Write))
+			{
+				var ch = Controller.Pool.Allocate();
+				var ih = Controller.Pool.Allocate();
+				var cpage = new CollectionPage(ch);
+				var ipage = new BTreeRootPage(ih);
 
-			var ch = Controller.Pool.Allocate();
-			var ih = Controller.Pool.Allocate();
-			var cpage = new CollectionPage(ch);
-			var ipage = new BTreeRootPage(ih);
+				Controller.Pool.SaveRelease(cpage);
+				Controller.Pool.SaveRelease(ipage);
 
-			Controller.Pool.SaveRelease(cpage);
-			Controller.Pool.SaveRelease(ipage);
+				var collectionDocument = _documentBuilder
+					.Add(BarbadosIdentifiers.MetaCollection.CollectionDocumentNameFIeld, collection)
+					.Add(BarbadosIdentifiers.MetaCollection.CollectionDocumentPageHandleField, ch.Index)
+					.Add(BarbadosIdentifiers.MetaCollection.CollectionDocumentClusteredIndexPageHandleField, ih.Index)
+					.Build();
 
-			var collectionDocument = _documentBuilder
-				.Add(BarbadosIdentifiers.MetaCollection.CollectionDocumentNameFIeld, collection)
-				.Add(BarbadosIdentifiers.MetaCollection.CollectionDocumentPageHandleField, ch.Index)
-				.Add(BarbadosIdentifiers.MetaCollection.CollectionDocumentClusteredIndexPageHandleField, ih.Index)
-				.Build();
+				var document = _documentBuilder
+					.Add(BarbadosIdentifiers.MetaCollection.CollectionDocumentField, collectionDocument)
+					.Build();
 
-			var document = _documentBuilder
-				.Add(BarbadosIdentifiers.MetaCollection.CollectionDocumentField, collectionDocument)
-				.Build();
-
-			LockableInsert(document, toLock: false);
-			Controller.Lock.Release(Name, LockMode.Write);
-			return document;
+				InsertNoLock(document);
+				return document;
+			}
 		}
 
 		public BarbadosDocument CreateIndex(BarbadosDocument document, string field, int keyMaxLength = -1)
@@ -96,84 +96,83 @@ namespace Barbados.StorageEngine.Collections.Internal
 				}
 			}
 
-			Controller.Lock.Acquire(Name, LockMode.Write);
-
-			var r = document.TryGetString(
-				BarbadosIdentifiers.MetaCollection.CollectionDocumentNameFieldAbsolute, out var collection
-			);
-			Debug.Assert(r);
-
-			if (!document.TryGetDocumentArray(BarbadosIdentifiers.MetaCollection.IndexArrayField, out var indexArray))
+			using (Controller.AcquireLock(Name, LockMode.Write))
 			{
-				indexArray = [];
-			}
-
-			foreach (var index in indexArray)
-			{
-				r = index.TryGetString(
-					BarbadosIdentifiers.MetaCollection.IndexDocumentIndexedFieldField, out var storedIndexedFieldName
+				var r = document.TryGetString(
+					BarbadosIdentifiers.MetaCollection.CollectionDocumentNameFieldAbsolute, out var collection
 				);
 				Debug.Assert(r);
 
-				if (field == storedIndexedFieldName)
+				if (!document.TryGetDocumentArray(BarbadosIdentifiers.MetaCollection.IndexArrayField, out var indexArray))
 				{
-					Controller.Lock.Release(Name, LockMode.Write);
-					throw new BarbadosException(
-						BarbadosExceptionCode.IndexAlreadyExists, $"Index on '{field}' in collection '{collection}' already exists"
-					);
+					indexArray = [];
 				}
+
+				foreach (var index in indexArray)
+				{
+					r = index.TryGetString(
+						BarbadosIdentifiers.MetaCollection.IndexDocumentIndexedFieldField, out var storedIndexedFieldName
+					);
+					Debug.Assert(r);
+
+					if (field == storedIndexedFieldName)
+					{
+						throw new BarbadosException(
+							BarbadosExceptionCode.IndexAlreadyExists,
+							$"Index on '{field}' in collection '{collection}' already exists"
+						);
+					}
+				}
+
+				var ih = Controller.Pool.Allocate();
+				var ipage = new BTreeRootPage(ih);
+
+				Controller.Pool.Save(ipage);
+
+				var indexDocument = _documentBuilder
+					.Add(BarbadosIdentifiers.MetaCollection.IndexDocumentIndexedFieldField, field)
+					.Add(BarbadosIdentifiers.MetaCollection.IndexDocumentPageHandleField, ih.Index)
+					.Add(BarbadosIdentifiers.MetaCollection.IndexDocumentKeyMaxLengthField, keyMaxLength)
+					.Build();
+
+				var updatedIndexesArray = new BarbadosDocument[indexArray.Length + 1];
+				indexArray.CopyTo(updatedIndexesArray, 0);
+				updatedIndexesArray[^1] = indexDocument;
+
+				var updated = _documentBuilder
+					.AddFieldFrom(BarbadosIdentifiers.MetaCollection.CollectionDocumentField, document)
+					.Add(BarbadosIdentifiers.MetaCollection.IndexArrayField, updatedIndexesArray)
+					.Build();
+
+				if (!TryUpdateNoLock(document.Id, updated))
+				{
+					throw new BarbadosException(BarbadosExceptionCode.InternalError);
+				}
+
+				return indexDocument;
 			}
-
-			var ih = Controller.Pool.Allocate();
-			var ipage = new BTreeRootPage(ih);
-
-			Controller.Pool.Save(ipage);
-
-			var indexDocument = _documentBuilder
-				.Add(BarbadosIdentifiers.MetaCollection.IndexDocumentIndexedFieldField, field)
-				.Add(BarbadosIdentifiers.MetaCollection.IndexDocumentPageHandleField, ih.Index)
-				.Add(BarbadosIdentifiers.MetaCollection.IndexDocumentKeyMaxLengthField, keyMaxLength)
-				.Build();
-
-			var updatedIndexesArray = new BarbadosDocument[indexArray.Length + 1];
-			indexArray.CopyTo(updatedIndexesArray, 0);
-			updatedIndexesArray[^1] = indexDocument;
-
-			var updated = _documentBuilder
-				.AddFieldFrom(BarbadosIdentifiers.MetaCollection.CollectionDocumentField, document)
-				.Add(BarbadosIdentifiers.MetaCollection.IndexArrayField, updatedIndexesArray)
-				.Build();
-
-			if (!TryLockableUpdate(document.Id, updated, toLock: false))
-			{
-				throw new BarbadosException(BarbadosExceptionCode.InternalError);
-			}
-
-			Controller.Lock.Release(Name, LockMode.Write);
-			return indexDocument;
 		}
 
 		public void Rename(BarbadosDocument document, string name)
 		{
-			Controller.Lock.Acquire(Name, LockMode.Write);
-
-			_documentBuilder
-				.Add(BarbadosIdentifiers.MetaCollection.CollectionDocumentNameFieldAbsolute, name)
-				.AddFieldFrom(BarbadosIdentifiers.MetaCollection.CollectionDocumentPageHandleFieldAbsolute, document)
-				.AddFieldFrom(BarbadosIdentifiers.MetaCollection.CollectionDocumentClusteredIndexPageHandleFieldAbsolute, document);
-
-			if (document.TryGetDocumentArray(BarbadosIdentifiers.MetaCollection.IndexArrayField, out var indexesArray))
+			using (Controller.AcquireLock(Name, LockMode.Write))
 			{
-				_documentBuilder.Add(BarbadosIdentifiers.MetaCollection.IndexArrayField, indexesArray);
-			}
+				_documentBuilder
+					.Add(BarbadosIdentifiers.MetaCollection.CollectionDocumentNameFieldAbsolute, name)
+					.AddFieldFrom(BarbadosIdentifiers.MetaCollection.CollectionDocumentPageHandleFieldAbsolute, document)
+					.AddFieldFrom(BarbadosIdentifiers.MetaCollection.CollectionDocumentClusteredIndexPageHandleFieldAbsolute, document);
 
-			var updated = _documentBuilder.Build();
-			if (!TryLockableUpdate(document.Id, updated, toLock: false))
-			{
-				throw new BarbadosException(BarbadosExceptionCode.InternalError);
-			}
+				if (document.TryGetDocumentArray(BarbadosIdentifiers.MetaCollection.IndexArrayField, out var indexesArray))
+				{
+					_documentBuilder.Add(BarbadosIdentifiers.MetaCollection.IndexArrayField, indexesArray);
+				}
 
-			Controller.Lock.Release(Name, LockMode.Write);
+				var updated = _documentBuilder.Build();
+				if (!TryUpdateNoLock(document.Id, updated))
+				{
+					throw new BarbadosException(BarbadosExceptionCode.InternalError);
+				}
+			}
 		}
 
 		public void Remove(BarbadosDocument document)
@@ -186,45 +185,44 @@ namespace Barbados.StorageEngine.Collections.Internal
 
 		public void RemoveIndex(BarbadosDocument document, string field)
 		{
-			Controller.Lock.Acquire(Name, LockMode.Write);
-
-			var r = document.TryGetDocumentArray(
-				BarbadosIdentifiers.MetaCollection.IndexArrayField, out var indexesArray
-			);
-			Debug.Assert(r);
-			Debug.Assert(indexesArray.Length > 0);
-
-			var updatedIndexesArray = new BarbadosDocument[indexesArray.Length - 1];
-			for (int i = 0; i < updatedIndexesArray.Length;)
+			using (Controller.AcquireLock(Name, LockMode.Write))
 			{
-				var indexDocument = indexesArray[i];
-				r = indexDocument.TryGetString(
-					BarbadosIdentifiers.MetaCollection.IndexDocumentIndexedFieldField, out var indexedField
+				var r = document.TryGetDocumentArray(
+					BarbadosIdentifiers.MetaCollection.IndexArrayField, out var indexesArray
 				);
 				Debug.Assert(r);
+				Debug.Assert(indexesArray.Length > 0);
 
-				if (indexedField != field)
+				var updatedIndexesArray = new BarbadosDocument[indexesArray.Length - 1];
+				for (int i = 0; i < updatedIndexesArray.Length;)
 				{
-					updatedIndexesArray[i] = indexDocument;
-					i += 1;
+					var indexDocument = indexesArray[i];
+					r = indexDocument.TryGetString(
+						BarbadosIdentifiers.MetaCollection.IndexDocumentIndexedFieldField, out var indexedField
+					);
+					Debug.Assert(r);
+
+					if (indexedField != field)
+					{
+						updatedIndexesArray[i] = indexDocument;
+						i += 1;
+					}
+				}
+
+				if (updatedIndexesArray.Length > 0)
+				{
+					_documentBuilder.Add(BarbadosIdentifiers.MetaCollection.IndexArrayField, updatedIndexesArray);
+				}
+
+				var updated = _documentBuilder
+					.AddFieldFrom(BarbadosIdentifiers.MetaCollection.CollectionDocumentField, document)
+					.Build();
+
+				if (!TryUpdateNoLock(document.Id, updated))
+				{
+					throw new BarbadosException(BarbadosExceptionCode.InternalError);
 				}
 			}
-
-			if (updatedIndexesArray.Length > 0)
-			{
-				_documentBuilder.Add(BarbadosIdentifiers.MetaCollection.IndexArrayField, updatedIndexesArray);
-			}
-
-			var updated = _documentBuilder
-				.AddFieldFrom(BarbadosIdentifiers.MetaCollection.CollectionDocumentField, document)
-				.Build();
-
-			if (!TryLockableUpdate(document.Id, updated, toLock: false))
-			{
-				throw new BarbadosException(BarbadosExceptionCode.InternalError);
-			}
-
-			Controller.Lock.Release(Name, LockMode.Write);
 		}
 	}
 }

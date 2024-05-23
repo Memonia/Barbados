@@ -60,7 +60,7 @@ namespace Barbados.StorageEngine.Indexing
 				return true;
 			}
 
-			Controller.Lock.Acquire(Name, LockMode.Write);
+			using var _ = Controller.AcquireLock(Name, LockMode.Write);
 
 			var ikey = ToBTreeIndexKey(key);
 			if (TryFind(ikey, out var traceback))
@@ -108,7 +108,6 @@ namespace Barbados.StorageEngine.Indexing
 								Controller.Pool.SaveRelease(opage);
 							}
 
-							Controller.Lock.Release(Name, LockMode.Write);
 							return true;
 						}
 
@@ -120,20 +119,16 @@ namespace Barbados.StorageEngine.Indexing
 						}
 					}
 
-					// The locator wasn't found in the overflow chain
+					// The id was not found in the overflow chain
 					Debug.Assert(false);
 				}
 
 				else
 				{
-					var r = _tryRemoveFromLeaf(leaf, ikey, traceback, removeOverflow: false);
-
-					Controller.Lock.Release(Name, LockMode.Write);
-					return r;
+					return _tryRemoveFromLeaf(leaf, ikey, traceback, removeOverflow: false);
 				}
 			}
 
-			Controller.Lock.Release(Name, LockMode.Write);
 			return false;
 		}
 	}

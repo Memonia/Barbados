@@ -157,7 +157,7 @@ namespace Barbados.StorageEngine.Indexing
 				throw new ArgumentException("Unexpected condition", nameof(condition));
 			}
 
-			return new Cursor<ObjectId>(ids, Controller, Name);
+			return new Cursor<ObjectId>(ids, Controller.GetLock(Name, LockMode.Read));
 		}
 
 		public ICursor<ObjectId> FindExact<T>(T searchValue)
@@ -178,7 +178,7 @@ namespace Barbados.StorageEngine.Indexing
 				Controller.Pool.Release(leaf);
 			}
 
-			return new Cursor<ObjectId>(ids, Controller, Name);
+			return new Cursor<ObjectId>(ids, Controller.GetLock(Name, LockMode.Read));
 		}
 
 		private bool _tryRetrieveFullNormalisedKey(ObjectId id, out NormalisedValue key)

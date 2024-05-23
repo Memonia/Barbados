@@ -45,19 +45,41 @@ namespace Barbados.StorageEngine.Collections
 		}
 
 		public ObjectId Insert(BarbadosDocument document)
-			=> LockableInsert(document, toLock: true);
+		{
+			using (Controller.AcquireLock(Name, LockMode.Write))
+			{
+				return InsertNoLock(document);
+			}
+		}
 
-		public bool TryRead(ObjectId id, out BarbadosDocument document) =>
-			TryRead(id, ValueSelector.SelectAll, out document);
+		public bool TryRead(ObjectId id, out BarbadosDocument document)
+		{
+			return TryRead(id, ValueSelector.SelectAll, out document);
+		}
 
-		public bool TryRead(ObjectId id, ValueSelector selector, out BarbadosDocument document) =>
-			TryLockableRead(id, selector, toLock: true, out document);
+		public bool TryRead(ObjectId id, ValueSelector selector, out BarbadosDocument document)
+		{
+			using (Controller.AcquireLock(Name, LockMode.Read))
+			{
+				return TryReadNoLock(id, selector, out document);
+			}
+		}
 
-		public bool TryUpdate(ObjectId id, BarbadosDocument document) =>
-			TryLockableUpdate(id, document, toLock: true);
+		public bool TryUpdate(ObjectId id, BarbadosDocument document)
+		{
+			using (Controller.AcquireLock(Name, LockMode.Write))
+			{
+				return TryUpdateNoLock(id, document);
+			}
+		}
 
-		public bool TryRemove(ObjectId id) =>
-			TryLockableRemove(id, toLock: true);
+		public bool TryRemove(ObjectId id)
+		{
+			using (Controller.AcquireLock(Name, LockMode.Write))
+			{
+				return TryRemoveNoLock(id);
+			}
+		}
 
 		public void Update(ObjectId id, BarbadosDocument document)
 		{
@@ -94,53 +116,46 @@ namespace Barbados.StorageEngine.Collections
 			}
 		}
 
-		protected ObjectId LockableInsert(BarbadosDocument document, bool toLock)
+		protected ObjectId InsertNoLock(BarbadosDocument document)
 		{
-			if (toLock)
-			{
-				Controller.Lock.Acquire(Name, LockMode.Write);
-			}
-
 			var collection = Controller.Pool.LoadPin<CollectionPage>(CollectionPageHandle);
 			if (collection.TryGetNextObjectId(out var nextId))
 			{
 				// Save next available document id
 				Controller.Pool.SaveRelease(collection);
 
-				_insert(nextId, document, toLock: false);
-				if (toLock)
-				{
-					Controller.Lock.Release(Name, LockMode.Write);
-				}
-
+				InsertNoLock(nextId, document);
 				return nextId;
 			}
 
 			else
 			{
 				Controller.Pool.Release(collection);
-				if (toLock)
-				{
-					Controller.Lock.Release(Name, LockMode.Write);
-				}
-
 				throw new BarbadosException(BarbadosExceptionCode.MaxDocumentCountReached);
 			}
 		}
 
-		protected bool TryLockableRead(ObjectId id, ValueSelector selector, bool toLock, out BarbadosDocument document)
+		protected void InsertNoLock(ObjectId id, BarbadosDocument document)
 		{
 			var idn = new ObjectIdNormalised(id);
-			if (toLock)
-			{
-				Controller.Lock.Acquire(Name, LockMode.Read);
-			}
+			ClusteredIndex.Insert(idn, document.Buffer, CollectionPageHandle);
 
+			foreach (var index in Indexes)
+			{
+				if (document.Buffer.TryGetNormalisedValue(index.IndexedField.StringBufferValue, out var value))
+				{
+					index.Insert(value, id);
+				}
+			}
+		}
+
+		protected bool TryReadNoLock(ObjectId id, ValueSelector selector, out BarbadosDocument document)
+		{
+			var idn = new ObjectIdNormalised(id);
 			var result = false;
-			document = default!;
 			if (ClusteredIndex.TryRead(idn, out var handle))
 			{
-				result = ObjectReader.Read(Controller.Pool, new(id, handle), selector, out var obj);
+				result = ObjectReader.Read(Controller.Pool, handle, id, selector, out var obj);
 				if (!result)
 				{
 					throw new BarbadosException(BarbadosExceptionCode.InternalError);
@@ -149,73 +164,30 @@ namespace Barbados.StorageEngine.Collections
 				document = new(id, obj);
 			}
 
-			if (toLock)
+			else
 			{
-				Controller.Lock.Release(Name, LockMode.Read);
+				document = default!;
 			}
 
 			return result;
 		}
 
-		protected bool TryLockableUpdate(ObjectId id, BarbadosDocument document, bool toLock)
+		protected bool TryUpdateNoLock(ObjectId id, BarbadosDocument document)
 		{
-			if (toLock)
-			{
-				Controller.Lock.Acquire(Name, LockMode.Write);
-			}
-
 			bool result = false;
-			if (_tryRemove(id, toLock: false))
+			if (TryRemoveNoLock(id))
 			{
 				result = true;
-				_insert(id, document, toLock: false);
-			}
-
-			if (toLock)
-			{
-				Controller.Lock.Release(Name, LockMode.Write);
+				InsertNoLock(id, document);
 			}
 
 			return result;
 		}
 
-		protected bool TryLockableRemove(ObjectId id, bool toLock)
-		{
-			return _tryRemove(id, toLock);
-		}
-
-		private void _insert(ObjectId id, BarbadosDocument document, bool toLock)
+		protected bool TryRemoveNoLock(ObjectId id)
 		{
 			var idn = new ObjectIdNormalised(id);
-			if (toLock)
-			{
-				Controller.Lock.Acquire(Name, LockMode.Write);
-			}
-
-			ClusteredIndex.Insert(idn, document.Buffer, CollectionPageHandle);
-			foreach (var index in Indexes)
-			{
-				if (document.Buffer.TryGetNormalisedValue(index.IndexedField.StringBufferValue, out var value))
-				{
-					index.Insert(value, id);
-				}
-			}
-
-			if (toLock)
-			{
-				Controller.Lock.Release(Name, LockMode.Write);
-			}
-		}
-
-		private bool _tryRemove(ObjectId id, bool toLock)
-		{
-			var idn = new ObjectIdNormalised(id);
-			if (toLock)
-			{
-				Controller.Lock.Acquire(Name, LockMode.Write);
-			}
-
-			if (!TryLockableRead(id, ValueSelector.SelectAll, toLock: false, out var document))
+			if (!TryReadNoLock(id, ValueSelector.SelectAll, out var document))
 			{
 				return false;
 			}
@@ -234,11 +206,6 @@ namespace Barbados.StorageEngine.Collections
 						throw new BarbadosException(BarbadosExceptionCode.InternalError);
 					}
 				}
-			}
-
-			if (toLock)
-			{
-				Controller.Lock.Release(Name, LockMode.Write);
 			}
 
 			return true;
