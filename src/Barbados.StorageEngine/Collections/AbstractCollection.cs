@@ -155,7 +155,7 @@ namespace Barbados.StorageEngine.Collections
 			var result = false;
 			if (ClusteredIndex.TryRead(idn, out var handle))
 			{
-				result = ObjectReader.Read(Controller.Pool, new(id, handle), selector, out var obj);
+				result = ObjectReader.Read(Controller.Pool, handle, id, selector, out var obj);
 				if (!result)
 				{
 					throw new BarbadosException(BarbadosExceptionCode.InternalError);
