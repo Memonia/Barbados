@@ -1,7 +1,7 @@
 name: run tests
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "main", "dev" ]
   workflow_call:
     
 jobs:
