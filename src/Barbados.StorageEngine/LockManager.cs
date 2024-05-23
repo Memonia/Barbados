@@ -48,6 +48,11 @@ namespace Barbados.StorageEngine
 		{
 			_lockables = new();
 		}
+		
+		public bool ContainsLockable(string name)
+		{
+			return _lockables.ContainsKey(name);
+		}
 
 		public void AddLockable(string name)
 		{
@@ -67,11 +72,6 @@ namespace Barbados.StorageEngine
 					BarbadosExceptionCode.LockableDoesNotExist, $"Lockable '{name}' does not exist"
 				);
 			}
-		}
-
-		public bool ContainsLockable(string name)
-		{
-			return _lockables.ContainsKey(name);
 		}
 
 		public void Acquire(string name, LockMode mode)
@@ -103,6 +103,18 @@ namespace Barbados.StorageEngine
 			}
 
 			_release(@lock, mode);
+		}
+
+		public ObjectLock GetLock(string name, LockMode mode)
+		{
+			if (!_lockables.ContainsKey(name))
+			{
+				throw new BarbadosConcurrencyException(
+					BarbadosExceptionCode.LockableDoesNotExist, $"Lockable '{name}' does not exist"
+				);
+			}
+
+			return new(name, mode, this);
 		}
 	}
 }

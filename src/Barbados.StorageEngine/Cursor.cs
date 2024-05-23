@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Threading;
 
@@ -6,29 +7,28 @@ using Barbados.StorageEngine.Exceptions;
 
 namespace Barbados.StorageEngine
 {
-	internal sealed class Cursor<T> : ICursor<T>
+	internal sealed class Cursor<T> : ICursor<T>, IDisposable
 	{
-		public BarbadosIdentifier OwnerName { get; }
+		public BarbadosIdentifier OwnerName => _lock.Name;
 
 		private int _open;
 		private int _closed;
+		private readonly ObjectLock _lock;
 		private readonly IEnumerable<T> _enumerable;
-		private readonly BarbadosController _controller;
 
-		public Cursor(IEnumerable<T> enumerable, BarbadosController controller, BarbadosIdentifier ownerName)
+		public Cursor(IEnumerable<T> enumerable, ObjectLock @lock)
 		{
-			OwnerName = ownerName;
 			_open = 0;
 			_closed = 0;
+			_lock = @lock;
 			_enumerable = enumerable;
-			_controller = controller;
 		}
 
 		public void Close()
 		{
 			if (Interlocked.CompareExchange(ref _closed, 1, 0) == 0)
 			{
-				_controller.Lock.Release(OwnerName, LockMode.Read);
+				_lock.Dispose();
 			}
 		}
 
@@ -39,7 +39,7 @@ namespace Barbados.StorageEngine
 				throw new BarbadosException(BarbadosExceptionCode.CursorConsumed, "Cursor has been opened already");
 			}
 
-			_controller.Lock.Acquire(OwnerName, LockMode.Read);
+			_lock.Acquire();
 			foreach (var e in _enumerable)
 			{
 				yield return e;
@@ -50,6 +50,11 @@ namespace Barbados.StorageEngine
 				}
 			}
 
+			Close();
+		}
+
+		public void Dispose()
+		{
 			Close();
 		}
 

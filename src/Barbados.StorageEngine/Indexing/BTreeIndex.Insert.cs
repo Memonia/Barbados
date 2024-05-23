@@ -11,7 +11,7 @@ namespace Barbados.StorageEngine.Indexing
 	{
 		public void Insert(NormalisedValue key, ObjectId id)
 		{
-			Controller.Lock.Acquire(Name, LockMode.Write);
+			using var _ = Controller.AcquireLock(Name, LockMode.Write);	
 
 			var ikey = ToBTreeIndexKey(key);
 			if (TryFindWithPreemptiveSplit(ikey, out var traceback))
@@ -32,7 +32,6 @@ namespace Barbados.StorageEngine.Indexing
 						if (overflow.TryWriteObjectId(new(id), ikey.IsTrimmed))
 						{
 							Controller.Pool.SaveRelease(overflow);
-							Controller.Lock.Release(Name, LockMode.Write);
 							return;
 						}
 
@@ -126,8 +125,6 @@ namespace Barbados.StorageEngine.Indexing
 				Controller.Pool.SaveRelease(root);
 				Controller.Pool.SaveRelease(leaf);
 			}
-
-			Controller.Lock.Release(Name, LockMode.Write);
 		}
 
 		private void _split(BTreeIndexKey key, ObjectId id, BTreeIndexTraceback traceback)
