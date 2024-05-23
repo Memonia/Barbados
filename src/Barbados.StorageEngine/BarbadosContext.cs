@@ -88,9 +88,11 @@ namespace Barbados.StorageEngine
 			var cursor = meta.GetCursor();
 			foreach (var document in cursor)
 			{
-				document.TryGetString(
-					BarbadosIdentifiers.MetaCollection.CollectionDocumentClusteredIndexPageHandleFieldAbsolute, out var name
+				var r = document.TryGetString(
+					BarbadosIdentifiers.MetaCollection.CollectionDocumentNameFieldAbsolute, out var name
 				);
+
+				Debug.Assert(r);
 				yield return name;
 			}
 		}
@@ -113,9 +115,11 @@ namespace Barbados.StorageEngine
 			{
 				foreach (var index in indexArray)
 				{
-					var r = index.TryGetString(BarbadosIdentifiers.MetaCollection.IndexDocumentIndexedFieldField, out var name);
+					var r = index.TryGetString(
+						BarbadosIdentifiers.MetaCollection.IndexDocumentIndexedFieldField, out var name
+					);
+					
 					Debug.Assert(r);
-
 					yield return name;
 				}
 			}
