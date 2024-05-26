@@ -1,5 +1,5 @@
 ﻿using Barbados.StorageEngine.Documents;
-using Barbados.StorageEngine.Tests.Integration.TestUtils;
+using Barbados.StorageEngine.Tests.Integration.Utils;
 
 namespace Barbados.StorageEngine.Tests.Integration.Collections
 {

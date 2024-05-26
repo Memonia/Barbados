@@ -1,7 +1,7 @@
 ﻿using Barbados.StorageEngine.Indexing;
 using Barbados.StorageEngine.Tests.Integration.Indexing;
 
-namespace Barbados.StorageEngine.Tests.Integration.TestUtils
+namespace Barbados.StorageEngine.Tests.Integration.Utils
 {
 	public sealed class BarbadosContextFixture<TTestClass> : IDisposable
 	{
