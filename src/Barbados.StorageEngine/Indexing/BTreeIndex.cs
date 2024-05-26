@@ -199,6 +199,12 @@ namespace Barbados.StorageEngine.Indexing
 			bool _check(NormalisedValueSpan search, BTreeIndexKey storedKey, ObjectId storedId)
 			{
 				var result = false;
+				if (!NormalisedValue.IsSameValueType(search, storedKey.Separator))
+				{
+					result = false;
+				}
+
+				else
 				if (search.Bytes.Length > Info.KeyMaxLength && storedKey.IsTrimmed)
 				{
 					if (_tryRetrieveFullNormalisedKey(storedId, out var full))
