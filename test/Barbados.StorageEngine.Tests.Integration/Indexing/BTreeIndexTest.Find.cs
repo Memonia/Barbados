@@ -1,6 +1,8 @@
-﻿using Barbados.StorageEngine.Documents;
+﻿using System.Diagnostics;
+
+using Barbados.StorageEngine.Documents;
 using Barbados.StorageEngine.Documents.Binary;
-using Barbados.StorageEngine.Tests.Integration.TestUtils;
+using Barbados.StorageEngine.Tests.Integration.Utils;
 
 namespace Barbados.StorageEngine.Tests.Integration.Indexing
 {
@@ -8,6 +10,13 @@ namespace Barbados.StorageEngine.Tests.Integration.Indexing
 	{
 		public sealed class Find : IClassFixture<BarbadosContextFixture<Find>>
 		{
+			static Find()
+			{
+				// 'MixedKeys' tests depend on that
+				Debug.Assert(ValueTypeMarker.Int16 < ValueTypeMarker.Int32);
+				Debug.Assert(ValueTypeMarker.Int32 < ValueTypeMarker.Int64);
+			}
+
 			private readonly BarbadosContextFixture<Find> _fixture;
 
 			public Find(BarbadosContextFixture<Find> fixture)
@@ -87,7 +96,7 @@ namespace Barbados.StorageEngine.Tests.Integration.Indexing
 				var result = index.Find(condition).ToList();
 
 				Assert.All(keyIds, id => Assert.Contains(id, result));
-				Assert.Equal(2, result.Count);
+				Assert.Equal(keyIds.Length, result.Count);
 			}
 
 			[Fact]
@@ -115,7 +124,7 @@ namespace Barbados.StorageEngine.Tests.Integration.Indexing
 				var result = index.Find(condition).ToList();
 
 				Assert.All(keyIds, id => Assert.Contains(id, result));
-				Assert.Equal(2, result.Count);
+				Assert.Equal(keyIds.Length, result.Count);
 			}
 
 			[Fact]
@@ -144,7 +153,7 @@ namespace Barbados.StorageEngine.Tests.Integration.Indexing
 				var result = index.Find(condition).ToList();
 
 				Assert.All(keyIds, id => Assert.Contains(id, result));
-				Assert.Equal(3, result.Count);
+				Assert.Equal(keyIds.Length, result.Count);
 			}
 
 			[Fact]
@@ -173,7 +182,7 @@ namespace Barbados.StorageEngine.Tests.Integration.Indexing
 				var result = index.Find(condition).ToList();
 
 				Assert.All(keyIds, id => Assert.Contains(id, result));
-				Assert.Equal(3, result.Count);
+				Assert.Equal(keyIds.Length, result.Count);
 			}
 
 			[Fact]
@@ -202,7 +211,7 @@ namespace Barbados.StorageEngine.Tests.Integration.Indexing
 				var result = index.Find(condition).ToList();
 
 				Assert.All(keyIds, id => Assert.Contains(id, result));
-				Assert.Equal(3, result.Count);
+				Assert.Equal(keyIds.Length, result.Count);
 			}
 
 			[Fact]
@@ -232,7 +241,129 @@ namespace Barbados.StorageEngine.Tests.Integration.Indexing
 				var result = index.Find(condition).ToList();
 
 				Assert.All(keyIds, id => Assert.Contains(id, result));
-				Assert.Equal(3, result.Count);
+				Assert.Equal(keyIds.Length, result.Count);
+			}
+
+			[Fact]
+			public void DifferentTypes_LessThan_FoundLessCorrectType()
+			{
+				var index = _fixture.CreateTestIndex(
+					nameof(DifferentTypes_LessThan_FoundLessCorrectType)
+				);
+
+				var (id1, v1) = (new ObjectId(1), (int)1);
+				var (id2, v2) = (new ObjectId(2), (short)2);
+				var (id3, v3) = (new ObjectId(3), (int)3);
+				var (id4, v4) = (new ObjectId(4), (short)4);
+				var (id5, v5) = (new ObjectId(5), (int)5);
+				index.Insert(NormalisedValue.Create(v1), id1);
+				index.Insert(NormalisedValue.Create(v2), id2);
+				index.Insert(NormalisedValue.Create(v3), id3);
+				index.Insert(NormalisedValue.Create(v4), id4);
+				index.Insert(NormalisedValue.Create(v5), id5);
+
+				var (key, keyIds) = (v5, new ObjectId[] { id1, id3 });
+				var condition = new BarbadosDocument.Builder()
+					.Add(BarbadosIdentifiers.Index.SearchValue, key)
+					.Add(BarbadosIdentifiers.Index.LessThan, true)
+					.Build();
+
+				var result = index.Find(condition).ToList();
+
+				Assert.All(keyIds, id => Assert.Contains(id, result));
+				Assert.Equal(keyIds.Length, result.Count);
+			}
+
+			[Fact]
+			public void DifferentTypes_GreaterThan_FoundGreaterCorrectType()
+			{
+				var index = _fixture.CreateTestIndex(
+					nameof(DifferentTypes_GreaterThan_FoundGreaterCorrectType)
+				);
+
+				var (id1, v1) = (new ObjectId(1), (int)1);
+				var (id2, v2) = (new ObjectId(2), (long)2);
+				var (id3, v3) = (new ObjectId(3), (int)3);
+				var (id4, v4) = (new ObjectId(4), (long)4);
+				var (id5, v5) = (new ObjectId(5), (int)5);
+				index.Insert(NormalisedValue.Create(v1), id1);
+				index.Insert(NormalisedValue.Create(v2), id2);
+				index.Insert(NormalisedValue.Create(v3), id3);
+				index.Insert(NormalisedValue.Create(v4), id4);
+				index.Insert(NormalisedValue.Create(v5), id5);
+
+				var (key, keyIds) = (v1, new ObjectId[] { id3, id5 });
+				var condition = new BarbadosDocument.Builder()
+					.Add(BarbadosIdentifiers.Index.SearchValue, key)
+					.Add(BarbadosIdentifiers.Index.GreaterThan, true)
+					.Build();
+
+				var result = index.Find(condition).ToList();
+
+				Assert.All(keyIds, id => Assert.Contains(id, result));
+				Assert.Equal(keyIds.Length, result.Count);
+			}
+
+			[Fact]
+			public void DifferentTypes_LessThanInclusive_FoundLessOrEqualCorrectType()
+			{
+				var index = _fixture.CreateTestIndex(
+					nameof(DifferentTypes_LessThanInclusive_FoundLessOrEqualCorrectType)
+				);
+
+				var (id1, v1) = (new ObjectId(1), (int)1);
+				var (id2, v2) = (new ObjectId(2), (short)2);
+				var (id3, v3) = (new ObjectId(3), (int)3);
+				var (id4, v4) = (new ObjectId(4), (short)4);
+				var (id5, v5) = (new ObjectId(5), (int)5);
+				index.Insert(NormalisedValue.Create(v1), id1);
+				index.Insert(NormalisedValue.Create(v2), id2);
+				index.Insert(NormalisedValue.Create(v3), id3);
+				index.Insert(NormalisedValue.Create(v4), id4);
+				index.Insert(NormalisedValue.Create(v5), id5);
+
+				var (key, keyIds) = ((int)v4, new ObjectId[] { id1, id3 });
+				var condition = new BarbadosDocument.Builder()
+					.Add(BarbadosIdentifiers.Index.SearchValue, key)
+					.Add(BarbadosIdentifiers.Index.LessThan, true)
+					.Add(BarbadosIdentifiers.Index.Inclusive, true)
+					.Build();
+
+				var result = index.Find(condition).ToList();
+
+				Assert.All(keyIds, id => Assert.Contains(id, result));
+				Assert.Equal(keyIds.Length, result.Count);
+			}
+
+			[Fact]
+			public void DifferentTypes_GreaterThanInclusive_FoundGreaterOrEqualCorrectType()
+			{
+				var index = _fixture.CreateTestIndex(
+					nameof(DifferentTypes_GreaterThanInclusive_FoundGreaterOrEqualCorrectType)
+				);
+
+				var (id1, v1) = (new ObjectId(1), (int)1);
+				var (id2, v2) = (new ObjectId(2), (long)2);
+				var (id3, v3) = (new ObjectId(3), (int)3);
+				var (id4, v4) = (new ObjectId(4), (long)4);
+				var (id5, v5) = (new ObjectId(5), (int)5);
+				index.Insert(NormalisedValue.Create(v1), id1);
+				index.Insert(NormalisedValue.Create(v2), id2);
+				index.Insert(NormalisedValue.Create(v3), id3);
+				index.Insert(NormalisedValue.Create(v4), id4);
+				index.Insert(NormalisedValue.Create(v5), id5);
+
+				var (key, keyIds) = ((int)v2, new ObjectId[] { id3, id5 });
+				var condition = new BarbadosDocument.Builder()
+					.Add(BarbadosIdentifiers.Index.SearchValue, key)
+					.Add(BarbadosIdentifiers.Index.GreaterThan, true)
+					.Add(BarbadosIdentifiers.Index.Inclusive, true)
+					.Build();
+
+				var result = index.Find(condition).ToList();
+
+				Assert.All(keyIds, id => Assert.Contains(id, result));
+				Assert.Equal(keyIds.Length, result.Count);
 			}
 		}
 	}

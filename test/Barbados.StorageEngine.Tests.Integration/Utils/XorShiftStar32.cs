@@ -1,4 +1,4 @@
-﻿namespace Barbados.StorageEngine.Tests.Integration.TestUtils
+﻿namespace Barbados.StorageEngine.Tests.Integration.Utils
 {
 	internal sealed class XorShiftStar32(int seed)
 	{

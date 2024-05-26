@@ -1,6 +1,6 @@
 ﻿using System.Runtime.CompilerServices;
 
-namespace Barbados.StorageEngine.Tests.Integration.TestUtils
+namespace Barbados.StorageEngine.Tests.Integration.Utils
 {
 	internal sealed class SelfCleanupBarbadosContext<TTestClass> : IDisposable
 	{

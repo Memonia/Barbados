@@ -1,6 +1,6 @@
 ﻿using System.Diagnostics;
 
-using Barbados.StorageEngine.Tests.Integration.TestUtils;
+using Barbados.StorageEngine.Tests.Integration.Utils;
 
 namespace Barbados.StorageEngine.Tests.Integration.Indexing
 {
@@ -28,11 +28,6 @@ namespace Barbados.StorageEngine.Tests.Integration.Indexing
 				{
 					var r = document.TryGet(sequence.IndexedField, out var key);
 					Debug.Assert(r);
-
-					if (key is string s && s == "00000000000000000000000000000000000000041")
-					{
-
-					}
 
 					var id = collection.Insert(document);
 					if (ids.TryGetValue(key, out var existingIds))

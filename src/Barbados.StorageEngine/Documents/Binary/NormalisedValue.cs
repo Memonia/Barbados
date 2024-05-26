@@ -6,6 +6,11 @@ namespace Barbados.StorageEngine.Documents.Binary
 {
 	internal sealed class NormalisedValue(byte[] bytes)
 	{
+		public static bool IsSameValueType(NormalisedValueSpan x, NormalisedValueSpan y)
+		{
+			return x.Bytes[0] == y.Bytes[0];
+		}
+
 		public static NormalisedValue Create<T>(T value)
 		{
 			switch (value)
