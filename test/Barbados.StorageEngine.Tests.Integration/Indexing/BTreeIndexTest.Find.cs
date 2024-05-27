@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using System.Linq;
 
 using Barbados.StorageEngine.Documents;
 using Barbados.StorageEngine.Documents.Binary;

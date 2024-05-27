@@ -1,4 +1,7 @@
-﻿using Barbados.StorageEngine.Documents;
+﻿using System;
+using System.Linq;
+
+using Barbados.StorageEngine.Documents;
 
 namespace Barbados.StorageEngine.Tests.Documents
 {

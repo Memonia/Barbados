@@ -1,4 +1,7 @@
-﻿using Barbados.StorageEngine.Documents;
+﻿using System.Collections.Generic;
+using System.Linq;
+
+using Barbados.StorageEngine.Documents;
 using Barbados.StorageEngine.Tests.Integration.Utils;
 
 namespace Barbados.StorageEngine.Tests.Integration.Collections
