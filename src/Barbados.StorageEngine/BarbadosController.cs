@@ -28,12 +28,12 @@ namespace Barbados.StorageEngine
 			_instances = [];
 		}
 
-		public ObjectLock GetLock(string name, LockMode mode)
+		public LockAutomatic GetLock(string name, LockMode mode)
 		{
 			return Lock.GetLock(name, mode);
 		}
 
-		public ObjectLock AcquireLock(string name, LockMode mode)
+		public LockAutomatic AcquireLock(string name, LockMode mode)
 		{
 			var @lock = GetLock(name, mode);
 			@lock.Acquire();

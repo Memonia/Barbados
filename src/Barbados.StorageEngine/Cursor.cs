@@ -13,10 +13,10 @@ namespace Barbados.StorageEngine
 
 		private int _open;
 		private int _closed;
-		private readonly ObjectLock _lock;
+		private readonly LockAutomatic _lock;
 		private readonly IEnumerable<T> _enumerable;
 
-		public Cursor(IEnumerable<T> enumerable, ObjectLock @lock)
+		public Cursor(IEnumerable<T> enumerable, LockAutomatic @lock)
 		{
 			_open = 0;
 			_closed = 0;
@@ -34,23 +34,28 @@ namespace Barbados.StorageEngine
 
 		public IEnumerator<T> GetEnumerator()
 		{
-			if (Interlocked.CompareExchange(ref _open, 1, 0) != 0)
+			using (_lock)
 			{
-				throw new BarbadosException(BarbadosExceptionCode.CursorConsumed, "Cursor has been opened already");
-			}
-
-			_lock.Acquire();
-			foreach (var e in _enumerable)
-			{
-				yield return e;
-
-				if (Interlocked.CompareExchange(ref _closed, _closed, 1) == 1)
+				if (Interlocked.CompareExchange(ref _open, 1, 0) != 0)
 				{
-					throw new BarbadosException(BarbadosExceptionCode.CursorClosed, "Cursor has been closed");
+					throw new BarbadosException(
+						BarbadosExceptionCode.CursorConsumed, $"Current cursor on {OwnerName} is already open"
+					);
+				}
+
+				_lock.Acquire();
+				foreach (var e in _enumerable)
+				{
+					yield return e;
+
+					if (Interlocked.CompareExchange(ref _closed, _closed, 1) == 1)
+					{
+						throw new BarbadosException(
+							BarbadosExceptionCode.CursorClosed, $"Current cursor on {OwnerName} has been closed"
+						);
+					}
 				}
 			}
-
-			Close();
 		}
 
 		public void Dispose()

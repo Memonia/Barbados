@@ -105,7 +105,7 @@ namespace Barbados.StorageEngine
 			_release(@lock, mode);
 		}
 
-		public ObjectLock GetLock(string name, LockMode mode)
+		public LockAutomatic GetLock(string name, LockMode mode)
 		{
 			if (!_lockables.ContainsKey(name))
 			{
