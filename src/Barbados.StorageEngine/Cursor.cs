@@ -34,16 +34,16 @@ namespace Barbados.StorageEngine
 
 		public IEnumerator<T> GetEnumerator()
 		{
+			if (Interlocked.CompareExchange(ref _open, 1, 0) != 0)
+			{
+				throw new BarbadosException(
+					BarbadosExceptionCode.CursorConsumed, $"Current cursor on {OwnerName} is already open"
+				);
+			}
+
+			_lock.Acquire();
 			using (_lock)
 			{
-				if (Interlocked.CompareExchange(ref _open, 1, 0) != 0)
-				{
-					throw new BarbadosException(
-						BarbadosExceptionCode.CursorConsumed, $"Current cursor on {OwnerName} is already open"
-					);
-				}
-
-				_lock.Acquire();
 				foreach (var e in _enumerable)
 				{
 					yield return e;
