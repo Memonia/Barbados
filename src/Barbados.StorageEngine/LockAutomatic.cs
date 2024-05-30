@@ -15,7 +15,7 @@
 		public Scope Acquire(LockMode mode)
 		{
 			_manager.Acquire(Name, mode);
-			return new Scope();
+			return new Scope(mode, this);
 		}
 
 		public void Release(LockMode mode)
