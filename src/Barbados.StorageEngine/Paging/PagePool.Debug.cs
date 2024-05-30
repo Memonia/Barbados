@@ -22,7 +22,7 @@ namespace Barbados.StorageEngine.Paging
 			}
 
 			var root = (RootPage)page;
-			if (handle.Index >= root.NextAvailablePageHandle.Index)
+			if (handle.Handle >= root.NextAvailablePageHandle.Handle)
 			{
 				Debug.Fail($"Unallocated handle: {handle}");
 			}

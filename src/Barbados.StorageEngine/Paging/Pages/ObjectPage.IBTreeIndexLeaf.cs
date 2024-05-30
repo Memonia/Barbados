@@ -73,7 +73,7 @@ namespace Barbados.StorageEngine.Paging.Pages
 					{
 						var r = TryRemoveObjectChunk(idn, out var storedHandle);
 						Debug.Assert(r);
-						Debug.Assert(storedHandle.Index == handle.Index);
+						Debug.Assert(storedHandle.Handle == handle.Handle);
 					}
 
 					else

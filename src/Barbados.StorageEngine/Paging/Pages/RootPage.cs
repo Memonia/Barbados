@@ -48,7 +48,7 @@ namespace Barbados.StorageEngine.Paging.Pages
 			Version = Constants.Version;
 			Magic = Constants.MagicNumber;
 
-			NextAvailablePageHandle = new(PageHandle.Root.Index + 1);
+			NextAvailablePageHandle = new(PageHandle.Root.Handle + 1);
 
 			AllocationPageChainHeadHandle = PageHandle.Null;
 			MappingCollectionPageHandle = PageHandle.Null;
@@ -93,7 +93,7 @@ namespace Barbados.StorageEngine.Paging.Pages
 			}
 
 			var next = NextAvailablePageHandle;
-			NextAvailablePageHandle = new(NextAvailablePageHandle.Index + 1);
+			NextAvailablePageHandle = new(NextAvailablePageHandle.Handle + 1);
 			return next;
 		}
 

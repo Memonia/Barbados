@@ -13,7 +13,7 @@ namespace Barbados.StorageEngine.Helpers
 		public static void AsUInt64(Span<byte> target, ulong value) => BinaryPrimitives.WriteUInt64LittleEndian(target, value);
 
 		public static void AsObjectId(Span<byte> target, ObjectId value) => AsInt64(target, value.Value);
-		public static void AsPageHandle(Span<byte> target, PageHandle value) => AsInt64(target, value.Index);
+		public static void AsPageHandle(Span<byte> target, PageHandle value) => AsInt64(target, value.Handle);
 		public static void AsPageMarker(Span<byte> target, PageMarker value) => target[0] = (byte)value;
 	}
 }

@@ -23,7 +23,7 @@ namespace Barbados.StorageEngine.Indexing
 				// Remove the leaf if it's empty, unless it is the collection page
 				if (from.Count() == 0)
 				{
-					if (from.Header.Handle.Index != collectionPageHandle.Index)
+					if (from.Header.Handle.Handle != collectionPageHandle.Handle)
 					{
 						ChainHelpers.RemoveAndDeallocate(from, Pool);
 					}
@@ -71,9 +71,9 @@ namespace Barbados.StorageEngine.Indexing
 
 					// 'CollectionPage' might be deallocated in the process
 					if (
-						from.Next.Index != collectionPageHandle.Index &&
-						from.Previous.Index != collectionPageHandle.Index &&
-						from.Header.Handle.Index != collectionPageHandle.Index
+						from.Next.Handle != collectionPageHandle.Handle &&
+						from.Previous.Handle != collectionPageHandle.Handle &&
+						from.Header.Handle.Handle != collectionPageHandle.Handle
 					)
 					{
 						BalanceLeaf(traceback);

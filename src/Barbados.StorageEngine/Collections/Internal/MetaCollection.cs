@@ -65,8 +65,8 @@ namespace Barbados.StorageEngine.Collections.Internal
 
 				var collectionDocument = _documentBuilder
 					.Add(BarbadosIdentifiers.MetaCollection.CollectionDocumentNameFIeld, collection)
-					.Add(BarbadosIdentifiers.MetaCollection.CollectionDocumentPageHandleField, ch.Index)
-					.Add(BarbadosIdentifiers.MetaCollection.CollectionDocumentClusteredIndexPageHandleField, ih.Index)
+					.Add(BarbadosIdentifiers.MetaCollection.CollectionDocumentPageHandleField, ch.Handle)
+					.Add(BarbadosIdentifiers.MetaCollection.CollectionDocumentClusteredIndexPageHandleField, ih.Handle)
 					.Build();
 
 				var document = _documentBuilder
@@ -133,7 +133,7 @@ namespace Barbados.StorageEngine.Collections.Internal
 
 				var indexDocument = _documentBuilder
 					.Add(BarbadosIdentifiers.MetaCollection.IndexDocumentIndexedFieldField, field)
-					.Add(BarbadosIdentifiers.MetaCollection.IndexDocumentPageHandleField, ih.Index)
+					.Add(BarbadosIdentifiers.MetaCollection.IndexDocumentPageHandleField, ih.Handle)
 					.Add(BarbadosIdentifiers.MetaCollection.IndexDocumentKeyMaxLengthField, keyMaxLength)
 					.Build();
 

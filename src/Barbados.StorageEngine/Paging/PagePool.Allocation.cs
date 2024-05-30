@@ -74,7 +74,7 @@ namespace Barbados.StorageEngine.Paging
 				// corresponds to its own handle. If the root's handle was 0, the last bit of every previous
 				// allocation page would correspond to the handle of the current allocation page. This is important,
 				// because we have to mark the allocation page itself as active, so it doesn't get garbage collected.
-				var freePageBitmapNum = nextHandle.Index / Constants.AllocationBitmapPageCount;
+				var freePageBitmapNum = nextHandle.Handle / Constants.AllocationBitmapPageCount;
 
 				// Find the allocation bitmap for a new handle
 				var bitmap = LoadPin<AllocationPage>(root.AllocationPageChainHeadHandle);
@@ -122,7 +122,7 @@ namespace Barbados.StorageEngine.Paging
 				Release(root);
 
 				var prev = PageHandle.Null;
-				var freePageNum = handle.Index / Constants.AllocationBitmapPageCount;
+				var freePageNum = handle.Handle / Constants.AllocationBitmapPageCount;
 
 				// Find allocation bitmap for a given handle.
 				// The page exists, because it's created during allocation of new pages

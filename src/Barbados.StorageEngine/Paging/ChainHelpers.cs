@@ -32,8 +32,8 @@ namespace Barbados.StorageEngine.Paging
 
 		public static void Insert<T>(T target, T previous, T next) where T : AbstractPage, ITwoWayChainPage
 		{
-			Debug.Assert(previous.Next.Index == next.Header.Handle.Index);
-			Debug.Assert(next.Previous.Index == previous.Header.Handle.Index);
+			Debug.Assert(previous.Next.Handle == next.Header.Handle.Handle);
+			Debug.Assert(next.Previous.Handle == previous.Header.Handle.Handle);
 
 			target.Previous = previous.Header.Handle;
 			target.Next = next.Header.Handle;
@@ -79,7 +79,7 @@ namespace Barbados.StorageEngine.Paging
 
 		public static void RemoveOneWay<T>(T target, T previous) where T : AbstractPage, IOneWayChainPage
 		{
-			Debug.Assert(previous.Next.Index == target.Header.Handle.Index);
+			Debug.Assert(previous.Next.Handle == target.Header.Handle.Handle);
 			previous.Next = target.Next;
 			target.Next = PageHandle.Null;
 		}

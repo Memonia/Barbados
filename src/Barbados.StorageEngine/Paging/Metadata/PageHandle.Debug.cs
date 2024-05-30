@@ -16,7 +16,7 @@ namespace Barbados.StorageEngine.Paging.Metadata
 		[Conditional("DEBUG")]
 		public readonly void DEBUG_ThrowInvalidHandleDereference()
 		{
-			if (Index < 0)
+			if (Handle < 0)
 			{
 				Debug.Fail($"Invalid handle dereference: {this}");
 			}

@@ -55,18 +55,18 @@ namespace Barbados.StorageEngine.Paging.Pages
 		public bool IsActive(PageHandle handle)
 		{
 			return (
-				_getPageByte(handle) & (byte)(1 << (int)(handle.Index % sizeof(ulong)))
+				_getPageByte(handle) & (byte)(1 << (int)(handle.Handle % sizeof(ulong)))
 			) != 0;
 		}
 
 		public void On(PageHandle handle)
 		{
-			_getPageByte(handle) |= (byte)(1 << (int)(handle.Index % sizeof(ulong)));
+			_getPageByte(handle) |= (byte)(1 << (int)(handle.Handle % sizeof(ulong)));
 		}
 
 		public void Off(PageHandle handle)
 		{
-			_getPageByte(handle) &= (byte)~(1 << (int)(handle.Index % sizeof(ulong)));
+			_getPageByte(handle) &= (byte)~(1 << (int)(handle.Handle % sizeof(ulong)));
 		}
 
 		public override PageBuffer UpdateAndGetBuffer()
@@ -88,7 +88,7 @@ namespace Barbados.StorageEngine.Paging.Pages
 
 		private ref byte _getPageByte(PageHandle handle)
 		{
-			return ref _getBitmap()[(int)(handle.Index / sizeof(ulong)) % Constants.AllocationBitmapLength];
+			return ref _getBitmap()[(int)(handle.Handle / sizeof(ulong)) % Constants.AllocationBitmapLength];
 		}
 
 		private bool _tryAcquire(Span<byte> bitmap, int ulongIndex, long bitmapIndex, PageHandle nextAvailableHandle, out PageHandle handle)
@@ -119,7 +119,7 @@ namespace Barbados.StorageEngine.Paging.Pages
 			handle = _getHandle(ulongIndex, bitIndex, bitmapIndex);
 
 			// We found an index of a zero, but it might not yet be allocated
-			if (handle.Index >= nextAvailableHandle.Index)
+			if (handle.Handle >= nextAvailableHandle.Handle)
 			{
 				handle = PageHandle.Null;
 				return false;
