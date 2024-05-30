@@ -37,22 +37,30 @@ namespace Barbados.StorageEngine
 			_lock.Acquire(LockMode.Read);
 			if (Interlocked.CompareExchange(ref _open, 1, 0) != 0)
 			{
-				_lock.Release(LockMode.Read);
+				Close();
 				throw new BarbadosException(
-					BarbadosExceptionCode.CursorConsumed, $"Current cursor on {OwnerName} is already open"
+					BarbadosExceptionCode.CursorConsumed, $"Current cursor on {OwnerName} is already consumed"
 				);
 			}
 
-			foreach (var e in _enumerable)
+			var e = _enumerable.GetEnumerator();
+			try
 			{
-				yield return e;
-
-				if (Interlocked.CompareExchange(ref _closed, _closed, 1) == 1)
+				while (e.MoveNext())
 				{
-					throw new BarbadosException(
-						BarbadosExceptionCode.CursorClosed, $"Current cursor on {OwnerName} has been closed"
-					);
+					yield return e.Current; 
+					if (Interlocked.CompareExchange(ref _closed, _closed, 1) == 1)
+					{
+						throw new BarbadosException(
+							BarbadosExceptionCode.CursorClosed, $"Current cursor on {OwnerName} has been closed"
+						);
+					}
 				}
+			}
+
+			finally
+			{
+				Close();
 			}
 		}
 
