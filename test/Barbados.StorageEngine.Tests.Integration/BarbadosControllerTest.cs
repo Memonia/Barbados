@@ -5,6 +5,118 @@ namespace Barbados.StorageEngine.Tests.Integration
 {
 	public sealed class BarbadosControllerTest
 	{
+		public class TryGetIndex
+		{
+			[Fact]
+			public void IndexExists_ReturnsTrue()
+			{
+				using var context = new SelfCleanupBarbadosContext<CreateCollection>();
+				var collection = "test-collection";
+				var field = "test-field";
+
+				context.Context.Controller.CreateCollection(collection);
+				context.Context.Controller.CreateIndex(collection, field);
+
+				Assert.True(context.Context.Controller.TryGetIndex(collection, field, out var found));
+				Assert.Equal(field, found.IndexedField.Identifier);
+			}
+
+			[Fact]
+			public void IndexDoesNotExist_ReturnsFalse()
+			{
+				using var context = new SelfCleanupBarbadosContext<CreateCollection>();
+				var collection = "test-collection";
+				var field = "test-field";
+
+				context.Context.Controller.CreateCollection(collection);
+
+				Assert.False(context.Context.Controller.TryGetIndex(collection, field, out _));
+			}
+		}
+
+		public class TryGetCollection
+		{
+			[Fact]
+			public void CollectionExists_ReturnsTrue()
+			{
+				using var context = new SelfCleanupBarbadosContext<CreateCollection>();
+				var collection = "test-collection";
+
+				context.Context.Controller.CreateCollection(collection);
+
+				Assert.True(context.Context.Controller.TryGetCollection(collection, out var found));
+				Assert.Equal(collection, found.Name.Identifier);
+			}
+
+			[Fact]
+			public void CollectionDoesNotExist_ReturnsFalse()
+			{
+				using var context = new SelfCleanupBarbadosContext<CreateCollection>();
+				var collection = "test-collection";
+
+				Assert.False(context.Context.Controller.TryGetCollection(collection, out _));
+			}
+		}
+		
+		public class GetIndex
+		{
+			[Fact]
+			public void IndexExists_ReturnsIndex()
+			{
+				using var context = new SelfCleanupBarbadosContext<CreateCollection>();
+				var collection = "test-collection";
+				var field = "test-field";
+
+				context.Context.Controller.CreateCollection(collection);
+				context.Context.Controller.CreateIndex(collection, field);
+
+				var found = context.Context.Controller.GetIndex(collection, field);
+
+				Assert.Equal(field, found.IndexedField.Identifier);
+			}
+
+			[Fact]
+			public void IndexDoesNotExist_ThrowsException()
+			{
+				using var context = new SelfCleanupBarbadosContext<CreateCollection>();
+				var collection = "test-collection";
+				var field = "test-field";
+
+				context.Context.Controller.CreateCollection(collection);
+
+				Assert.Throws<BarbadosException>(
+					() => context.Context.Controller.GetIndex(collection, field)
+				);
+			}
+		}
+
+		public class GetCollection
+		{
+			[Fact]
+			public void CollectionExists_ReturnsCollection()
+			{
+				using var context = new SelfCleanupBarbadosContext<CreateCollection>();
+				var collection = "test-collection";
+
+				context.Context.Controller.CreateCollection(collection);
+
+				var found = context.Context.Controller.GetCollection(collection);
+
+				Assert.Equal(collection, found.Name.Identifier);
+			}
+
+			[Fact]
+			public void CollectionDoesNotExist_ThrowsException()
+			{
+				using var context = new SelfCleanupBarbadosContext<CreateCollection>();
+				var collection = "test-collection";
+
+				Assert.Throws<BarbadosException>(
+					() => context.Context.Controller.GetCollection(collection)
+				);
+			}
+		}
+
 		public sealed class CreateCollection
 		{
 			[Fact]
@@ -78,7 +190,7 @@ namespace Barbados.StorageEngine.Tests.Integration
 				Assert.True(context.Context.CollectionExists(replacement));
 			}
 		}
-		
+
 		public sealed class RemoveCollection
 		{
 			[Fact]
@@ -104,7 +216,7 @@ namespace Barbados.StorageEngine.Tests.Integration
 				Assert.False(context.Context.CollectionExists(collection));
 			}
 		}
-		
+
 		public sealed class CreateIndex
 		{
 			[Fact]
