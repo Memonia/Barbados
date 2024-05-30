@@ -2,7 +2,7 @@ name: publish
 on:
   push:
     tags:
-      - v*
+      - "v[0-9]+.[0-9]+.[0-9]+"
 
 jobs:
   test:
@@ -12,7 +12,9 @@ jobs:
     name: Publish to NuGet
     needs: [test]
     runs-on: ubuntu-latest
-    steps:    
+    steps:       
+    - name: Get version from release tag
+      run: echo "VERSION=${GITHUB_REF/refs\/tags\/v/}" >> $GITHUB_ENV
     - uses: actions/checkout@v4
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
@@ -21,10 +23,10 @@ jobs:
     - name: Restore dependencies
       run: dotnet restore
     - name: Build
-      run: dotnet build -c Release --no-restore
+      run: dotnet build -c Release --no-restore /p:Version=${VERSION}
     - name: Pack
-      run: dotnet pack -c Release --output nupkgs --no-restore --no-build
+      run: dotnet pack -c Release --output nupkgs --no-restore --no-build /p:Version=${VERSION}
     - name: Publish
       run: | 
-        dotnet nuget push nupkgs/Memonia.Barbados.QueryEngine.*.nupkg -k ${{ secrets.NUGET_API_KEY }} -s https://api.nuget.org/v3/index.json
-        dotnet nuget push nupkgs/Memonia.Barbados.StorageEngine.*.nupkg -k ${{ secrets.NUGET_API_KEY }} -s https://api.nuget.org/v3/index.json
+        dotnet nuget push nupkgs/Memonia.Barbados.QueryEngine.${VERSION}.nupkg -k ${{ secrets.NUGET_API_KEY }} -s https://api.nuget.org/v3/index.json
+        dotnet nuget push nupkgs/Memonia.Barbados.StorageEngine.${VERSION}.nupkg -k ${{ secrets.NUGET_API_KEY }} -s https://api.nuget.org/v3/index.json
