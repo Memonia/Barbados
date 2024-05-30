@@ -70,10 +70,8 @@ namespace Barbados.StorageEngine
 				Lock.Acquire(collectionInstance.Name, LockMode.Write);
 
 				meta.RemoveIndex(document, field);
-				r = collectionInstance.Indexes.Remove(index);
-				Debug.Assert(r);
-
-
+				collectionInstance.RemoveBTreeIndex(index.IndexedField);
+				
 				Lock.Release(collectionInstance.Name, LockMode.Write);
 
 				index.DeallocateNoLock();
@@ -206,11 +204,15 @@ namespace Barbados.StorageEngine
 				}
 
 				var idoc = meta.CreateIndex(document, field, maxKeyLength);
-				var iinstance = MetaCollection.CreateIndexInstance(collection, idoc, this);
+				var iname = MetaCollection.GetIndexName(idoc, collection);
+				Lock.AddLockable(iname);
 
-				Lock.AddLockable(iinstance.Name);
+				var ilock = Lock.GetLock(iname);
+				var iinstance = MetaCollection.CreateIndexInstance(
+					idoc, iname, Pool, ilock, collectionInstance!.ClusteredIndex
+				);
 
-				collectionInstance!.Indexes.Add(iinstance);
+				collectionInstance!.AddBTreeIndex(iinstance);
 				_buildIndex(collectionInstance!, iinstance);
 			}
 		}

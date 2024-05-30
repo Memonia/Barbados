@@ -5,30 +5,32 @@ using System.Linq;
 using Barbados.StorageEngine.Documents;
 using Barbados.StorageEngine.Exceptions;
 using Barbados.StorageEngine.Indexing;
+using Barbados.StorageEngine.Paging;
 using Barbados.StorageEngine.Paging.Metadata;
 using Barbados.StorageEngine.Paging.Pages;
 
 namespace Barbados.StorageEngine.Collections.Internal
 {
-	internal sealed partial class MetaCollection : AbstractCollection, IBarbadosReadOnlyCollection
+	internal sealed partial class MetaCollection : AbstractCollection
 	{
-		private readonly BTreeIndex _index;
+		private BTreeIndex _index => Indexes[0];
 		private readonly BarbadosDocument.Builder _documentBuilder;
 
 		public MetaCollection(
-			BarbadosController controller,
-			PageHandle collectionPageHandle,
+			PageHandle collectionPageHandle, 
+			PagePool pool,
+			LockAutomatic @lock,
 			BTreeIndex nameIndex,
 			BTreeClusteredIndex clusteredIndex
 		) : base(
 			BarbadosIdentifiers.Collection.MetaCollection,
-			controller,
 			collectionPageHandle,
-			[nameIndex],
+			pool, 
+			@lock,
 			clusteredIndex
 		)
 		{
-			_index = nameIndex;
+			AddBTreeIndex(nameIndex);
 			_documentBuilder = new();
 		}
 
@@ -51,15 +53,15 @@ namespace Barbados.StorageEngine.Collections.Internal
 
 		public BarbadosDocument Create(string collection)
 		{
-			using (Controller.GetLock(Name).Acquire(LockMode.Write))
+			using (Lock.Acquire(LockMode.Write))
 			{
-				var ch = Controller.Pool.Allocate();
-				var ih = Controller.Pool.Allocate();
+				var ch = Pool.Allocate();
+				var ih = Pool.Allocate();
 				var cpage = new CollectionPage(ch);
 				var ipage = new BTreeRootPage(ih);
 
-				Controller.Pool.SaveRelease(cpage);
-				Controller.Pool.SaveRelease(ipage);
+				Pool.SaveRelease(cpage);
+				Pool.SaveRelease(ipage);
 
 				var collectionDocument = _documentBuilder
 					.Add(BarbadosIdentifiers.MetaCollection.CollectionDocumentNameFIeld, collection)
@@ -96,7 +98,7 @@ namespace Barbados.StorageEngine.Collections.Internal
 				}
 			}
 
-			using (Controller.GetLock(Name).Acquire(LockMode.Write))
+			using (Lock.Acquire(LockMode.Write))
 			{
 				var r = document.TryGetString(
 					BarbadosIdentifiers.MetaCollection.CollectionDocumentNameFieldAbsolute, out var collection
@@ -124,10 +126,10 @@ namespace Barbados.StorageEngine.Collections.Internal
 					}
 				}
 
-				var ih = Controller.Pool.Allocate();
+				var ih = Pool.Allocate();
 				var ipage = new BTreeRootPage(ih);
 
-				Controller.Pool.Save(ipage);
+				Pool.Save(ipage);
 
 				var indexDocument = _documentBuilder
 					.Add(BarbadosIdentifiers.MetaCollection.IndexDocumentIndexedFieldField, field)
@@ -155,7 +157,7 @@ namespace Barbados.StorageEngine.Collections.Internal
 
 		public void Rename(BarbadosDocument document, string name)
 		{
-			using (Controller.GetLock(Name).Acquire(LockMode.Write))
+			using (Lock.Acquire(LockMode.Write))
 			{
 				_documentBuilder
 					.Add(BarbadosIdentifiers.MetaCollection.CollectionDocumentNameFieldAbsolute, name)
@@ -185,7 +187,7 @@ namespace Barbados.StorageEngine.Collections.Internal
 
 		public void RemoveIndex(BarbadosDocument document, string field)
 		{
-			using (Controller.GetLock(Name).Acquire(LockMode.Write))
+			using (Lock.Acquire(LockMode.Write))
 			{
 				var r = document.TryGetDocumentArray(
 					BarbadosIdentifiers.MetaCollection.IndexArrayField, out var indexesArray

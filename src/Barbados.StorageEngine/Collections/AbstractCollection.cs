@@ -3,6 +3,7 @@
 using Barbados.StorageEngine.Documents;
 using Barbados.StorageEngine.Exceptions;
 using Barbados.StorageEngine.Indexing;
+using Barbados.StorageEngine.Paging;
 using Barbados.StorageEngine.Paging.Metadata;
 using Barbados.StorageEngine.Paging.Pages;
 
@@ -11,27 +12,31 @@ namespace Barbados.StorageEngine.Collections
 	internal abstract partial class AbstractCollection : IBarbadosCollection
 	{
 		public BarbadosIdentifier Name { get; set; }
-		public BarbadosController Controller { get; }
 		public PageHandle CollectionPageHandle { get; }
+		public PagePool Pool { get; }
+		public LockAutomatic Lock { get; }
 		public BTreeClusteredIndex ClusteredIndex { get; }
 
-		public List<BTreeIndex> Indexes { get; }
+		protected List<BTreeIndex> Indexes { get; }
 
-		IBarbadosController IBarbadosReadOnlyCollection.Controller => Controller;
+		private readonly object _sync;
 
 		protected AbstractCollection(
 			BarbadosIdentifier name,
-			BarbadosController controller,
 			PageHandle collectionPageHandle,
-			List<BTreeIndex> indexes,
+			PagePool pool,
+			LockAutomatic @lock,
 			BTreeClusteredIndex clusteredIndex
 		)
 		{
 			Name = name;
-			Controller = controller;
-			Indexes = indexes;
 			CollectionPageHandle = collectionPageHandle;
+			Pool = pool;
+			Lock = @lock;
 			ClusteredIndex = clusteredIndex;
+
+			_sync = new();
+			Indexes = [];
 		}
 
 		public void DeallocateNoLock()
@@ -44,9 +49,75 @@ namespace Barbados.StorageEngine.Collections
 			ClusteredIndex.DeallocateNoLock();
 		}
 
+		public void AddBTreeIndex(BTreeIndex index)
+		{
+			if (TryGetBTreeIndex(index.IndexedField, out _))
+			{
+				throw new BarbadosException(
+					BarbadosExceptionCode.IndexAlreadyExists,
+					$"Index on field {index.IndexedField} has been added to the current instance already"
+				);
+			}
+
+			lock (_sync)
+			{
+				Indexes.Add(index);
+			}
+		}
+
+		public void RemoveBTreeIndex(BarbadosIdentifier field)
+		{
+			lock (_sync)
+			{
+				for (int i = 0; i < Indexes.Count; i++)
+				{
+					if (Indexes[i].IndexedField.Identifier == field.Identifier)
+					{
+						Indexes.RemoveAt(i);
+						return;
+					}
+				}
+
+				throw new BarbadosException(
+					BarbadosExceptionCode.IndexDoesNotExist,
+					$"Index on field {field} does not exist in the current instance"
+				);
+			}
+		}
+
+		public bool TryGetBTreeIndex(BarbadosIdentifier field, out BTreeIndex index)
+		{
+			lock (_sync)
+			{
+				foreach (var storedIndex in Indexes)
+				{
+					if (storedIndex.IndexedField.Identifier == field.Identifier)
+					{
+						index = storedIndex;
+						return true;
+					}
+				}
+
+				index = default!;
+				return false;
+			}
+		}
+
+		public bool TryGetBTreeIndexLookup(BarbadosIdentifier field, out IBTreeIndexLookup lookup)
+		{
+			if (TryGetBTreeIndex(field, out var index))
+			{
+				lookup = index;
+				return true;
+			}
+
+			lookup = default!;
+			return false;
+		}
+
 		public ObjectId Insert(BarbadosDocument document)
 		{
-			using (Controller.GetLock(Name).Acquire(LockMode.Write))
+			using (Lock.Acquire(LockMode.Write))
 			{
 				return InsertNoLock(document);
 			}
@@ -59,7 +130,7 @@ namespace Barbados.StorageEngine.Collections
 
 		public bool TryRead(ObjectId id, ValueSelector selector, out BarbadosDocument document)
 		{
-			using (Controller.GetLock(Name).Acquire(LockMode.Read))
+			using (Lock.Acquire(LockMode.Read))
 			{
 				return TryReadNoLock(id, selector, out document);
 			}
@@ -67,7 +138,7 @@ namespace Barbados.StorageEngine.Collections
 
 		public bool TryUpdate(ObjectId id, BarbadosDocument document)
 		{
-			using (Controller.GetLock(Name).Acquire(LockMode.Write))
+			using (Lock.Acquire(LockMode.Write))
 			{
 				return TryUpdateNoLock(id, document);
 			}
@@ -75,7 +146,7 @@ namespace Barbados.StorageEngine.Collections
 
 		public bool TryRemove(ObjectId id)
 		{
-			using (Controller.GetLock(Name).Acquire(LockMode.Write))
+			using (Lock.Acquire(LockMode.Write))
 			{
 				return TryRemoveNoLock(id);
 			}
@@ -118,11 +189,11 @@ namespace Barbados.StorageEngine.Collections
 
 		protected ObjectId InsertNoLock(BarbadosDocument document)
 		{
-			var collection = Controller.Pool.LoadPin<CollectionPage>(CollectionPageHandle);
+			var collection = Pool.LoadPin<CollectionPage>(CollectionPageHandle);
 			if (collection.TryGetNextObjectId(out var nextId))
 			{
 				// Save next available document id
-				Controller.Pool.SaveRelease(collection);
+				Pool.SaveRelease(collection);
 
 				InsertNoLock(nextId, document);
 				return nextId;
@@ -130,7 +201,7 @@ namespace Barbados.StorageEngine.Collections
 
 			else
 			{
-				Controller.Pool.Release(collection);
+				Pool.Release(collection);
 				throw new BarbadosException(BarbadosExceptionCode.MaxDocumentCountReached);
 			}
 		}
@@ -155,7 +226,7 @@ namespace Barbados.StorageEngine.Collections
 			var result = false;
 			if (ClusteredIndex.TryRead(idn, out var handle))
 			{
-				result = ObjectReader.Read(Controller.Pool, handle, id, selector, out var obj);
+				result = ObjectReader.TryRead(Pool, handle, id, selector, out var obj);
 				if (!result)
 				{
 					throw new BarbadosException(BarbadosExceptionCode.InternalError);

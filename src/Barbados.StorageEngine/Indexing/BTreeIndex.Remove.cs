@@ -16,14 +16,14 @@ namespace Barbados.StorageEngine.Indexing
 			{
 				if (!(removeOverflow ? from.TryRemoveOverflowHandle(key) : from.TryRemoveObjectId(key)))
 				{
-					Controller.Pool.Release(from);
+					Pool.Release(from);
 					return false;
 				}
 
 				// Remove the leaf if it's empty
 				if (from.Count() == 0)
 				{
-					ChainHelpers.RemoveAndDeallocate(from, Controller.Pool);
+					ChainHelpers.RemoveAndDeallocate(from, Pool);
 
 					var r = traceback.TryMoveUp();
 					Debug.Assert(r);
@@ -39,7 +39,7 @@ namespace Barbados.StorageEngine.Indexing
 					Span<byte> hkeySepCopy = stackalloc byte[hkey.Separator.Bytes.Length];
 					hkey.Separator.Bytes.CopyTo(hkeySepCopy);
 
-					Controller.Pool.SaveRelease(from);
+					Pool.SaveRelease(from);
 
 					// Update the parent if the removed key was the highest
 					if (hkeySepCopy.SequenceCompareTo(key.Separator.Bytes) <= 0)
@@ -60,12 +60,12 @@ namespace Barbados.StorageEngine.Indexing
 				return true;
 			}
 
-			using var _ = Controller.GetLock(Name).Acquire(LockMode.Write);
+			using var _ = _lock.Acquire(LockMode.Write);
 
 			var ikey = ToBTreeIndexKey(key);
 			if (TryFind(ikey, out var traceback))
 			{
-				var leaf = Controller.Pool.LoadPin<BTreeLeafPage>(traceback.Current);
+				var leaf = Pool.LoadPin<BTreeLeafPage>(traceback.Current);
 
 				// The entry is in the overflow page. Remove it and deallocate the page if it's empty
 				if (leaf.TryReadOverflowHandle(ikey.Separator, out var next))
@@ -74,7 +74,7 @@ namespace Barbados.StorageEngine.Indexing
 					var prev = PageHandle.Null;
 					while (!next.IsNull)
 					{
-						var opage = Controller.Pool.LoadPin<BTreeLeafPageOverflow>(next);
+						var opage = Pool.LoadPin<BTreeLeafPageOverflow>(next);
 						if (opage.TryRemoveObjectId(new(id)))
 						{
 							// Deallocate empty overflow page
@@ -91,21 +91,21 @@ namespace Barbados.StorageEngine.Indexing
 								else
 								if (!prev.IsNull)
 								{
-									var popage = Controller.Pool.LoadPin<BTreeLeafPageOverflow>(prev);
+									var popage = Pool.LoadPin<BTreeLeafPageOverflow>(prev);
 									ChainHelpers.RemoveOneWay(opage, popage);
 
-									Controller.Pool.Release(popage);
-									Controller.Pool.SaveRelease(popage);
+									Pool.Release(popage);
+									Pool.SaveRelease(popage);
 								}
 
-								Controller.Pool.Release(opage);
-								Controller.Pool.Deallocate(opage.Header.Handle);
+								Pool.Release(opage);
+								Pool.Deallocate(opage.Header.Handle);
 							}
 
 							else
 							{
-								Controller.Pool.Release(leaf);
-								Controller.Pool.SaveRelease(opage);
+								Pool.Release(leaf);
+								Pool.SaveRelease(opage);
 							}
 
 							return true;
@@ -115,7 +115,7 @@ namespace Barbados.StorageEngine.Indexing
 						{
 							prev = next;
 							next = opage.Next;
-							Controller.Pool.Release(opage);
+							Pool.Release(opage);
 						}
 					}
 

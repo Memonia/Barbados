@@ -172,7 +172,7 @@ namespace Barbados.QueryEngine
 						throw new NotImplementedException();
 				}
 
-				if (!collection.Controller.TryGetIndex(collection.Name, ce.ComparedField, out var index))
+				if (!collection.TryGetBTreeIndexLookup(ce.ComparedField, out var index))
 				{
 					evaluator = default!;
 					return false;

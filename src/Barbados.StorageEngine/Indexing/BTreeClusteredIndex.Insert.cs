@@ -18,7 +18,7 @@ namespace Barbados.StorageEngine.Indexing
 			var ikey = _toBTreeIndexKey(kBuf);
 			if (TryFindWithPreemptiveSplit(ikey, out var traceback))
 			{
-				var leaf = Controller.Pool.LoadPin<ObjectPage>(traceback.Current);
+				var leaf = Pool.LoadPin<ObjectPage>(traceback.Current);
 				var r = leaf.TryReadHighestId(out var hid);
 				Debug.Assert(r);
 
@@ -30,7 +30,7 @@ namespace Barbados.StorageEngine.Indexing
 				{
 					if (leaf.TryWriteObject(id, obj.AsReadonlySpan()))
 					{
-						Controller.Pool.SaveRelease(leaf);
+						Pool.SaveRelease(leaf);
 						updateParent = true;
 						objectLocation = traceback.Current;
 					}
@@ -38,7 +38,7 @@ namespace Barbados.StorageEngine.Indexing
 					// Instead of writing the object in chunks, split the page and write the object as a whole
 					else
 					{
-						Controller.Pool.Release(leaf);
+						Pool.Release(leaf);
 						objectLocation = _split(id, obj, traceback);
 					}
 				}
@@ -47,14 +47,14 @@ namespace Barbados.StorageEngine.Indexing
 				{
 					if (_tryInsertChunk(leaf, id, obj))
 					{
-						Controller.Pool.SaveRelease(leaf);
+						Pool.SaveRelease(leaf);
 						updateParent = true;
 						objectLocation = traceback.Current;
 					}
 
 					else
 					{
-						Controller.Pool.Release(leaf);
+						Pool.Release(leaf);
 						objectLocation = _split(id, obj, traceback);
 					}
 				}
@@ -83,10 +83,10 @@ namespace Barbados.StorageEngine.Indexing
 
 			else
 			{
-				var root = Controller.Pool.LoadPin<BTreeRootPage>(Info.RootPageHandle);
+				var root = Pool.LoadPin<BTreeRootPage>(Info.RootPageHandle);
 				Debug.Assert(!root.TryReadLowestSeparatorHandle(out _, out _));
 
-				var leaf = Controller.Pool.LoadPin<CollectionPage>(collectionPageHandle);
+				var leaf = Pool.LoadPin<CollectionPage>(collectionPageHandle);
 				Debug.Assert(leaf.Count() == 0);
 
 				var a = root.TryWriteSeparatorHandle(ikey.Separator, leaf.Header.Handle);
@@ -96,8 +96,8 @@ namespace Barbados.StorageEngine.Indexing
 
 				var objectLocation = leaf.Header.Handle;
 
-				Controller.Pool.SaveRelease(leaf);
-				Controller.Pool.SaveRelease(root);
+				Pool.SaveRelease(leaf);
+				Pool.SaveRelease(root);
 
 				return objectLocation;
 			}
@@ -105,8 +105,8 @@ namespace Barbados.StorageEngine.Indexing
 
 		private PageHandle _split(ObjectIdNormalised id, ObjectBuffer obj, BTreeIndexTraceback traceback)
 		{
-			var target = Controller.Pool.LoadPin<ObjectPage>(traceback.Current);
-			var lh = Controller.Pool.Allocate();
+			var target = Pool.LoadPin<ObjectPage>(traceback.Current);
+			var lh = Pool.Allocate();
 			var left = new ObjectPage(lh);
 
 			if (target.Previous.IsNull)
@@ -116,9 +116,9 @@ namespace Barbados.StorageEngine.Indexing
 
 			else
 			{
-				var previous = Controller.Pool.LoadPin<ObjectPage>(target.Previous);
+				var previous = Pool.LoadPin<ObjectPage>(target.Previous);
 				ChainHelpers.Insert(left, previous, target);
-				Controller.Pool.SaveRelease(previous);
+				Pool.SaveRelease(previous);
 			}
 
 			target.Spill(left, fromHighest: false);
@@ -176,8 +176,8 @@ namespace Barbados.StorageEngine.Indexing
 			Span<byte> lhidnCopy = stackalloc byte[Constants.ObjectIdNormalisedLength];
 			lhidn.WriteTo(lhidnCopy);
 
-			Controller.Pool.SaveRelease(left);
-			Controller.Pool.SaveRelease(target);
+			Pool.SaveRelease(left);
+			Pool.SaveRelease(target);
 
 			InsertSeparator(
 				NormalisedValueSpan.FromNormalised(lhidnCopy), lh,
@@ -202,9 +202,9 @@ namespace Barbados.StorageEngine.Indexing
 			var span = obj.AsReadonlySpan();
 			if (leaf.TryWriteObjectChunk(id, span, out var totalWritten))
 			{
-				var oh = Controller.Pool.Allocate();
+				var oh = Pool.Allocate();
 				var overflow = new ObjectPageOverflow(oh);
-				Controller.Pool.Save(overflow);
+				Pool.Save(overflow);
 
 				var r = leaf.TrySetOverfowHandle(id, oh);
 				Debug.Assert(r);
@@ -212,7 +212,7 @@ namespace Barbados.StorageEngine.Indexing
 				var next = oh;
 				while (totalWritten < span.Length)
 				{
-					overflow = Controller.Pool.LoadPin<ObjectPageOverflow>(next);
+					overflow = Pool.LoadPin<ObjectPageOverflow>(next);
 					r = overflow.TryWriteObjectChunk(id, span[totalWritten..], out var written);
 					Debug.Assert(r);
 
@@ -221,14 +221,14 @@ namespace Barbados.StorageEngine.Indexing
 
 					if (overflow.Next.IsNull && totalWritten < span.Length)
 					{
-						var noh = Controller.Pool.Allocate();
+						var noh = Pool.Allocate();
 						var nopage = new ObjectPageOverflow(noh);
-						Controller.Pool.Save(nopage);
+						Pool.Save(nopage);
 						overflow.Next = noh;
 					}
 
 					next = overflow.Next;
-					Controller.Pool.SaveRelease(overflow);
+					Pool.SaveRelease(overflow);
 				}
 
 				Debug.Assert(totalWritten == span.Length);
