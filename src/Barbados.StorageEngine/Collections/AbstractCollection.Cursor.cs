@@ -72,7 +72,7 @@ namespace Barbados.StorageEngine.Collections
 				}
 			}
 
-			return new Cursor<BarbadosDocument>(_enum(), Controller.GetLock(Name, LockMode.Read));
+			return new Cursor<BarbadosDocument>(_enum(), Controller.GetLock(Name));
 		}
 	}
 }

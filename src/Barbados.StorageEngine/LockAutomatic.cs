@@ -1,36 +1,26 @@
-﻿using System;
-using System.Threading;
-
-namespace Barbados.StorageEngine
+﻿namespace Barbados.StorageEngine
 {
-	internal sealed class LockAutomatic : IDisposable
+	internal sealed partial class LockAutomatic
 	{
 		public string Name { get; }
-		public LockMode Mode { get; }
 
-		private int _disposed;
 		private readonly LockManager _manager;
 
-		public LockAutomatic(string name, LockMode mode, LockManager manager)
+		public LockAutomatic(string name, LockManager manager)
 		{
 			Name = name;
-			Mode = mode;
-
-			_disposed = 0;
 			_manager = manager;
 		}
 
-		public void Acquire()
+		public Scope Acquire(LockMode mode)
 		{
-			_manager.Acquire(Name, Mode);
+			_manager.Acquire(Name, mode);
+			return new Scope();
 		}
 
-		public void Dispose()
+		public void Release(LockMode mode)
 		{
-			if (Interlocked.CompareExchange(ref _disposed, 1, 0) == 0)
-			{
-				_manager.Release(Name, Mode);
-			}
+			_manager.Release(Name, mode);
 		}
 	}
 }

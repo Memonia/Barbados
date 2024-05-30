@@ -28,16 +28,9 @@ namespace Barbados.StorageEngine
 			_instances = [];
 		}
 
-		public LockAutomatic GetLock(string name, LockMode mode)
+		public LockAutomatic GetLock(string name)
 		{
-			return Lock.GetLock(name, mode);
-		}
-
-		public LockAutomatic AcquireLock(string name, LockMode mode)
-		{
-			var @lock = GetLock(name, mode);
-			@lock.Acquire();
-			return @lock;
+			return Lock.GetLock(name);
 		}
 
 		public BTreeIndex GetIndex(BarbadosIdentifier collection, BarbadosIdentifier field)

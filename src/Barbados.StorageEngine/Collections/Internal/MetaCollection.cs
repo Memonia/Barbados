@@ -51,7 +51,7 @@ namespace Barbados.StorageEngine.Collections.Internal
 
 		public BarbadosDocument Create(string collection)
 		{
-			using (Controller.AcquireLock(Name, LockMode.Write))
+			using (Controller.GetLock(Name).Acquire(LockMode.Write))
 			{
 				var ch = Controller.Pool.Allocate();
 				var ih = Controller.Pool.Allocate();
@@ -96,7 +96,7 @@ namespace Barbados.StorageEngine.Collections.Internal
 				}
 			}
 
-			using (Controller.AcquireLock(Name, LockMode.Write))
+			using (Controller.GetLock(Name).Acquire(LockMode.Write))
 			{
 				var r = document.TryGetString(
 					BarbadosIdentifiers.MetaCollection.CollectionDocumentNameFieldAbsolute, out var collection
@@ -155,7 +155,7 @@ namespace Barbados.StorageEngine.Collections.Internal
 
 		public void Rename(BarbadosDocument document, string name)
 		{
-			using (Controller.AcquireLock(Name, LockMode.Write))
+			using (Controller.GetLock(Name).Acquire(LockMode.Write))
 			{
 				_documentBuilder
 					.Add(BarbadosIdentifiers.MetaCollection.CollectionDocumentNameFieldAbsolute, name)
@@ -185,7 +185,7 @@ namespace Barbados.StorageEngine.Collections.Internal
 
 		public void RemoveIndex(BarbadosDocument document, string field)
 		{
-			using (Controller.AcquireLock(Name, LockMode.Write))
+			using (Controller.GetLock(Name).Acquire(LockMode.Write))
 			{
 				var r = document.TryGetDocumentArray(
 					BarbadosIdentifiers.MetaCollection.IndexArrayField, out var indexesArray

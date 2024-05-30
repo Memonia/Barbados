@@ -46,7 +46,7 @@ namespace Barbados.StorageEngine.Collections
 
 		public ObjectId Insert(BarbadosDocument document)
 		{
-			using (Controller.AcquireLock(Name, LockMode.Write))
+			using (Controller.GetLock(Name).Acquire(LockMode.Write))
 			{
 				return InsertNoLock(document);
 			}
@@ -59,7 +59,7 @@ namespace Barbados.StorageEngine.Collections
 
 		public bool TryRead(ObjectId id, ValueSelector selector, out BarbadosDocument document)
 		{
-			using (Controller.AcquireLock(Name, LockMode.Read))
+			using (Controller.GetLock(Name).Acquire(LockMode.Read))
 			{
 				return TryReadNoLock(id, selector, out document);
 			}
@@ -67,7 +67,7 @@ namespace Barbados.StorageEngine.Collections
 
 		public bool TryUpdate(ObjectId id, BarbadosDocument document)
 		{
-			using (Controller.AcquireLock(Name, LockMode.Write))
+			using (Controller.GetLock(Name).Acquire(LockMode.Write))
 			{
 				return TryUpdateNoLock(id, document);
 			}
@@ -75,7 +75,7 @@ namespace Barbados.StorageEngine.Collections
 
 		public bool TryRemove(ObjectId id)
 		{
-			using (Controller.AcquireLock(Name, LockMode.Write))
+			using (Controller.GetLock(Name).Acquire(LockMode.Write))
 			{
 				return TryRemoveNoLock(id);
 			}
