@@ -36,12 +36,10 @@ namespace Barbados.StorageEngine.Paging.Pages
 
 		public PageHandle NextAvailablePageHandle { get; private set; }
 
-		public PageHandle AllocationPageChainHeadHandle { get; set; }
-		public PageHandle MappingCollectionPageHandle { get; set; }
-		public PageHandle MappingCollectionNameIndexRootPageHandle { get; set; }
-		public PageHandle MappingCollectionClusteredIndexRootPageHandle { get; set; }
 		public PageHandle MetaCollectionPageHandle { get; set; }
+		public PageHandle MetaCollectionNameIndexRootPageHandle { get; set; }
 		public PageHandle MetaCollectionClusteredIndexRootPageHandle { get; set; }
+		public PageHandle AllocationPageChainHeadHandle { get; set; }
 
 		public RootPage() : base(new PageHeader(PageHandle.Root, PageMarker.Root))
 		{
@@ -51,9 +49,6 @@ namespace Barbados.StorageEngine.Paging.Pages
 			NextAvailablePageHandle = new(PageHandle.Root.Handle + 1);
 
 			AllocationPageChainHeadHandle = PageHandle.Null;
-			MappingCollectionPageHandle = PageHandle.Null;
-			MappingCollectionNameIndexRootPageHandle = PageHandle.Null;
-			MappingCollectionClusteredIndexRootPageHandle = PageHandle.Null;
 			MetaCollectionPageHandle = PageHandle.Null;
 			MetaCollectionClusteredIndexRootPageHandle = PageHandle.Null;
 		}
@@ -71,13 +66,9 @@ namespace Barbados.StorageEngine.Paging.Pages
 			i += Constants.PageHandleLength;
 			AllocationPageChainHeadHandle = HelpRead.AsPageHandle(span[i..]);
 			i += Constants.PageHandleLength;
-			MappingCollectionPageHandle = HelpRead.AsPageHandle(span[i..]);
-			i += Constants.PageHandleLength;
-			MappingCollectionNameIndexRootPageHandle = HelpRead.AsPageHandle(span[i..]);
-			i += Constants.PageHandleLength;
-			MappingCollectionClusteredIndexRootPageHandle = HelpRead.AsPageHandle(span[i..]);
-			i += Constants.PageHandleLength;
 			MetaCollectionPageHandle = HelpRead.AsPageHandle(span[i..]);
+			i += Constants.PageHandleLength;
+			MetaCollectionNameIndexRootPageHandle = HelpRead.AsPageHandle(span[i..]);
 			i += Constants.PageHandleLength;
 			MetaCollectionClusteredIndexRootPageHandle = HelpRead.AsPageHandle(span[i..]);
 			i += Constants.PageHandleLength;
@@ -110,13 +101,9 @@ namespace Barbados.StorageEngine.Paging.Pages
 			i += Constants.PageHandleLength;
 			HelpWrite.AsPageHandle(span[i..], AllocationPageChainHeadHandle);
 			i += Constants.PageHandleLength;
-			HelpWrite.AsPageHandle(span[i..], MappingCollectionPageHandle);
-			i += Constants.PageHandleLength;
-			HelpWrite.AsPageHandle(span[i..], MappingCollectionNameIndexRootPageHandle);
-			i += Constants.PageHandleLength;
-			HelpWrite.AsPageHandle(span[i..], MappingCollectionClusteredIndexRootPageHandle);
-			i += Constants.PageHandleLength;
 			HelpWrite.AsPageHandle(span[i..], MetaCollectionPageHandle);
+			i += Constants.PageHandleLength;
+			HelpWrite.AsPageHandle(span[i..], MetaCollectionNameIndexRootPageHandle);
 			i += Constants.PageHandleLength;
 			HelpWrite.AsPageHandle(span[i..], MetaCollectionClusteredIndexRootPageHandle);
 			i += Constants.PageHandleLength;

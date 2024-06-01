@@ -140,7 +140,7 @@ namespace Barbados.StorageEngine
 					new()
 					{
 						KeyMaxLength = Constants.MetaCollectionIndexKeyMaxLength,
-						RootPageHandle = root.MappingCollectionNameIndexRootPageHandle
+						RootPageHandle = root.MetaCollectionNameIndexRootPageHandle
 					}
 				);
 
