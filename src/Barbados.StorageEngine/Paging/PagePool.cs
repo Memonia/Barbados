@@ -24,7 +24,8 @@ namespace Barbados.StorageEngine.Paging
 
 			// Init the allocation bitmap
 			var apage = new AllocationPage(apageHandle);
-			root.AllocationPageChainHeadHandle = apage.Header.Handle;
+			root.FirstAllocationPageHandle = apage.Header.Handle;
+			root.LastAllocationPageHandle = apage.Header.Handle;
 
 			// Init the meta collection
 			var cpage = new CollectionPage(cpageHandle);

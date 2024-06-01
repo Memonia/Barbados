@@ -35,11 +35,11 @@ namespace Barbados.StorageEngine.Paging.Pages
 		public uint Version { get; }
 
 		public PageHandle NextAvailablePageHandle { get; private set; }
-
 		public PageHandle MetaCollectionPageHandle { get; set; }
 		public PageHandle MetaCollectionNameIndexRootPageHandle { get; set; }
 		public PageHandle MetaCollectionClusteredIndexRootPageHandle { get; set; }
-		public PageHandle AllocationPageChainHeadHandle { get; set; }
+		public PageHandle FirstAllocationPageHandle { get; set; }
+		public PageHandle LastAllocationPageHandle { get; set; }
 
 		public RootPage() : base(new PageHeader(PageHandle.Root, PageMarker.Root))
 		{
@@ -47,10 +47,11 @@ namespace Barbados.StorageEngine.Paging.Pages
 			Magic = Constants.MagicNumber;
 
 			NextAvailablePageHandle = new(PageHandle.Root.Handle + 1);
-
-			AllocationPageChainHeadHandle = PageHandle.Null;
 			MetaCollectionPageHandle = PageHandle.Null;
+			MetaCollectionNameIndexRootPageHandle = PageHandle.Null;
 			MetaCollectionClusteredIndexRootPageHandle = PageHandle.Null;
+			FirstAllocationPageHandle = PageHandle.Null;
+			LastAllocationPageHandle = PageHandle.Null;
 		}
 
 		public RootPage(PageBuffer buffer) : base(buffer)
@@ -64,13 +65,15 @@ namespace Barbados.StorageEngine.Paging.Pages
 			i += sizeof(uint);
 			NextAvailablePageHandle = HelpRead.AsPageHandle(span[i..]);
 			i += Constants.PageHandleLength;
-			AllocationPageChainHeadHandle = HelpRead.AsPageHandle(span[i..]);
-			i += Constants.PageHandleLength;
 			MetaCollectionPageHandle = HelpRead.AsPageHandle(span[i..]);
 			i += Constants.PageHandleLength;
 			MetaCollectionNameIndexRootPageHandle = HelpRead.AsPageHandle(span[i..]);
 			i += Constants.PageHandleLength;
 			MetaCollectionClusteredIndexRootPageHandle = HelpRead.AsPageHandle(span[i..]);
+			i += Constants.PageHandleLength;
+			FirstAllocationPageHandle = HelpRead.AsPageHandle(span[i..]);
+			i += Constants.PageHandleLength;
+			LastAllocationPageHandle = HelpRead.AsPageHandle(span[i..]);
 			i += Constants.PageHandleLength;
 
 			Debug.Assert(Header.Marker == PageMarker.Root);
@@ -99,13 +102,15 @@ namespace Barbados.StorageEngine.Paging.Pages
 			i += sizeof(uint);
 			HelpWrite.AsPageHandle(span[i..], NextAvailablePageHandle);
 			i += Constants.PageHandleLength;
-			HelpWrite.AsPageHandle(span[i..], AllocationPageChainHeadHandle);
-			i += Constants.PageHandleLength;
 			HelpWrite.AsPageHandle(span[i..], MetaCollectionPageHandle);
 			i += Constants.PageHandleLength;
 			HelpWrite.AsPageHandle(span[i..], MetaCollectionNameIndexRootPageHandle);
 			i += Constants.PageHandleLength;
 			HelpWrite.AsPageHandle(span[i..], MetaCollectionClusteredIndexRootPageHandle);
+			i += Constants.PageHandleLength; 
+			HelpWrite.AsPageHandle(span[i..], FirstAllocationPageHandle);
+			i += Constants.PageHandleLength;
+			HelpWrite.AsPageHandle(span[i..], LastAllocationPageHandle);
 			i += Constants.PageHandleLength;
 
 			return PageBuffer;

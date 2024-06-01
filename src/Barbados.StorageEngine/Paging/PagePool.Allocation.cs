@@ -1,5 +1,4 @@
-﻿using System.Diagnostics;
-using System.IO;
+﻿using System.IO;
 
 using Barbados.StorageEngine.Paging.Metadata;
 using Barbados.StorageEngine.Paging.Pages;
@@ -8,21 +7,63 @@ namespace Barbados.StorageEngine.Paging
 {
 	internal partial class PagePool
 	{
-		/* Atrocious allocation/deallocation performance as far as both algorithm and concurrency go.
-		 * Needs improvement
-		 */
+		private static PageHandle _getAllocationPageHandle(PageHandle handle, RootPage root)
+		{
+			// See the comment below
+			var index = handle.Handle / Constants.AllocationBitmapPageCount;
+			var allocHandle = new PageHandle(index * Constants.AllocationBitmapPageCount);
+			if (allocHandle.Handle == 0)
+			{
+				return root.FirstAllocationPageHandle;
+			}
+
+			return new PageHandle(index * Constants.AllocationBitmapPageCount);
+		}
+
+		// Assume one allocation page can track 128 pages, then:
+		// No.	| Tracked handles	| Bitmap handle | Note
+		// 1	| [0:127]			| ?				| (handle depends on how the file is initialised)
+		// 2	| [128:255] 		| 128			|
+		// 3	| [256:383] 		| 256			|
+		//
+		// Then, the index of the allocation page in a file for a given handle is:
+		// floor(handle / 128)
+		// 
+		// And so the handle of the allocation page is:
+		// floor(handle / 128) * 128
+		// 
+		// That also means that each allocation page tracks itself (see note)
+		// in its first bit (except for the first one, which is never deallocated)
+		//
+		// Note: currently, the root handle is 1, in which case the first bit of every allocation page
+		// corresponds to its own handle. If the root's handle was 0, the last bit of every previous
+		// allocation page would correspond to the handle of the current allocation page. This is important,
+		// because we have to mark the allocation page itself as active, so it doesn't get garbage collected.
 
 		public PageHandle Allocate()
 		{
 			bool _tryGetFreePage(out PageHandle handle)
 			{
 				var root = LoadPin<RootPage>(PageHandle.Root);
-				var next = root.AllocationPageChainHeadHandle;
+				var bitmap = LoadPin<AllocationPage>(root.FirstAllocationPageHandle);
+				var bitmapIndex = 1;
 
-				long bitmapIndex = 0;
-				while (!next.IsNull)
+				// Try the first page
+				if (bitmap.TryAcquireFreeHandle(root.NextAvailablePageHandle, bitmapIndex, out handle))
 				{
-					var bitmap = LoadPin<AllocationPage>(next);
+					Release(root);
+					SaveRelease(bitmap);
+					return true;
+				}
+
+				Release(bitmap);
+
+				// Try the rest (see the comment at the top)
+				bitmapIndex += 1;
+				var bitmapHandle = new PageHandle(Constants.AllocationBitmapPageCount);
+				while (bitmapHandle.Handle < root.LastAllocationPageHandle.Handle)
+				{
+					bitmap = LoadPin<AllocationPage>(bitmapHandle);
 					if (bitmap.TryAcquireFreeHandle(root.NextAvailablePageHandle, bitmapIndex, out handle))
 					{
 						Release(root);
@@ -30,10 +71,9 @@ namespace Barbados.StorageEngine.Paging
 						return true;
 					}
 
-					next = bitmap.Next;
-
 					Release(bitmap);
 					bitmapIndex += 1;
+					bitmapHandle = new PageHandle(bitmapHandle.Handle + Constants.AllocationBitmapPageCount);
 				}
 
 				Release(root);
@@ -50,60 +90,38 @@ namespace Barbados.StorageEngine.Paging
 				}
 
 				var root = LoadPin<RootPage>(PageHandle.Root);
-				var nextHandle = root.NextAvailablePageHandle;
+				var bitmapHandle = _getAllocationPageHandle(root.NextAvailablePageHandle, root);
 
-				// Increase the file length
-				RandomAccess.SetLength(
-					_fileHandle,
-					RandomAccess.GetLength(_fileHandle) + Constants.PageLength
-				);
-
-				// Assume one allocation page can track 128 pages, then:
-				// No.	| Tracked handles	| Bitmap handle | Note
-				// 1	| [1:127]			| ?				| (handle depends on how the file is initialised)
-				// 2	| [128:255] 		| 128			|
-				// 3	| [256:383] 		| 256			|
-				//
-				// Then, the number of a bitmap page for a given handle is:
-				// floor(handle / 128)
-				//
-				// That also means that each allocation page tracks itself (see note)
-				// in its first bit (except for the first one, which is never deallocated)
-				//
-				// Note: currently, the root handle is 1, in which case the first bit of every allocation page
-				// corresponds to its own handle. If the root's handle was 0, the last bit of every previous
-				// allocation page would correspond to the handle of the current allocation page. This is important,
-				// because we have to mark the allocation page itself as active, so it doesn't get garbage collected.
-				var freePageBitmapNum = nextHandle.Handle / Constants.AllocationBitmapPageCount;
-
-				// Find the allocation bitmap for a new handle
-				var bitmap = LoadPin<AllocationPage>(root.AllocationPageChainHeadHandle);
-				for (long i = 0; i < freePageBitmapNum; ++i)
+				// Check if we need a new allocation page
+				if (bitmapHandle.Handle > root.LastAllocationPageHandle.Handle)
 				{
-					// Check if we need a new allocation page
-					if (bitmap.Next.IsNull)
-					{
-						// Should always happen on the last iteration
-						Debug.Assert(i == freePageBitmapNum - 1);
+					bitmapHandle = root.IncrementNextAvailablePageHandle();
+					root.LastAllocationPageHandle = bitmapHandle;
 
-						// Create the next allocation page and append to the chain
-						var nap = new AllocationPage(root.IncrementNextAvailablePageHandle());
-						bitmap.Next = nap.Header.Handle;
+					// Increase the file length for both the new allocation page and a newly allocated page
+					RandomAccess.SetLength(
+						_fileHandle, RandomAccess.GetLength(_fileHandle) + Constants.PageLength * 2
+					);
 
-						// The bitmap tracks itself in the first bit (see above)
-						bitmap = nap;
-						bitmap.On(bitmap.Header.Handle);
-						break;
-					}
-
-					var next = bitmap.Next;
-
-					Release(bitmap);
-					bitmap = LoadPin<AllocationPage>(next);
+					// See the comment at the top
+					var nap = new AllocationPage(bitmapHandle);
+					nap.On(bitmapHandle);
+					Save(nap);
+					Save(root);
 				}
 
-				// Mark the page as active
+				else
+				{
+					// Increase the file length for a newly allocated page
+					RandomAccess.SetLength(
+						_fileHandle, RandomAccess.GetLength(_fileHandle) + Constants.PageLength
+					);
+				}
+
 				var handle = root.IncrementNextAvailablePageHandle();
+
+				// Mark newly allocated page as active
+				var bitmap = LoadPin<AllocationPage>(bitmapHandle);
 				bitmap.On(handle);
 
 				SaveRelease(root);
@@ -114,29 +132,17 @@ namespace Barbados.StorageEngine.Paging
 
 		public void Deallocate(PageHandle handle)
 		{
+			DEBUG_ThrowUnallocatedHandle(handle);
 			lock (_sync)
 			{
 				var root = LoadPin<RootPage>(PageHandle.Root);
-				var bitmap = LoadPin<AllocationPage>(root.AllocationPageChainHeadHandle);
-
-				Release(root);
-
-				var prev = PageHandle.Null;
-				var freePageNum = handle.Handle / Constants.AllocationBitmapPageCount;
-
-				// Find allocation bitmap for a given handle.
-				// The page exists, because it's created during allocation of new pages
-				for (long i = 0; i < freePageNum; ++i)
-				{
-					prev = bitmap.Header.Handle;
-					var nextBitmapHandle = bitmap.Next;
-
-					Release(bitmap);
-					bitmap = LoadPin<AllocationPage>(nextBitmapHandle);
-				}
+				var bitmapHandle = _getAllocationPageHandle(handle, root);
+				var bitmap = LoadPin<AllocationPage>(bitmapHandle);
 
 				// Mark the page as free
 				bitmap.Off(handle);
+
+				Release(root);
 				SaveRelease(bitmap);
 			}
 		}
