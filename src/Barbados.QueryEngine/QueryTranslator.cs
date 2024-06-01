@@ -7,7 +7,6 @@ using Barbados.QueryEngine.Build.Expressions;
 using Barbados.QueryEngine.Evaluation;
 using Barbados.QueryEngine.Evaluation.Expressions;
 using Barbados.StorageEngine;
-using Barbados.StorageEngine.Collections;
 using Barbados.StorageEngine.Documents;
 
 namespace Barbados.QueryEngine

@@ -51,11 +51,11 @@ namespace Barbados.StorageEngine.Collections
 
 		public void AddBTreeIndex(BTreeIndex index)
 		{
-			if (TryGetBTreeIndex(index.IndexedField, out _))
+			if (TryGetBTreeIndex(index.Field, out _))
 			{
 				throw new BarbadosException(
 					BarbadosExceptionCode.IndexAlreadyExists,
-					$"Index on field {index.IndexedField} has been added to the current instance already"
+					$"Index on field {index.Field} has been added to the current instance already"
 				);
 			}
 
@@ -71,7 +71,7 @@ namespace Barbados.StorageEngine.Collections
 			{
 				for (int i = 0; i < Indexes.Count; i++)
 				{
-					if (Indexes[i].IndexedField.Identifier == field.Identifier)
+					if (Indexes[i].Field.Identifier == field.Identifier)
 					{
 						Indexes.RemoveAt(i);
 						return;
@@ -91,7 +91,7 @@ namespace Barbados.StorageEngine.Collections
 			{
 				foreach (var storedIndex in Indexes)
 				{
-					if (storedIndex.IndexedField.Identifier == field.Identifier)
+					if (storedIndex.Field.Identifier == field.Identifier)
 					{
 						index = storedIndex;
 						return true;
@@ -103,7 +103,7 @@ namespace Barbados.StorageEngine.Collections
 			}
 		}
 
-		public bool TryGetBTreeIndexLookup(BarbadosIdentifier field, out IBTreeIndexLookup lookup)
+		public bool TryGetBTreeIndexLookup(BarbadosIdentifier field, out IReadOnlyBTreeIndex lookup)
 		{
 			if (TryGetBTreeIndex(field, out var index))
 			{
@@ -213,7 +213,7 @@ namespace Barbados.StorageEngine.Collections
 
 			foreach (var index in Indexes)
 			{
-				if (document.Buffer.TryGetNormalisedValue(index.IndexedField.StringBufferValue, out var value))
+				if (document.Buffer.TryGetNormalisedValue(index.Field.StringBufferValue, out var value))
 				{
 					index.Insert(value, id);
 				}
@@ -270,7 +270,7 @@ namespace Barbados.StorageEngine.Collections
 
 			foreach (var index in Indexes)
 			{
-				if (document.Buffer.TryGetNormalisedValue(index.IndexedField.StringBufferValue, out var value))
+				if (document.Buffer.TryGetNormalisedValue(index.Field.StringBufferValue, out var value))
 				{
 					if (!index.TryRemove(value, id))
 					{

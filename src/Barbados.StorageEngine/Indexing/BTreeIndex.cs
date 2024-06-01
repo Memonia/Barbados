@@ -11,10 +11,10 @@ using Barbados.StorageEngine.Paging.Pages;
 
 namespace Barbados.StorageEngine.Indexing
 {
-	internal sealed partial class BTreeIndex : AbstractBTreeIndex<BTreeLeafPage>, IBTreeIndexLookup
+	internal sealed partial class BTreeIndex : AbstractBTreeIndex<BTreeLeafPage>, IReadOnlyBTreeIndex
 	{
 		public BarbadosIdentifier Name { get; }
-		public BarbadosIdentifier IndexedField { get; }
+		public BarbadosIdentifier Field { get; }
 		public BTreeClusteredIndex ClusteredIndex { get; }
 
 		private readonly LockAutomatic _lock;
@@ -29,7 +29,7 @@ namespace Barbados.StorageEngine.Indexing
 		) : base(pool, info)
 		{
 			Name = name;
-			IndexedField = indexedField;
+			Field = indexedField;
 			ClusteredIndex = clusteredIndex;
 			_lock = @lock;
 		}
@@ -191,7 +191,7 @@ namespace Barbados.StorageEngine.Indexing
 			{
 				if (ObjectReader.TryRead(Pool, handle, id, ValueSelector.SelectAll, out var buffer))
 				{
-					return buffer.TryGetNormalisedValue(IndexedField.StringBufferValue, out key);
+					return buffer.TryGetNormalisedValue(Field.StringBufferValue, out key);
 				}
 			}
 

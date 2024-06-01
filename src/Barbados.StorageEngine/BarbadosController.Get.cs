@@ -50,12 +50,12 @@ namespace Barbados.StorageEngine
 			return false;
 		}
 
-		IBTreeIndexLookup IBarbadosController.GetIndex(BarbadosIdentifier collection, BarbadosIdentifier field)
+		IReadOnlyBTreeIndex IBarbadosController.GetIndex(BarbadosIdentifier collection, BarbadosIdentifier field)
 		{
 			return GetIndex(collection.Identifier, field.Identifier);
 		}
 
-		bool IBarbadosController.TryGetIndex(BarbadosIdentifier collection, BarbadosIdentifier field, out IBTreeIndexLookup index)
+		bool IBarbadosController.TryGetIndex(BarbadosIdentifier collection, BarbadosIdentifier field, out IReadOnlyBTreeIndex index)
 		{
 			if (TryGetIndex(collection.Identifier, field.Identifier, out BTreeIndex bTreeIndex))
 			{

@@ -2,7 +2,6 @@
 
 using Barbados.QueryEngine.Helpers;
 using Barbados.StorageEngine;
-using Barbados.StorageEngine.Collections;
 using Barbados.StorageEngine.Documents;
 
 namespace Barbados.QueryEngine.Evaluation

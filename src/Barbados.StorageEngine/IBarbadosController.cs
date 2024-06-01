@@ -1,7 +1,4 @@
-﻿using Barbados.StorageEngine.Collections;
-using Barbados.StorageEngine.Indexing;
-
-namespace Barbados.StorageEngine
+﻿namespace Barbados.StorageEngine
 {
 	public interface IBarbadosController
 	{
@@ -10,8 +7,8 @@ namespace Barbados.StorageEngine
 		IBarbadosCollection GetCollection(BarbadosIdentifier name);
 		IBarbadosReadOnlyCollection GetReadOnlyCollection(BarbadosIdentifier name);
 
-		bool TryGetIndex(BarbadosIdentifier collection, BarbadosIdentifier field, out IBTreeIndexLookup index);
-		IBTreeIndexLookup GetIndex(BarbadosIdentifier collection, BarbadosIdentifier field);
+		bool TryGetIndex(BarbadosIdentifier collection, BarbadosIdentifier field, out IReadOnlyBTreeIndex index);
+		IReadOnlyBTreeIndex GetIndex(BarbadosIdentifier collection, BarbadosIdentifier field);
 
 		void CreateCollection(BarbadosIdentifier name);
 		void RemoveCollection(BarbadosIdentifier name);

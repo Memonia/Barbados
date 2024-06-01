@@ -1,6 +1,6 @@
 ﻿using Barbados.StorageEngine.Documents;
 
-namespace Barbados.StorageEngine.Collections
+namespace Barbados.StorageEngine
 {
 	public interface IBarbadosCollection : IBarbadosReadOnlyCollection
 	{

@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 
 using Barbados.QueryEngine.Helpers;
-using Barbados.StorageEngine.Collections;
+using Barbados.StorageEngine;
 using Barbados.StorageEngine.Documents;
 
 namespace Barbados.QueryEngine.Query

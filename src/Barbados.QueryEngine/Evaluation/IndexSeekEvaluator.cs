@@ -2,10 +2,8 @@
 
 using Barbados.QueryEngine.Helpers;
 using Barbados.StorageEngine;
-using Barbados.StorageEngine.Collections;
 using Barbados.StorageEngine.Documents;
 using Barbados.StorageEngine.Exceptions;
-using Barbados.StorageEngine.Indexing;
 
 namespace Barbados.QueryEngine.Evaluation
 {
@@ -15,13 +13,13 @@ namespace Barbados.QueryEngine.Evaluation
 
 		private readonly ValueSelector _selector;
 		private readonly BarbadosDocument _condition;
-		private readonly IBTreeIndexLookup _index;
+		private readonly IReadOnlyBTreeIndex _index;
 		private readonly IBarbadosCollection _collection;
 
 		public IndexSeekEvaluator(
 			ValueSelector selector,
 			BarbadosDocument condition,
-			IBTreeIndexLookup index,
+			IReadOnlyBTreeIndex index,
 			IBarbadosCollection collection
 		)
 		{

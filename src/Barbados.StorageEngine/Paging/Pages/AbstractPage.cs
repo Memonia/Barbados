@@ -20,7 +20,6 @@ namespace Barbados.StorageEngine.Paging.Pages
 			PageBuffer = buffer;
 		}
 
-
 		protected AbstractPage(PageHeader header) : this(header, new())
 		{
 

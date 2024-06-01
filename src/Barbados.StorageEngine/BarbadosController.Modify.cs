@@ -15,7 +15,7 @@ namespace Barbados.StorageEngine
 			var cursor = collection.GetCursor();
 			foreach (var document in cursor)
 			{
-				if (document.Buffer.TryGetNormalisedValue(index.IndexedField.StringBufferValue, out var value))
+				if (document.Buffer.TryGetNormalisedValue(index.Field.StringBufferValue, out var value))
 				{
 					index.Insert(value, document.Id);
 				}
@@ -57,7 +57,7 @@ namespace Barbados.StorageEngine
 					);
 				}
 
-				Debug.Assert(index.IndexedField.Identifier == field.Identifier);
+				Debug.Assert(index.Field.Identifier == field.Identifier);
 
 				var meta = GetMetaCollection();
 				var collectionInstance = GetCollection(collection);
@@ -70,7 +70,7 @@ namespace Barbados.StorageEngine
 				Lock.Acquire(collectionInstance.Name, LockMode.Write);
 
 				meta.RemoveIndex(document, field);
-				collectionInstance.RemoveBTreeIndex(index.IndexedField);
+				collectionInstance.RemoveBTreeIndex(index.Field);
 				
 				Lock.Release(collectionInstance.Name, LockMode.Write);
 
