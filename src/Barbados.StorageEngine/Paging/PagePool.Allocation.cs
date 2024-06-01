@@ -17,7 +17,7 @@ namespace Barbados.StorageEngine.Paging
 				return root.FirstAllocationPageHandle;
 			}
 
-			return new PageHandle(index * Constants.AllocationBitmapPageCount);
+			return allocHandle;
 		}
 
 		// Assume one allocation page can track 128 pages, then:
@@ -46,7 +46,7 @@ namespace Barbados.StorageEngine.Paging
 			{
 				var root = LoadPin<RootPage>(PageHandle.Root);
 				var bitmap = LoadPin<AllocationPage>(root.FirstAllocationPageHandle);
-				var bitmapIndex = 1;
+				var bitmapIndex = 0;
 
 				// Try the first page
 				if (bitmap.TryAcquireFreeHandle(root.NextAvailablePageHandle, bitmapIndex, out handle))
