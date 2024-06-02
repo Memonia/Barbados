@@ -1,6 +1,7 @@
 ﻿using System;
 
 using Barbados.StorageEngine.Documents.Binary;
+using Barbados.StorageEngine.Paging;
 using Barbados.StorageEngine.Paging.Metadata;
 using Barbados.StorageEngine.Paging.Pages;
 
@@ -16,14 +17,15 @@ namespace Barbados.StorageEngine.Indexing
 			return new(NormalisedValueSpan.FromNormalised(objectIdNormalisedBuffer), false);
 		}
 
-		public BTreeClusteredIndex(BarbadosController controller, PageHandle handle)
+		public BTreeClusteredIndex(PagePool pool, PageHandle handle)
 			: base(
-				  controller,
-				  new()
-				  {
-					  RootPageHandle = handle,
-					  KeyMaxLength = Constants.ObjectIdLength
-				  }
+				pool,
+				new()
+				{
+					IndexedField = BarbadosIdentifiers.Id,
+					RootPageHandle = handle,
+					KeyMaxLength = Constants.ObjectIdLength
+				}
 			)
 		{
 

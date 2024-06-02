@@ -48,7 +48,7 @@ namespace Barbados.StorageEngine
 		{
 			_lockables = new();
 		}
-		
+
 		public bool ContainsLockable(string name)
 		{
 			return _lockables.ContainsKey(name);
@@ -105,7 +105,7 @@ namespace Barbados.StorageEngine
 			_release(@lock, mode);
 		}
 
-		public ObjectLock GetLock(string name, LockMode mode)
+		public LockAutomatic GetLock(string name)
 		{
 			if (!_lockables.ContainsKey(name))
 			{
@@ -114,7 +114,7 @@ namespace Barbados.StorageEngine
 				);
 			}
 
-			return new(name, mode, this);
+			return new(name, this);
 		}
 	}
 }

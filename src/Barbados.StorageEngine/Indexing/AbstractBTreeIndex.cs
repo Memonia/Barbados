@@ -14,10 +14,10 @@ namespace Barbados.StorageEngine.Indexing
 		/* Locks must be handled by derived classes 
 		 */
 
+		public PagePool Pool { get; }
 		public BTreeIndexInfo Info { get; }
-		public BarbadosController Controller { get; }
 
-		protected AbstractBTreeIndex(BarbadosController controller, BTreeIndexInfo info)
+		protected AbstractBTreeIndex(PagePool pool, BTreeIndexInfo info)
 		{
 			if (info.KeyMaxLength <= 0 || info.KeyMaxLength > Constants.IndexKeyMaxLength)
 			{
@@ -26,8 +26,8 @@ namespace Barbados.StorageEngine.Indexing
 				);
 			}
 
-			Controller = controller;
 			Info = info;
+			Pool = pool;
 		}
 
 		protected void Deallocate()
@@ -35,15 +35,15 @@ namespace Barbados.StorageEngine.Indexing
 			void _deallocate(PageHandle handle)
 			{
 				if (
-					!Controller.Pool.IsPageType(handle, PageMarker.BTreeRoot) &&
-					!Controller.Pool.IsPageType(handle, PageMarker.BTreeNode)
+					!Pool.IsPageType(handle, PageMarker.BTreeRoot) &&
+					!Pool.IsPageType(handle, PageMarker.BTreeNode)
 				)
 				{
-					Controller.Pool.Deallocate(handle);
+					Pool.Deallocate(handle);
 					return;
 				}
 
-				var node = Controller.Pool.LoadPin<BTreePage>(handle);
+				var node = Pool.LoadPin<BTreePage>(handle);
 				var e = node.GetEnumerator();
 				while (e.TryGetNext(out var separator))
 				{
@@ -53,8 +53,8 @@ namespace Barbados.StorageEngine.Indexing
 					_deallocate(lessOrEqual);
 				}
 
-				Controller.Pool.Release(node);
-				Controller.Pool.Deallocate(handle);
+				Pool.Release(node);
+				Pool.Deallocate(handle);
 			}
 
 			_deallocate(Info.RootPageHandle);
@@ -62,7 +62,7 @@ namespace Barbados.StorageEngine.Indexing
 
 		protected bool TryFind(BTreeIndexKey search, out BTreeIndexTraceback traceback)
 		{
-			var root = Controller.Pool.LoadPin<BTreeRootPage>(Info.RootPageHandle);
+			var root = Pool.LoadPin<BTreeRootPage>(Info.RootPageHandle);
 			var trace = new List<PageHandle>
 			{
 				Info.RootPageHandle
@@ -70,15 +70,15 @@ namespace Barbados.StorageEngine.Indexing
 
 			if (root.TryReadSubtreeHandle(search.Separator, out var subtreeHandle))
 			{
-				Controller.Pool.Release(root);
+				Pool.Release(root);
 				trace.Add(subtreeHandle);
-				while (Controller.Pool.IsPageType(subtreeHandle, PageMarker.BTreeNode))
+				while (Pool.IsPageType(subtreeHandle, PageMarker.BTreeNode))
 				{
-					var node = Controller.Pool.LoadPin<BTreePage>(subtreeHandle);
+					var node = Pool.LoadPin<BTreePage>(subtreeHandle);
 					var r = node.TryReadSubtreeHandle(search.Separator, out subtreeHandle);
 					Debug.Assert(r);
 
-					Controller.Pool.Release(node);
+					Pool.Release(node);
 					trace.Add(subtreeHandle);
 				}
 
@@ -89,15 +89,15 @@ namespace Barbados.StorageEngine.Indexing
 			else
 			if (root.TryReadHighestSeparatorHandle(out _, out var lessOrEqual))
 			{
-				Controller.Pool.Release(root);
+				Pool.Release(root);
 				trace.Add(lessOrEqual);
-				while (Controller.Pool.IsPageType(lessOrEqual, PageMarker.BTreeNode))
+				while (Pool.IsPageType(lessOrEqual, PageMarker.BTreeNode))
 				{
-					var node = Controller.Pool.LoadPin<BTreePage>(lessOrEqual);
+					var node = Pool.LoadPin<BTreePage>(lessOrEqual);
 					var r = node.TryReadHighestSeparatorHandle(out _, out lessOrEqual);
 					Debug.Assert(r);
 
-					Controller.Pool.Release(node);
+					Pool.Release(node);
 					trace.Add(lessOrEqual);
 				}
 
@@ -105,7 +105,7 @@ namespace Barbados.StorageEngine.Indexing
 				return true;
 			}
 
-			Controller.Pool.Release(root);
+			Pool.Release(root);
 
 			traceback = default!;
 			return false;
@@ -132,19 +132,19 @@ namespace Barbados.StorageEngine.Indexing
 			traceback.ResetTop();
 			while (traceback.CanMoveDown)
 			{
-				var node = Controller.Pool.LoadPin<BTreePage>(traceback.Current);
+				var node = Pool.LoadPin<BTreePage>(traceback.Current);
 				if (node.CanFit(Info.KeyMaxLength * 2))
 				{
 					trace.Add(node.Header.Handle);
-					Controller.Pool.Release(node);
+					Pool.Release(node);
 				}
 
 				else
 				{
 					if (node.Header.Marker == PageMarker.BTreeRoot)
 					{
-						var lh = Controller.Pool.Allocate();
-						var rh = Controller.Pool.Allocate();
+						var lh = Pool.Allocate();
+						var rh = Pool.Allocate();
 						var left = new BTreePage(lh);
 						var right = new BTreePage(rh);
 
@@ -157,9 +157,9 @@ namespace Barbados.StorageEngine.Indexing
 						Debug.Assert(left.CanFit(Info.KeyMaxLength * 2));
 						Debug.Assert(right.CanFit(Info.KeyMaxLength * 2));
 
-						Controller.Pool.SaveRelease(node);
-						Controller.Pool.SaveRelease(left);
-						Controller.Pool.SaveRelease(right);
+						Pool.SaveRelease(node);
+						Pool.SaveRelease(left);
+						Pool.SaveRelease(right);
 					}
 
 					else
@@ -170,8 +170,8 @@ namespace Barbados.StorageEngine.Indexing
 						 * fit a new separator from the split in the leaf node.
 						 */
 
-						var parent = Controller.Pool.LoadPin<BTreePage>(trace[^1]);
-						var sh = Controller.Pool.Allocate();
+						var parent = Pool.LoadPin<BTreePage>(trace[^1]);
+						var sh = Pool.Allocate();
 						var split = new BTreePage(sh);
 
 						_splitNode(parent, node, split);
@@ -184,9 +184,9 @@ namespace Barbados.StorageEngine.Indexing
 						Debug.Assert(node.CanFit(Info.KeyMaxLength * 2));
 						Debug.Assert(split.CanFit(Info.KeyMaxLength * 2));
 
-						Controller.Pool.SaveRelease(node);
-						Controller.Pool.SaveRelease(split);
-						Controller.Pool.SaveRelease(parent);
+						Pool.SaveRelease(node);
+						Pool.SaveRelease(split);
+						Pool.SaveRelease(parent);
 					}
 				}
 

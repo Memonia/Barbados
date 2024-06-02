@@ -11,45 +11,43 @@ namespace Barbados.StorageEngine.Indexing
 	{
 		public void Insert(NormalisedValue key, ObjectId id)
 		{
-			using var _ = Controller.AcquireLock(Name, LockMode.Write);	
-
 			var ikey = ToBTreeIndexKey(key);
 			if (TryFindWithPreemptiveSplit(ikey, out var traceback))
 			{
-				var leaf = Controller.Pool.LoadPin<BTreeLeafPage>(traceback.Current);
+				var leaf = Pool.LoadPin<BTreeLeafPage>(traceback.Current);
 
 				// An overflow entry exists. The locators are in the overflow chain
 				if (leaf.TryReadOverflowHandle(ikey.Separator, out var start))
 				{
-					Controller.Pool.Release(leaf);
+					Pool.Release(leaf);
 
 					var last = start;
 					foreach (var overflow in
-						ChainHelpers.EnumerateForwardsPinned<BTreeLeafPageOverflow>(Controller.Pool, start, release: false)
+						ChainHelpers.EnumerateForwardsPinned<BTreeLeafPageOverflow>(Pool, start, release: false)
 					)
 					{
 						last = overflow.Header.Handle;
 						if (overflow.TryWriteObjectId(new(id), ikey.IsTrimmed))
 						{
-							Controller.Pool.SaveRelease(overflow);
+							Pool.SaveRelease(overflow);
 							return;
 						}
 
-						Controller.Pool.Release(overflow);
+						Pool.Release(overflow);
 					}
 
 					// The overflow chain is full. Append a page to the chain and insert
-					var next = Controller.Pool.Allocate();
+					var next = Pool.Allocate();
 					var nextPage = new BTreeLeafPageOverflow(next);
-					var lastPage = Controller.Pool.LoadPin<BTreeLeafPageOverflow>(last);
+					var lastPage = Pool.LoadPin<BTreeLeafPageOverflow>(last);
 
 					ChainHelpers.AppendOneWay(nextPage, lastPage);
 
 					var r = nextPage.TryWriteObjectId(new(id), ikey.IsTrimmed);
 					Debug.Assert(r);
 
-					Controller.Pool.SaveRelease(lastPage);
-					Controller.Pool.SaveRelease(nextPage);
+					Pool.SaveRelease(lastPage);
+					Pool.SaveRelease(nextPage);
 				}
 
 				// An overflow entry doesn't exist, but they key has been inserted.
@@ -57,7 +55,7 @@ namespace Barbados.StorageEngine.Indexing
 				else
 				if (leaf.TryReadObjectId(ikey.Separator, out var storedId, out var isTrimmed))
 				{
-					var oh = Controller.Pool.Allocate();
+					var oh = Pool.Allocate();
 					var r = leaf.TryOverwriteWithOverflow(ikey, oh);
 					Debug.Assert(r);
 
@@ -68,8 +66,8 @@ namespace Barbados.StorageEngine.Indexing
 					r = overflow.TryWriteObjectId(new(id), ikey.IsTrimmed);
 					Debug.Assert(r);
 
-					Controller.Pool.SaveRelease(leaf);
-					Controller.Pool.SaveRelease(overflow);
+					Pool.SaveRelease(leaf);
+					Pool.SaveRelease(overflow);
 				}
 
 				// No entry is associated with a given key
@@ -96,12 +94,12 @@ namespace Barbados.StorageEngine.Indexing
 							);
 						}
 
-						Controller.Pool.SaveRelease(leaf);
+						Pool.SaveRelease(leaf);
 					}
 
 					else
 					{
-						Controller.Pool.Release(leaf);
+						Pool.Release(leaf);
 						_split(ikey, id, traceback);
 					}
 				}
@@ -110,10 +108,10 @@ namespace Barbados.StorageEngine.Indexing
 			// Should only happen on the first insert in an empty tree
 			else
 			{
-				var root = Controller.Pool.LoadPin<BTreeRootPage>(Info.RootPageHandle);
+				var root = Pool.LoadPin<BTreeRootPage>(Info.RootPageHandle);
 				Debug.Assert(root.Count() == 0);
 
-				var lh = Controller.Pool.Allocate();
+				var lh = Pool.Allocate();
 				var leaf = new BTreeLeafPage(lh);
 
 				var a = leaf.TryWriteObjectId(ikey, id);
@@ -122,15 +120,15 @@ namespace Barbados.StorageEngine.Indexing
 				Debug.Assert(a);
 				Debug.Assert(b);
 
-				Controller.Pool.SaveRelease(root);
-				Controller.Pool.SaveRelease(leaf);
+				Pool.SaveRelease(root);
+				Pool.SaveRelease(leaf);
 			}
 		}
 
 		private void _split(BTreeIndexKey key, ObjectId id, BTreeIndexTraceback traceback)
 		{
-			var target = Controller.Pool.LoadPin<BTreeLeafPage>(traceback.Current);
-			var lh = Controller.Pool.Allocate();
+			var target = Pool.LoadPin<BTreeLeafPage>(traceback.Current);
+			var lh = Pool.Allocate();
 			var left = new BTreeLeafPage(lh);
 
 			if (target.Previous.IsNull)
@@ -140,9 +138,9 @@ namespace Barbados.StorageEngine.Indexing
 
 			else
 			{
-				var previous = Controller.Pool.LoadPin<BTreeLeafPage>(target.Previous);
+				var previous = Pool.LoadPin<BTreeLeafPage>(target.Previous);
 				ChainHelpers.Insert(left, previous, target);
-				Controller.Pool.SaveRelease(previous);
+				Pool.SaveRelease(previous);
 			}
 
 			target.Spill(left, fromHighest: false);
@@ -182,8 +180,8 @@ namespace Barbados.StorageEngine.Indexing
 			Span<byte> lhkeySepCopy = stackalloc byte[lhkey.Separator.Bytes.Length];
 			lhkey.Separator.Bytes.CopyTo(lhkeySepCopy);
 
-			Controller.Pool.SaveRelease(left);
-			Controller.Pool.SaveRelease(target);
+			Pool.SaveRelease(left);
+			Pool.SaveRelease(target);
 
 			InsertSeparator(
 				NormalisedValueSpan.FromNormalised(lhkeySepCopy), lh,

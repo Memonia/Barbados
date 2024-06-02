@@ -1,15 +1,14 @@
 ﻿using Barbados.StorageEngine.Documents;
 
-namespace Barbados.StorageEngine.Collections
+namespace Barbados.StorageEngine
 {
-	public interface IBarbadosReadOnlyCollection
+	public interface IReadOnlyBarbadosCollection
 	{
 		BarbadosIdentifier Name { get; }
 
-		IBarbadosController Controller { get; }
-
 		bool TryRead(ObjectId id, out BarbadosDocument document);
 		bool TryRead(ObjectId id, ValueSelector selector, out BarbadosDocument document);
+		bool TryGetBTreeIndexLookup(BarbadosIdentifier field, out IReadOnlyBTreeIndex lookup);
 
 		void Read(ObjectId id, out BarbadosDocument document);
 		void Read(ObjectId id, ValueSelector selector, out BarbadosDocument document);

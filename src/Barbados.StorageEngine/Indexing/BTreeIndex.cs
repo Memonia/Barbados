@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 
+using Barbados.StorageEngine.Collections;
 using Barbados.StorageEngine.Documents;
 using Barbados.StorageEngine.Documents.Binary;
 using Barbados.StorageEngine.Indexing.Search;
@@ -10,25 +11,25 @@ using Barbados.StorageEngine.Paging.Pages;
 
 namespace Barbados.StorageEngine.Indexing
 {
-	internal sealed partial class BTreeIndex : AbstractBTreeIndex<BTreeLeafPage>, IBTreeIndexLookup
+	internal sealed partial class BTreeIndex : AbstractBTreeIndex<BTreeLeafPage>, IReadOnlyBTreeIndex
 	{
-		public BarbadosIdentifier Name { get; }
-		public BarbadosIdentifier Collection { get; }
-		public BarbadosIdentifier IndexedField { get; }
+		/* Write locks are handled by the collection. Read locks are taken by cursors the index returns 
+		 */
 
-		IBarbadosController IBTreeIndexLookup.Controller => Controller;
+		public BarbadosIdentifier IndexedField => Info.IndexedField;
+
+		public LockAutomatic CollectionLock { get; }
+		public BTreeClusteredIndex ClusteredIndex { get; }
 
 		public BTreeIndex(
-			BarbadosIdentifier name,
-			BarbadosIdentifier collection,
-			BarbadosIdentifier indexedField,
-			BarbadosController controller,
-			BTreeIndexInfo info
-		) : base(controller, info)
+			BTreeIndexInfo info,
+			LockAutomatic collectionLock,
+			BTreeClusteredIndex clusteredIndex,
+			PagePool pool
+		) : base(pool, info)
 		{
-			Name = name;
-			Collection = collection;
-			IndexedField = indexedField;
+			CollectionLock = collectionLock;
+			ClusteredIndex = clusteredIndex;
 		}
 
 		public void DeallocateNoLock()
@@ -157,7 +158,7 @@ namespace Barbados.StorageEngine.Indexing
 				throw new ArgumentException("Unexpected condition", nameof(condition));
 			}
 
-			return new Cursor<ObjectId>(ids, Controller.GetLock(Name, LockMode.Read));
+			return new Cursor<ObjectId>(ids, CollectionLock);
 		}
 
 		public ICursor<ObjectId> FindExact<T>(T searchValue)
@@ -172,22 +173,24 @@ namespace Barbados.StorageEngine.Indexing
 			var ikey = ToBTreeIndexKey(search);
 			if (TryFind(ikey, out var traceback))
 			{
-				var leaf = Controller.Pool.LoadPin<BTreeLeafPage>(traceback.Current);
+				var leaf = Pool.LoadPin<BTreeLeafPage>(traceback.Current);
 				var check = KeyCheckFactory.GetCheck(search, KeyCheckCondition.Equal);
 				_writeMatchingIds(in ids, leaf, search.AsSpan(), check);
-				Controller.Pool.Release(leaf);
+				Pool.Release(leaf);
 			}
 
-			return new Cursor<ObjectId>(ids, Controller.GetLock(Name, LockMode.Read));
+			return new Cursor<ObjectId>(ids, CollectionLock);
 		}
 
 		private bool _tryRetrieveFullNormalisedKey(ObjectId id, out NormalisedValue key)
 		{
-			// Read-only collections include system collections
-			var collection = Controller.GetReadOnlyCollection(Collection);
-			if (collection.TryRead(id, out var document))
+			var idn = new ObjectIdNormalised(id);
+			if (ClusteredIndex.TryRead(idn, out var handle))
 			{
-				return document.Buffer.TryGetNormalisedValue(IndexedField.StringBufferValue, out key);
+				if (ObjectReader.TryRead(Pool, handle, id, ValueSelector.SelectAll, out var buffer))
+				{
+					return buffer.TryGetNormalisedValue(IndexedField.StringBufferValue, out key);
+				}
 			}
 
 			key = default!;
@@ -240,7 +243,7 @@ namespace Barbados.StorageEngine.Indexing
 				if (from.TryReadOverflowHandle(storedKey.Separator, out var start))
 				{
 					foreach (var overflow in
-						ChainHelpers.EnumerateForwardsPinned<BTreeLeafPageOverflow>(Controller.Pool, start, release: true)
+						ChainHelpers.EnumerateForwardsPinned<BTreeLeafPageOverflow>(Pool, start, release: true)
 					)
 					{
 						var oe = overflow.GetEnumerator();
@@ -267,13 +270,13 @@ namespace Barbados.StorageEngine.Indexing
 			var ids = new List<ObjectId>();
 			var start = traceback.Current;
 			foreach (var leaf in forwards
-				? ChainHelpers.EnumerateForwardsPinned<BTreeLeafPage>(Controller.Pool, start, release: false)
-				: ChainHelpers.EnumerateBackwardsPinned<BTreeLeafPage>(Controller.Pool, start, release: false)
+				? ChainHelpers.EnumerateForwardsPinned<BTreeLeafPage>(Pool, start, release: false)
+				: ChainHelpers.EnumerateBackwardsPinned<BTreeLeafPage>(Pool, start, release: false)
 			)
 			{
 				_writeMatchingIds(ids, leaf, search.AsSpan(), check);
 
-				Controller.Pool.Release(leaf);
+				Pool.Release(leaf);
 				if (ids.Count > 0)
 				{
 					foreach (var id in ids)

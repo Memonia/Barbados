@@ -9,14 +9,18 @@ namespace Barbados.StorageEngine
 {
 	internal sealed class Cursor<T> : ICursor<T>, IDisposable
 	{
+		/*	Since the lock is released between yields, 
+		 *	users have to ensure that writing in-between the reads will not break anything
+		 */
+
 		public BarbadosIdentifier OwnerName => _lock.Name;
 
 		private int _open;
 		private int _closed;
-		private readonly ObjectLock _lock;
+		private readonly LockAutomatic _lock;
 		private readonly IEnumerable<T> _enumerable;
 
-		public Cursor(IEnumerable<T> enumerable, ObjectLock @lock)
+		public Cursor(IEnumerable<T> enumerable, LockAutomatic @lock)
 		{
 			_open = 0;
 			_closed = 0;
@@ -28,7 +32,7 @@ namespace Barbados.StorageEngine
 		{
 			if (Interlocked.CompareExchange(ref _closed, 1, 0) == 0)
 			{
-				_lock.Dispose();
+				_lock.Release(LockMode.Read);
 			}
 		}
 
@@ -36,21 +40,36 @@ namespace Barbados.StorageEngine
 		{
 			if (Interlocked.CompareExchange(ref _open, 1, 0) != 0)
 			{
-				throw new BarbadosException(BarbadosExceptionCode.CursorConsumed, "Cursor has been opened already");
+				Close();
+				throw new BarbadosException(
+					BarbadosExceptionCode.CursorConsumed, $"Current cursor is already consumed"
+				);
 			}
 
-			_lock.Acquire();
-			foreach (var e in _enumerable)
+			_lock.Acquire(LockMode.Read);
+			var e = _enumerable.GetEnumerator();
+			try
 			{
-				yield return e;
-
-				if (Interlocked.CompareExchange(ref _closed, _closed, 1) == 1)
+				while (e.MoveNext())
 				{
-					throw new BarbadosException(BarbadosExceptionCode.CursorClosed, "Cursor has been closed");
+					_lock.Release(LockMode.Read);
+
+					yield return e.Current; 
+					if (Interlocked.CompareExchange(ref _closed, _closed, 1) == 1)
+					{
+						throw new BarbadosException(
+							BarbadosExceptionCode.CursorClosed, $"Current cursor has been closed"
+						);
+					}
+
+					_lock.Acquire(LockMode.Read);
 				}
 			}
 
-			Close();
+			finally
+			{
+				Close();
+			}
 		}
 
 		public void Dispose()

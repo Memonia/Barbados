@@ -4,6 +4,7 @@
 	{
 		public static readonly string NestingSeparator = ".";
 		public static readonly BarbadosIdentifier PrefixInternal = "?";
+		public static readonly BarbadosIdentifier Id = "?id";
 
 		public static class Index
 		{
@@ -18,7 +19,6 @@
 		public static class Collection
 		{
 			public static readonly BarbadosIdentifier MetaCollection = "?meta";
-			public static readonly BarbadosIdentifier MetaCollectionIndex = "?metai";
 		}
 
 		internal static class MetaCollection

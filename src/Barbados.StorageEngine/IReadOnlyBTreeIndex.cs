@@ -1,14 +1,10 @@
 ﻿using Barbados.StorageEngine.Documents;
 
-namespace Barbados.StorageEngine.Indexing
+namespace Barbados.StorageEngine
 {
-	public interface IBTreeIndexLookup
+	public interface IReadOnlyBTreeIndex
 	{
-		BarbadosIdentifier Name { get; }
-		BarbadosIdentifier Collection { get; }
 		BarbadosIdentifier IndexedField { get; }
-
-		IBarbadosController Controller { get; }
 
 		ICursor<ObjectId> Find(BarbadosDocument condition);
 		ICursor<ObjectId> FindExact<T>(T searchValue);

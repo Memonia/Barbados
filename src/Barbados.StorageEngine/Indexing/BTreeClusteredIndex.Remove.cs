@@ -16,21 +16,21 @@ namespace Barbados.StorageEngine.Indexing
 			{
 				if (!(removeChunk ? from.TryRemoveObjectChunk(id, out _) : from.TryRemoveObject(id)))
 				{
-					Controller.Pool.Release(from);
+					Pool.Release(from);
 					return false;
 				}
 
 				// Remove the leaf if it's empty, unless it is the collection page
 				if (from.Count() == 0)
 				{
-					if (from.Header.Handle.Index != collectionPageHandle.Index)
+					if (from.Header.Handle.Handle != collectionPageHandle.Handle)
 					{
-						ChainHelpers.RemoveAndDeallocate(from, Controller.Pool);
+						ChainHelpers.RemoveAndDeallocate(from, Pool);
 					}
 
 					else
 					{
-						Controller.Pool.SaveRelease(from);
+						Pool.SaveRelease(from);
 					}
 
 					var r = traceback.TryMoveUp();
@@ -47,7 +47,7 @@ namespace Barbados.StorageEngine.Indexing
 					var r = from.TryReadHighestId(out var hid);
 					Debug.Assert(r);
 
-					Controller.Pool.SaveRelease(from);
+					Pool.SaveRelease(from);
 
 					// Update the parent if the removed id was the highest
 					var hidn = new ObjectIdNormalised(hid);
@@ -71,9 +71,9 @@ namespace Barbados.StorageEngine.Indexing
 
 					// 'CollectionPage' might be deallocated in the process
 					if (
-						from.Next.Index != collectionPageHandle.Index &&
-						from.Previous.Index != collectionPageHandle.Index &&
-						from.Header.Handle.Index != collectionPageHandle.Index
+						from.Next.Handle != collectionPageHandle.Handle &&
+						from.Previous.Handle != collectionPageHandle.Handle &&
+						from.Header.Handle.Handle != collectionPageHandle.Handle
 					)
 					{
 						BalanceLeaf(traceback);
@@ -89,7 +89,7 @@ namespace Barbados.StorageEngine.Indexing
 			var ikey = _toBTreeIndexKey(idbuf);
 			if (TryFind(ikey, out var traceback))
 			{
-				var leaf = Controller.Pool.LoadPin<ObjectPage>(traceback.Current);
+				var leaf = Pool.LoadPin<ObjectPage>(traceback.Current);
 
 				// An object that didn't fit on the leaf page is spread across several overflow pages.
 				// Since a single overflow chain is occupied by a single object, we can just
@@ -98,11 +98,11 @@ namespace Barbados.StorageEngine.Indexing
 				{
 					while (!next.IsNull)
 					{
-						var opage = Controller.Pool.LoadPin<ObjectPageOverflow>(next);
+						var opage = Pool.LoadPin<ObjectPageOverflow>(next);
 						next = opage.Next;
 
-						Controller.Pool.Release(opage);
-						Controller.Pool.Deallocate(opage.Header.Handle);
+						Pool.Release(opage);
+						Pool.Deallocate(opage.Header.Handle);
 					}
 
 					var r = _tryRemoveFromLeaf(leaf, traceback, removeChunk: true);

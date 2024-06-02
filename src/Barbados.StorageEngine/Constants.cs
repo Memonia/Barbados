@@ -12,7 +12,8 @@ namespace Barbados.StorageEngine
 		public const int PageHandleLength = sizeof(long);
 		public const int PageHeaderLength = PageHandleLength + sizeof(PageMarker);
 
-		public const int AllocationBitmapLength = PageLength - _allocationPageOverheadLength;
+		public const int AllocationBitmapOverheadLength = PageHeaderLength;
+		public const int AllocationBitmapLength = PageLength - AllocationBitmapOverheadLength;
 		public const int AllocationBitmapPageCount = AllocationBitmapLength * 8;
 
 		public const int SlottedPagePayloadLength = PageLength - SlottedPageOverheadLength;
@@ -29,7 +30,5 @@ namespace Barbados.StorageEngine
 		public const int MetaCollectionIndexKeyMaxLength = 64;
 		public const int MinimalMaxIndexKeyLength = 1;
 		public const int DefaultMaxIndexKeyLength = 256;
-
-		private const int _allocationPageOverheadLength = PageHeaderLength + PageHandleLength;
 	}
 }

@@ -101,7 +101,7 @@ namespace Barbados.StorageEngine.Tests.Paging.Pages
 				);
 
 				Assert.True(r);
-				Assert.Equal(pageHandleIndex, handle.Index);
+				Assert.Equal(pageHandleIndex, handle.Handle);
 			}
 
 			[Fact]

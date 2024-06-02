@@ -14,7 +14,7 @@ namespace Barbados.StorageEngine
 	internal sealed partial class BarbadosController : IBarbadosController
 	{
 		public PagePool Pool { get; }
-		private LockManager Lock { get; }
+		public LockManager Lock { get; }
 
 		private readonly object _sync;
 		private readonly ConcurrentDictionary<string, AbstractCollection> _instances;
@@ -26,18 +26,6 @@ namespace Barbados.StorageEngine
 
 			_sync = new();
 			_instances = [];
-		}
-
-		public ObjectLock GetLock(string name, LockMode mode)
-		{
-			return Lock.GetLock(name, mode);
-		}
-
-		public ObjectLock AcquireLock(string name, LockMode mode)
-		{
-			var @lock = GetLock(name, mode);
-			@lock.Acquire();
-			return @lock;
 		}
 
 		public BTreeIndex GetIndex(BarbadosIdentifier collection, BarbadosIdentifier field)
@@ -70,17 +58,7 @@ namespace Barbados.StorageEngine
 			lock (_sync)
 			{
 				var instance = GetCollection(collection);
-				foreach (var storedIndex in instance.Indexes)
-				{
-					if (storedIndex.IndexedField.Identifier == field.Identifier)
-					{
-						index = storedIndex;
-						return true;
-					}
-				}
-
-				index = default!;
-				return false;
+				return instance.TryGetBTreeIndex(field, out index);
 			}
 		}
 
@@ -107,12 +85,17 @@ namespace Barbados.StorageEngine
 					return false;
 				}
 
-				collection = MetaCollection.CreateCollectionInstance(document, this);
-
 				Lock.AddLockable(name);
-				foreach (var index in collection.Indexes)
+				var @lock = Lock.GetLock(name);
+
+				collection = MetaCollection.CreateCollectionInstance(document, Pool, @lock);
+				foreach (var indexDocument in MetaCollection.GetIndexDocuments(document))
 				{
-					Lock.AddLockable(index.Name);
+					collection.AddBTreeIndex(
+						MetaCollection.CreateIndexInstance(
+							document, Pool, @lock, collection.ClusteredIndex
+						)
+					);
 				}
 
 				var r = _instances.TryAdd(name, collection);
@@ -135,29 +118,29 @@ namespace Barbados.StorageEngine
 					return (MetaCollection)instance;
 				}
 
+				Lock.AddLockable(BarbadosIdentifiers.Collection.MetaCollection);
+
 				var root = Pool.LoadPin<RootPage>(PageHandle.Root);
+				var metaLock = Lock.GetLock(BarbadosIdentifiers.Collection.MetaCollection);
+
+				var clusteredIndex = new BTreeClusteredIndex(Pool, root.MetaCollectionClusteredIndexRootPageHandle);
 				var index = new BTreeIndex(
-					BarbadosIdentifiers.Collection.MetaCollectionIndex,
-					BarbadosIdentifiers.Collection.MetaCollection,
-					BarbadosIdentifiers.MetaCollection.CollectionDocumentNameFieldAbsolute,
-					this,
 					new()
 					{
+						IndexedField = BarbadosIdentifiers.MetaCollection.CollectionDocumentNameFieldAbsolute,
 						KeyMaxLength = Constants.MetaCollectionIndexKeyMaxLength,
-						RootPageHandle = root.MappingCollectionNameIndexRootPageHandle
-					}
+						RootPageHandle = root.MetaCollectionNameIndexRootPageHandle
+					},
+					metaLock,
+					clusteredIndex,
+					Pool
 				);
 
-				var clusteredIndex = new BTreeClusteredIndex(this, root.MetaCollectionClusteredIndexRootPageHandle);
-				var meta = new MetaCollection(this, root.MetaCollectionPageHandle, index, clusteredIndex);
-
-				Pool.Release(root);
-
+				var meta = new MetaCollection(root.MetaCollectionPageHandle, Pool, metaLock, index, clusteredIndex);
 				var r = _instances.TryAdd(BarbadosIdentifiers.Collection.MetaCollection, meta);
 				Debug.Assert(r);
 
-				Lock.AddLockable(BarbadosIdentifiers.Collection.MetaCollection);
-				Lock.AddLockable(BarbadosIdentifiers.Collection.MetaCollectionIndex);
+				Pool.Release(root);
 				return meta;
 			}
 		}

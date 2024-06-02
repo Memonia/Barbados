@@ -43,7 +43,7 @@ namespace Barbados.StorageEngine.Indexing
 
 		protected void InsertSeparator(NormalisedValueSpan separator, PageHandle lessOrEqual, BTreeIndexTraceback traceback)
 		{
-			var target = Controller.Pool.LoadPin<BTreePage>(traceback.Current);
+			var target = Pool.LoadPin<BTreePage>(traceback.Current);
 
 			if (
 				target.TryReadHighestSeparatorHandle(out var highest, out _) &&
@@ -61,12 +61,12 @@ namespace Barbados.StorageEngine.Indexing
 			var r = target.TryWriteSeparatorHandle(separator, lessOrEqual);
 			Debug.Assert(r);
 
-			Controller.Pool.SaveRelease(target);
+			Pool.SaveRelease(target);
 		}
 
 		protected void UpdateSeparatorPropagate(NormalisedValueSpan separator, NormalisedValueSpan replacement, BTreeIndexTraceback traceback)
 		{
-			var target = Controller.Pool.LoadPin<BTreePage>(traceback.Current);
+			var target = Pool.LoadPin<BTreePage>(traceback.Current);
 			if (target.TryReadSeparatorHandle(separator, out var lessOrEqual))
 			{
 				var tracebackCopy = traceback.Clone();
@@ -78,26 +78,26 @@ namespace Barbados.StorageEngine.Indexing
 				var r = target.TryRemoveSeparatorHandle(separator);
 				Debug.Assert(r);
 
-				Controller.Pool.SaveRelease(target);
+				Pool.SaveRelease(target);
 				InsertSeparator(replacement, lessOrEqual, traceback);
 			}
 
 			else
 			{
-				Controller.Pool.Release(target);
+				Pool.Release(target);
 			}
 		}
 
 		protected void RemoveSeparatorPropagate(NormalisedValueSpan separator, BTreeIndexTraceback traceback)
 		{
-			var target = Controller.Pool.LoadPin<BTreePage>(traceback.Current);
+			var target = Pool.LoadPin<BTreePage>(traceback.Current);
 			if (target.TryRemoveSeparatorHandle(separator))
 			{
 				// Remove an empty page from the tree, unless it is the root
 				if (target.Count() == 0 && traceback.CanMoveUp)
 				{
-					Controller.Pool.Release(target);
-					Controller.Pool.Deallocate(target.Header.Handle);
+					Pool.Release(target);
+					Pool.Deallocate(target.Header.Handle);
 
 					var r = traceback.TryMoveUp();
 					Debug.Assert(r);
@@ -115,7 +115,7 @@ namespace Barbados.StorageEngine.Indexing
 					Span<byte> hsepCopy = stackalloc byte[hsep.Bytes.Length];
 					hsep.Bytes.CopyTo(hsepCopy);
 
-					Controller.Pool.SaveRelease(target);
+					Pool.SaveRelease(target);
 
 					var tracebackCopy = traceback.Clone();
 					r = tracebackCopy.TryMoveUp();
@@ -140,13 +140,13 @@ namespace Barbados.StorageEngine.Indexing
 
 				else
 				{
-					Controller.Pool.SaveRelease(target);
+					Pool.SaveRelease(target);
 				}
 			}
 
 			else
 			{
-				Controller.Pool.Release(target);
+				Pool.Release(target);
 			}
 		}
 
@@ -176,12 +176,12 @@ namespace Barbados.StorageEngine.Indexing
 				Debug.Assert(r);
 
 				// Must be before deallocating right
-				Controller.Pool.SaveRelease(left);
+				Pool.SaveRelease(left);
 
 				// Remove right's highest key from the parent before replacing left's separator with it
 				if (!right.TryReadHighest(out _))
 				{
-					ChainHelpers.RemoveAndDeallocate(right, Controller.Pool);
+					ChainHelpers.RemoveAndDeallocate(right, Pool);
 					RemoveSeparatorPropagate(
 						NormalisedValueSpan.FromNormalised(rhkeySepCopy),
 						traceback.Clone()
@@ -190,7 +190,7 @@ namespace Barbados.StorageEngine.Indexing
 
 				else
 				{
-					Controller.Pool.SaveRelease(right);
+					Pool.SaveRelease(right);
 				}
 
 				UpdateSeparatorPropagate(
@@ -200,10 +200,10 @@ namespace Barbados.StorageEngine.Indexing
 				);
 			}
 
-			var target = Controller.Pool.LoadPin<T>(traceback.Current);
+			var target = Pool.LoadPin<T>(traceback.Current);
 			if (!target.IsUnderflowed)
 			{
-				Controller.Pool.Release(target);
+				Pool.Release(target);
 				return;
 			}
 
@@ -216,7 +216,7 @@ namespace Barbados.StorageEngine.Indexing
 
 			if (!target.Next.IsNull)
 			{
-				var next = Controller.Pool.LoadPin<T>(target.Next);
+				var next = Pool.LoadPin<T>(target.Next);
 				r = next.TryReadHighest(out var nhkey);
 				Debug.Assert(r);
 
@@ -239,8 +239,8 @@ namespace Barbados.StorageEngine.Indexing
 					r = traceback.TryMoveUp();
 					Debug.Assert(r);
 
-					Controller.Pool.SaveRelease(target);
-					Controller.Pool.SaveRelease(next);
+					Pool.SaveRelease(target);
+					Pool.SaveRelease(next);
 
 					// Taking keys from the right sibling in ascending order changes left's highest key,
 					// but not right's highest key, thus we only need to update left's separator in parent
@@ -259,15 +259,15 @@ namespace Barbados.StorageEngine.Indexing
 
 				else
 				{
-					Controller.Pool.Release(next);
-					Controller.Pool.Release(target);
+					Pool.Release(next);
+					Pool.Release(target);
 				}
 			}
 
 			else
 			if (!target.Previous.IsNull)
 			{
-				var previous = Controller.Pool.LoadPin<T>(target.Previous);
+				var previous = Pool.LoadPin<T>(target.Previous);
 				r = previous.TryReadHighest(out var phkey);
 				Debug.Assert(r);
 
@@ -290,8 +290,8 @@ namespace Barbados.StorageEngine.Indexing
 					r = traceback.TryMoveUp();
 					Debug.Assert(r);
 
-					Controller.Pool.SaveRelease(target);
-					Controller.Pool.SaveRelease(previous);
+					Pool.SaveRelease(target);
+					Pool.SaveRelease(previous);
 
 					// Same as above, except we take keys from the left sibling in descending order,
 					// in order to preserve the correct order of keys in the tree
@@ -310,14 +310,14 @@ namespace Barbados.StorageEngine.Indexing
 
 				else
 				{
-					Controller.Pool.Release(previous);
-					Controller.Pool.Release(target);
+					Pool.Release(previous);
+					Pool.Release(target);
 				}
 			}
 
 			else
 			{
-				Controller.Pool.Release(target);
+				Pool.Release(target);
 			}
 		}
 
@@ -329,27 +329,27 @@ namespace Barbados.StorageEngine.Indexing
 				return;
 			}
 
-			var target = Controller.Pool.LoadPin<BTreePage>(traceback.Current);
+			var target = Pool.LoadPin<BTreePage>(traceback.Current);
 			if (!target.IsUnderflowed)
 			{
-				Controller.Pool.Release(target);
+				Pool.Release(target);
 				return;
 			}
 
-			Controller.Pool.Release(target);
+			Pool.Release(target);
 			// Balancing goes here
 		}
 
 		private bool _parentContains(PageHandle parentHandle, NormalisedValueSpan separator)
 		{
-			var target = Controller.Pool.LoadPin<BTreePage>(parentHandle);
+			var target = Pool.LoadPin<BTreePage>(parentHandle);
 			if (target.TryReadSeparatorHandle(separator, out _))
 			{
-				Controller.Pool.SaveRelease(target);
+				Pool.SaveRelease(target);
 				return true;
 			}
 
-			Controller.Pool.Release(target);
+			Pool.Release(target);
 			return false;
 		}
 	}

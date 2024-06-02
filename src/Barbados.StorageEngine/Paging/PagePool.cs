@@ -19,39 +19,29 @@ namespace Barbados.StorageEngine.Paging
 			var root = new RootPage();
 			var apageHandle = root.IncrementNextAvailablePageHandle();
 			var cpageHandle = root.IncrementNextAvailablePageHandle();
-			var cicpageHandle = root.IncrementNextAvailablePageHandle();
-			var mpageHandle = root.IncrementNextAvailablePageHandle();
-			var impageHandle = root.IncrementNextAvailablePageHandle();
-			var cimpageHandle = root.IncrementNextAvailablePageHandle();
+			var ipageHandle = root.IncrementNextAvailablePageHandle();
+			var cipageHandle = root.IncrementNextAvailablePageHandle();
 
 			// Init the allocation bitmap
 			var apage = new AllocationPage(apageHandle);
-			root.AllocationPageChainHeadHandle = apage.Header.Handle;
+			root.FirstAllocationPageHandle = apage.Header.Handle;
+			root.LastAllocationPageHandle = apage.Header.Handle;
 
 			// Init the meta collection
 			var cpage = new CollectionPage(cpageHandle);
-			var cicpage = new BTreeRootPage(cicpageHandle);
+			var ipage = new BTreeRootPage(ipageHandle);
+			var cipage = new BTreeRootPage(cipageHandle);
 
 			root.MetaCollectionPageHandle = cpage.Header.Handle;
-			root.MetaCollectionClusteredIndexRootPageHandle = cicpage.Header.Handle;
-
-			// Init the mapping collection
-			var mpage = new CollectionPage(mpageHandle);
-			var impage = new BTreeRootPage(impageHandle);
-			var cimpage = new BTreeRootPage(cimpageHandle);
-
-			root.MappingCollectionPageHandle = mpage.Header.Handle;
-			root.MappingCollectionNameIndexRootPageHandle = impage.Header.Handle;
-			root.MappingCollectionClusteredIndexRootPageHandle = cimpage.Header.Handle;
+			root.MetaCollectionNameIndexRootPageHandle = ipage.Header.Handle;
+			root.MetaCollectionClusteredIndexRootPageHandle = cipage.Header.Handle;
 
 			// Mark created pages as active
 			apage.On(root.Header.Handle);
 			apage.On(apage.Header.Handle);
 			apage.On(cpage.Header.Handle);
-			apage.On(cicpage.Header.Handle);
-			apage.On(mpage.Header.Handle);
-			apage.On(impage.Header.Handle);
-			apage.On(cimpage.Header.Handle);
+			apage.On(ipage.Header.Handle);
+			apage.On(cipage.Header.Handle);
 
 			// Mark null handle as active so it can't be allocated
 			apage.On(PageHandle.Null);
@@ -59,10 +49,8 @@ namespace Barbados.StorageEngine.Paging
 			_writePageBuffer(fileHandle, root);
 			_writePageBuffer(fileHandle, apage);
 			_writePageBuffer(fileHandle, cpage);
-			_writePageBuffer(fileHandle, cicpage);
-			_writePageBuffer(fileHandle, mpage);
-			_writePageBuffer(fileHandle, impage);
-			_writePageBuffer(fileHandle, cimpage);
+			_writePageBuffer(fileHandle, ipage);
+			_writePageBuffer(fileHandle, cipage);
 
 			RandomAccess.FlushToDisk(fileHandle);
 		}

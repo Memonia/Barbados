@@ -4,7 +4,7 @@
 	{
 		static void Main(string[] args)
 		{
-			// Remove everything before pushing
+			// Remove everything before commit
 		}
 	}
 }

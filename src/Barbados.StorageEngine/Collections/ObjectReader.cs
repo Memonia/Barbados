@@ -10,7 +10,7 @@ namespace Barbados.StorageEngine.Collections
 {
 	internal static class ObjectReader
 	{
-		public static bool Read(PagePool pool, PageHandle handle, ObjectId id, ValueSelector selector, out ObjectBuffer obj)
+		public static bool TryRead(PagePool pool, PageHandle handle, ObjectId id, ValueSelector selector, out ObjectBuffer obj)
 		{
 			var page = pool.LoadPin<ObjectPage>(handle);
 			var r = TryRead(pool, page, id, selector, out obj);

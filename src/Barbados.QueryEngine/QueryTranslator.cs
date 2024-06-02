@@ -7,7 +7,6 @@ using Barbados.QueryEngine.Build.Expressions;
 using Barbados.QueryEngine.Evaluation;
 using Barbados.QueryEngine.Evaluation.Expressions;
 using Barbados.StorageEngine;
-using Barbados.StorageEngine.Collections;
 using Barbados.StorageEngine.Documents;
 
 namespace Barbados.QueryEngine
@@ -172,7 +171,7 @@ namespace Barbados.QueryEngine
 						throw new NotImplementedException();
 				}
 
-				if (!collection.Controller.TryGetIndex(collection.Name, ce.ComparedField, out var index))
+				if (!collection.TryGetBTreeIndexLookup(ce.ComparedField, out var index))
 				{
 					evaluator = default!;
 					return false;

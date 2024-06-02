@@ -1,4 +1,6 @@
-﻿using Barbados.StorageEngine.Indexing;
+﻿using System;
+
+using Barbados.StorageEngine.Indexing;
 using Barbados.StorageEngine.Tests.Integration.Indexing;
 
 namespace Barbados.StorageEngine.Tests.Integration.Utils

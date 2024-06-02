@@ -22,7 +22,7 @@ namespace Barbados.StorageEngine
 			return false;
 		}
 
-		public IBarbadosReadOnlyCollection GetReadOnlyCollection(BarbadosIdentifier name)
+		public IReadOnlyBarbadosCollection GetReadOnlyCollection(BarbadosIdentifier name)
 		{
 			if (name == BarbadosIdentifiers.Collection.MetaCollection)
 			{
@@ -32,7 +32,7 @@ namespace Barbados.StorageEngine
 			return GetCollection(name);
 		}
 
-		public bool TryGetReadOnlyCollection(BarbadosIdentifier name, out IBarbadosReadOnlyCollection collection)
+		public bool TryGetReadOnlyCollection(BarbadosIdentifier name, out IReadOnlyBarbadosCollection collection)
 		{
 			if (name == BarbadosIdentifiers.Collection.MetaCollection)
 			{
@@ -50,12 +50,12 @@ namespace Barbados.StorageEngine
 			return false;
 		}
 
-		IBTreeIndexLookup IBarbadosController.GetIndex(BarbadosIdentifier collection, BarbadosIdentifier field)
+		IReadOnlyBTreeIndex IBarbadosController.GetIndex(BarbadosIdentifier collection, BarbadosIdentifier field)
 		{
 			return GetIndex(collection.Identifier, field.Identifier);
 		}
 
-		bool IBarbadosController.TryGetIndex(BarbadosIdentifier collection, BarbadosIdentifier field, out IBTreeIndexLookup index)
+		bool IBarbadosController.TryGetIndex(BarbadosIdentifier collection, BarbadosIdentifier field, out IReadOnlyBTreeIndex index)
 		{
 			if (TryGetIndex(collection.Identifier, field.Identifier, out BTreeIndex bTreeIndex))
 			{
