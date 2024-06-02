@@ -9,6 +9,10 @@ namespace Barbados.StorageEngine
 {
 	internal sealed class Cursor<T> : ICursor<T>, IDisposable
 	{
+		/*	Since the lock is released between yields, 
+		 *	users have to ensure that writing in-between the reads will not break anything
+		 */
+
 		public BarbadosIdentifier OwnerName => _lock.Name;
 
 		private int _open;
@@ -34,27 +38,31 @@ namespace Barbados.StorageEngine
 
 		public IEnumerator<T> GetEnumerator()
 		{
-			_lock.Acquire(LockMode.Read);
 			if (Interlocked.CompareExchange(ref _open, 1, 0) != 0)
 			{
 				Close();
 				throw new BarbadosException(
-					BarbadosExceptionCode.CursorConsumed, $"Current cursor on {OwnerName} is already consumed"
+					BarbadosExceptionCode.CursorConsumed, $"Current cursor is already consumed"
 				);
 			}
 
+			_lock.Acquire(LockMode.Read);
 			var e = _enumerable.GetEnumerator();
 			try
 			{
 				while (e.MoveNext())
 				{
+					_lock.Release(LockMode.Read);
+
 					yield return e.Current; 
 					if (Interlocked.CompareExchange(ref _closed, _closed, 1) == 1)
 					{
 						throw new BarbadosException(
-							BarbadosExceptionCode.CursorClosed, $"Current cursor on {OwnerName} has been closed"
+							BarbadosExceptionCode.CursorClosed, $"Current cursor has been closed"
 						);
 					}
+
+					_lock.Acquire(LockMode.Read);
 				}
 			}
 
