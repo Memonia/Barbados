@@ -3,9 +3,9 @@
 	public interface IBarbadosController
 	{
 		bool TryGetCollection(BarbadosIdentifier name, out IBarbadosCollection collection);
-		bool TryGetReadOnlyCollection(BarbadosIdentifier name, out IBarbadosReadOnlyCollection collection);
+		bool TryGetReadOnlyCollection(BarbadosIdentifier name, out IReadOnlyBarbadosCollection collection);
 		IBarbadosCollection GetCollection(BarbadosIdentifier name);
-		IBarbadosReadOnlyCollection GetReadOnlyCollection(BarbadosIdentifier name);
+		IReadOnlyBarbadosCollection GetReadOnlyCollection(BarbadosIdentifier name);
 
 		bool TryGetIndex(BarbadosIdentifier collection, BarbadosIdentifier field, out IReadOnlyBTreeIndex index);
 		IReadOnlyBTreeIndex GetIndex(BarbadosIdentifier collection, BarbadosIdentifier field);

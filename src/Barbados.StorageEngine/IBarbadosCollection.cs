@@ -2,7 +2,7 @@
 
 namespace Barbados.StorageEngine
 {
-	public interface IBarbadosCollection : IBarbadosReadOnlyCollection
+	public interface IBarbadosCollection : IReadOnlyBarbadosCollection
 	{
 		ObjectId Insert(BarbadosDocument document);
 

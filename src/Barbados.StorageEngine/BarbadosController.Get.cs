@@ -22,7 +22,7 @@ namespace Barbados.StorageEngine
 			return false;
 		}
 
-		public IBarbadosReadOnlyCollection GetReadOnlyCollection(BarbadosIdentifier name)
+		public IReadOnlyBarbadosCollection GetReadOnlyCollection(BarbadosIdentifier name)
 		{
 			if (name == BarbadosIdentifiers.Collection.MetaCollection)
 			{
@@ -32,7 +32,7 @@ namespace Barbados.StorageEngine
 			return GetCollection(name);
 		}
 
-		public bool TryGetReadOnlyCollection(BarbadosIdentifier name, out IBarbadosReadOnlyCollection collection)
+		public bool TryGetReadOnlyCollection(BarbadosIdentifier name, out IReadOnlyBarbadosCollection collection)
 		{
 			if (name == BarbadosIdentifiers.Collection.MetaCollection)
 			{

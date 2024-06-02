@@ -2,7 +2,7 @@
 
 namespace Barbados.StorageEngine
 {
-	public interface IBarbadosReadOnlyCollection
+	public interface IReadOnlyBarbadosCollection
 	{
 		BarbadosIdentifier Name { get; }
 
