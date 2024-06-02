@@ -101,7 +101,7 @@ namespace Barbados.StorageEngine
 		{
 			if (collection == BarbadosIdentifiers.Collection.MetaCollection)
 			{
-				yield return BarbadosIdentifiers.Collection.MetaCollectionIndex;
+				yield return BarbadosIdentifiers.MetaCollection.CollectionDocumentNameFieldAbsolute;
 				yield break;
 			}
 

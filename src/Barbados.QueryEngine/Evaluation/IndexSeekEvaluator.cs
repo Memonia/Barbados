@@ -44,6 +44,6 @@ namespace Barbados.QueryEngine.Evaluation
 			}
 		}
 
-		public override string ToString() => FormatHelpers.FormatValueSelector($"IndexSeek({_index.Name})", _selector);
+		public override string ToString() => FormatHelpers.FormatValueSelector($"IndexSeek({_index.IndexedField})", _selector);
 	}
 }

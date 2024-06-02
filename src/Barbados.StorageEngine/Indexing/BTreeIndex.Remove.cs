@@ -60,8 +60,6 @@ namespace Barbados.StorageEngine.Indexing
 				return true;
 			}
 
-			using var _ = _lock.Acquire(LockMode.Write);
-
 			var ikey = ToBTreeIndexKey(key);
 			if (TryFind(ikey, out var traceback))
 			{

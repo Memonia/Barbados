@@ -4,8 +4,7 @@ namespace Barbados.StorageEngine
 {
 	public interface IReadOnlyBTreeIndex
 	{
-		BarbadosIdentifier Name { get; }
-		BarbadosIdentifier Field { get; }
+		BarbadosIdentifier IndexedField { get; }
 
 		ICursor<ObjectId> Find(BarbadosDocument condition);
 		ICursor<ObjectId> FindExact<T>(T searchValue);

@@ -13,25 +13,23 @@ namespace Barbados.StorageEngine.Indexing
 {
 	internal sealed partial class BTreeIndex : AbstractBTreeIndex<BTreeLeafPage>, IReadOnlyBTreeIndex
 	{
-		public BarbadosIdentifier Name { get; }
-		public BarbadosIdentifier Field { get; }
+		/* Write locks are handled by the collection. Read locks are taken by cursors the index returns 
+		 */
+
+		public BarbadosIdentifier IndexedField => Info.IndexedField;
+
+		public LockAutomatic CollectionLock { get; }
 		public BTreeClusteredIndex ClusteredIndex { get; }
 
-		private readonly LockAutomatic _lock;
-
 		public BTreeIndex(
-			BarbadosIdentifier name,
-			BarbadosIdentifier indexedField,
+			BTreeIndexInfo info,
+			LockAutomatic collectionLock,
 			BTreeClusteredIndex clusteredIndex,
-			PagePool pool,
-			LockAutomatic @lock,
-			BTreeIndexInfo info
+			PagePool pool
 		) : base(pool, info)
 		{
-			Name = name;
-			Field = indexedField;
+			CollectionLock = collectionLock;
 			ClusteredIndex = clusteredIndex;
-			_lock = @lock;
 		}
 
 		public void DeallocateNoLock()
@@ -160,7 +158,7 @@ namespace Barbados.StorageEngine.Indexing
 				throw new ArgumentException("Unexpected condition", nameof(condition));
 			}
 
-			return new Cursor<ObjectId>(ids, _lock);
+			return new Cursor<ObjectId>(ids, CollectionLock);
 		}
 
 		public ICursor<ObjectId> FindExact<T>(T searchValue)
@@ -181,7 +179,7 @@ namespace Barbados.StorageEngine.Indexing
 				Pool.Release(leaf);
 			}
 
-			return new Cursor<ObjectId>(ids, _lock);
+			return new Cursor<ObjectId>(ids, CollectionLock);
 		}
 
 		private bool _tryRetrieveFullNormalisedKey(ObjectId id, out NormalisedValue key)
@@ -191,7 +189,7 @@ namespace Barbados.StorageEngine.Indexing
 			{
 				if (ObjectReader.TryRead(Pool, handle, id, ValueSelector.SelectAll, out var buffer))
 				{
-					return buffer.TryGetNormalisedValue(Field.StringBufferValue, out key);
+					return buffer.TryGetNormalisedValue(IndexedField.StringBufferValue, out key);
 				}
 			}
 

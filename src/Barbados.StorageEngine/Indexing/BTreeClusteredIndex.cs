@@ -19,12 +19,13 @@ namespace Barbados.StorageEngine.Indexing
 
 		public BTreeClusteredIndex(PagePool pool, PageHandle handle)
 			: base(
-				  pool,
-				  new()
-				  {
-					  RootPageHandle = handle,
-					  KeyMaxLength = Constants.ObjectIdLength
-				  }
+				pool,
+				new()
+				{
+					IndexedField = BarbadosIdentifiers.Id,
+					RootPageHandle = handle,
+					KeyMaxLength = Constants.ObjectIdLength
+				}
 			)
 		{
 

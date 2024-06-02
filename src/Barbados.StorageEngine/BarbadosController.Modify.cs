@@ -15,7 +15,7 @@ namespace Barbados.StorageEngine
 			var cursor = collection.GetCursor();
 			foreach (var document in cursor)
 			{
-				if (document.Buffer.TryGetNormalisedValue(index.Field.StringBufferValue, out var value))
+				if (document.Buffer.TryGetNormalisedValue(index.IndexedField.StringBufferValue, out var value))
 				{
 					index.Insert(value, document.Id);
 				}
@@ -57,25 +57,20 @@ namespace Barbados.StorageEngine
 					);
 				}
 
-				Debug.Assert(index.Field.Identifier == field.Identifier);
+				Debug.Assert(index.IndexedField.Identifier == field.Identifier);
 
 				var meta = GetMetaCollection();
 				var collectionInstance = GetCollection(collection);
 				var r = meta.Find(collection, out var document);
 				Debug.Assert(r);
 
-				Lock.RemoveLockable(index.Name, out var @lock);
-				@lock.EnterWriteLock();
-
 				Lock.Acquire(collectionInstance.Name, LockMode.Write);
 
 				meta.RemoveIndex(document, field);
-				collectionInstance.RemoveBTreeIndex(index.Field);
-				
-				Lock.Release(collectionInstance.Name, LockMode.Write);
-
+				collectionInstance.RemoveBTreeIndex(index.IndexedField);
 				index.DeallocateNoLock();
-				@lock.ExitWriteLock();
+
+				Lock.Release(collectionInstance.Name, LockMode.Write);
 			}
 		}
 
@@ -204,12 +199,8 @@ namespace Barbados.StorageEngine
 				}
 
 				var idoc = meta.CreateIndex(document, field, maxKeyLength);
-				var iname = MetaCollection.GetIndexName(idoc, collection);
-				Lock.AddLockable(iname);
-
-				var ilock = Lock.GetLock(iname);
 				var iinstance = MetaCollection.CreateIndexInstance(
-					idoc, iname, Pool, ilock, collectionInstance!.ClusteredIndex
+					idoc, Pool, collectionInstance!.Lock, collectionInstance!.ClusteredIndex
 				);
 
 				collectionInstance!.AddBTreeIndex(iinstance);

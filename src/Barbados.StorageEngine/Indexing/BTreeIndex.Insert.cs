@@ -11,8 +11,6 @@ namespace Barbados.StorageEngine.Indexing
 	{
 		public void Insert(NormalisedValue key, ObjectId id)
 		{
-			using var _ = _lock.Acquire(LockMode.Write);	
-
 			var ikey = ToBTreeIndexKey(key);
 			if (TryFindWithPreemptiveSplit(ikey, out var traceback))
 			{

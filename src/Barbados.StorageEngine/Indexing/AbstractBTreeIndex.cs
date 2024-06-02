@@ -14,8 +14,8 @@ namespace Barbados.StorageEngine.Indexing
 		/* Locks must be handled by derived classes 
 		 */
 
-		public BTreeIndexInfo Info { get; }
 		public PagePool Pool { get; }
+		public BTreeIndexInfo Info { get; }
 
 		protected AbstractBTreeIndex(PagePool pool, BTreeIndexInfo info)
 		{

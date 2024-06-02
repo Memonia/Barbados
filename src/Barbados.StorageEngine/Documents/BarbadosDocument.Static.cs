@@ -51,7 +51,7 @@ namespace Barbados.StorageEngine.Documents
 
 			if (spaces == 0)
 			{
-				builder.AppendFormat(format, "?id", document.Id);
+				builder.AppendFormat(format, BarbadosIdentifiers.Id, document.Id);
 			}
 
 			foreach (var field in document.GetFields())

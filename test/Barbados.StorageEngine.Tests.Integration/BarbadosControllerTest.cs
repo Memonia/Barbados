@@ -18,7 +18,7 @@ namespace Barbados.StorageEngine.Tests.Integration
 				context.Context.Controller.CreateIndex(collection, field);
 
 				Assert.True(context.Context.Controller.TryGetIndex(collection, field, out var found));
-				Assert.Equal(field, found.Field.Identifier);
+				Assert.Equal(field, found.IndexedField.Identifier);
 			}
 
 			[Fact]
@@ -72,7 +72,7 @@ namespace Barbados.StorageEngine.Tests.Integration
 
 				var found = context.Context.Controller.GetIndex(collection, field);
 
-				Assert.Equal(field, found.Field.Identifier);
+				Assert.Equal(field, found.IndexedField.Identifier);
 			}
 
 			[Fact]

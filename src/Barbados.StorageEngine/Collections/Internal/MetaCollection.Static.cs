@@ -9,16 +9,6 @@ namespace Barbados.StorageEngine.Collections.Internal
 {
 	internal partial class MetaCollection
 	{
-		public static string GetIndexName(BarbadosDocument document, string collection)
-		{
-			var r = document.TryGetString(
-				BarbadosIdentifiers.MetaCollection.IndexDocumentIndexedFieldField, out var indexedField
-			);
-			Debug.Assert(r);
-
-			return $"{collection}.{indexedField}";
-		}
-
 		public static IEnumerable<BarbadosDocument> GetIndexDocuments(BarbadosDocument document)
 		{
 			if (document.TryGetDocumentArray(BarbadosIdentifiers.MetaCollection.IndexArrayField, out var indexesArray))
@@ -31,9 +21,8 @@ namespace Barbados.StorageEngine.Collections.Internal
 
 		public static BTreeIndex CreateIndexInstance(
 			BarbadosDocument document,
-			string name,
 			PagePool pool,
-			LockAutomatic @lock,
+			LockAutomatic collectionLock,
 			BTreeClusteredIndex clusteredIndex
 		)
 		{
@@ -52,11 +41,12 @@ namespace Barbados.StorageEngine.Collections.Internal
 
 			var info = new BTreeIndexInfo()
 			{
+				IndexedField = indexedField,
 				KeyMaxLength = keyMaxLength,
 				RootPageHandle = new(rawHandle)
 			};
 
-			return new BTreeIndex(name, indexedField, clusteredIndex, pool, @lock, info);
+			return new BTreeIndex(info, collectionLock, clusteredIndex, pool);
 		}
 
 		public static BarbadosCollection CreateCollectionInstance(

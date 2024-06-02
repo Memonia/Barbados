@@ -91,18 +91,13 @@ namespace Barbados.StorageEngine
 				collection = MetaCollection.CreateCollectionInstance(document, Pool, @lock);
 				foreach (var indexDocument in MetaCollection.GetIndexDocuments(document))
 				{
-					var iname = MetaCollection.GetIndexName(document, collection.Name);
-
-					Lock.AddLockable(iname);
-					@lock = Lock.GetLock(iname);
-
 					collection.AddBTreeIndex(
 						MetaCollection.CreateIndexInstance(
-							document, iname, Pool, @lock, collection.ClusteredIndex
+							document, Pool, @lock, collection.ClusteredIndex
 						)
 					);
 				}
-			
+
 				var r = _instances.TryAdd(name, collection);
 				Debug.Assert(r);
 				return true;
@@ -124,24 +119,21 @@ namespace Barbados.StorageEngine
 				}
 
 				Lock.AddLockable(BarbadosIdentifiers.Collection.MetaCollection);
-				Lock.AddLockable(BarbadosIdentifiers.Collection.MetaCollectionIndex);
 
 				var root = Pool.LoadPin<RootPage>(PageHandle.Root);
 				var metaLock = Lock.GetLock(BarbadosIdentifiers.Collection.MetaCollection);
-				var indexLock = Lock.GetLock(BarbadosIdentifiers.Collection.MetaCollectionIndex);
 
 				var clusteredIndex = new BTreeClusteredIndex(Pool, root.MetaCollectionClusteredIndexRootPageHandle);
 				var index = new BTreeIndex(
-					BarbadosIdentifiers.Collection.MetaCollectionIndex,
-					BarbadosIdentifiers.MetaCollection.CollectionDocumentNameFieldAbsolute,
-					clusteredIndex,
-					Pool, 
-					indexLock,
 					new()
 					{
+						IndexedField = BarbadosIdentifiers.MetaCollection.CollectionDocumentNameFieldAbsolute,
 						KeyMaxLength = Constants.MetaCollectionIndexKeyMaxLength,
 						RootPageHandle = root.MetaCollectionNameIndexRootPageHandle
-					}
+					},
+					metaLock,
+					clusteredIndex,
+					Pool
 				);
 
 				var meta = new MetaCollection(root.MetaCollectionPageHandle, Pool, metaLock, index, clusteredIndex);
