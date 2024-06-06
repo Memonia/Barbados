@@ -12,7 +12,6 @@ namespace Barbados.StorageEngine
 
 		public bool IsGroup { get; }
 		public bool IsReserved { get; }
-
 		public string Identifier { get; }
 
 		internal byte[] StringBufferValue { get; }
