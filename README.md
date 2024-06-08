@@ -1,22 +1,23 @@
-## About
-Barbados is an embedded, single-file document store with support for simple CRUD operations and querying capabilities.
+#### Status
+This is a personal project. No consistent development or maintenance is planned for the future.
 
-## Features
-This is a pet project and not in any way a comprehensive storage solution. Below is the list of some features.
-* BTree-based indexing with one default clustered index per collection and multiple non-clustered indexes 
-* Partial document loading and indexing are supported for nested documents at any depth 
-* Multiple simultaneous readers or a single writer per collection
-* Zero maintnance. Indexes are kept healthy, space occupied by garbage data in pages and deallocated pages are reused on demand
-* Documents are stored in a format which doesn't require expensive serialisation/deserialisation steps. Once raw bytes are loaded in memory, the document can be consumed
+## About
+Barbados is an embedded, single-file document store supporting simple CRUD operations and querying capabilities. Some of the features include:
+* BTree-based indexing: each collection has a clustered index by default and may have an unlimited number of non-clustered indexes.
+* Concurrency control: supports multiple simultaneous readers or a single writer per collection.
+* Nested documents: allows for partial loading and indexing of nested documents at any depth.
+* Zero maintenance: supports automatic index rebalancing and automatic page compacting. Free pages are reused on demand. 
+* Custom storage format: loading documents into memory does not require a deserialisation step.
 
 ## How to use it
-Anyone who stumbles upon this project is free to try it out! Note that nothing is guaranteed to work.  
-
-Barbados is shipped as two separate NuGet packages: [Barbados.StorageEngine](https://www.nuget.org/packages/Memonia.Barbados.StorageEngine) and [Barbados.QueryEngine](https://www.nuget.org/packages/Memonia.Barbados.QueryEngine). The storage engine provides collections, indexing and documents, while the query engine builds on top of it and provides support for queries. 
-
-Below is a code snippet highlighting some basic functionality.
+Barbados is shipped as two separate NuGet packages: [Barbados.StorageEngine](https://www.nuget.org/packages/Memonia.Barbados.StorageEngine) and [Barbados.QueryEngine](https://www.nuget.org/packages/Memonia.Barbados.QueryEngine). The storage engine provides collections, indexing and documents, while the query engine builds on top of it and provides support for queries. Below is a code snippet highlighting some basic functionality.
 
 ```c#
+ using Barbados.QueryEngine.Query;
+ using Barbados.QueryEngine.Query.Extensions;
+ using Barbados.StorageEngine;
+ using Barbados.StorageEngine.Documents;
+
  // Our database file is called 'barbados.db'
  using var context = new BarbadosContext("barbados.db", openOrCreate: true);
 
