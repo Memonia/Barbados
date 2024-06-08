@@ -4,12 +4,37 @@ using Barbados.StorageEngine.Documents;
 
 namespace Barbados.StorageEngine.Tests.Documents
 {
-	public partial class BarbadosDocumentTest
+	public sealed partial class BarbadosDocumentTest
 	{
 		public sealed class Builder
 		{
 			public sealed class Add
 			{
+				[Fact]
+				public void FieldEmpty_ThrowsException()
+				{
+					var field = string.Empty;
+					var builder = new BarbadosDocument.Builder();
+					var value = "value";
+
+					Assert.Throws<ArgumentException>(
+						() => builder.Add(field, value)
+					);
+				}
+
+				[Fact]
+				public void FieldDuplicate_ThrowsException()
+				{
+					var field = "duplicate";
+					var builder = new BarbadosDocument.Builder();
+					var value = "value";
+
+					builder.Add(field, value);
+
+					Assert.Throws<ArgumentException>(
+						() => builder.Add(field, value)
+					);
+				}
 
 				[Fact]
 				public void DocumentEmpty_ThrowsException()
