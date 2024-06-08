@@ -5,7 +5,7 @@ using Barbados.StorageEngine.Documents;
 
 namespace Barbados.StorageEngine.Tests.Documents
 {
-	public partial class BarbadosDocumentTest
+	public sealed partial class BarbadosDocumentTest
 	{
 		public sealed class TryGet
 		{

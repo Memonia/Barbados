@@ -74,9 +74,12 @@ namespace Barbados.StorageEngine.Caching
 		{
 			if (_entries.TryGetValue(key, out var node))
 			{
-				_refresh(node);
-				value = node.Value.Value!;
-				return true;
+				lock (_sync)
+				{
+					_refresh(node);
+					value = node.Value.Value!;
+					return true;
+				}
 			}
 
 			value = default!;

@@ -9,8 +9,8 @@ namespace Barbados.StorageEngine
 {
 	internal sealed class Cursor<T> : ICursor<T>, IDisposable
 	{
-		/*	Since the lock is released between yields, 
-		 *	users have to ensure that writing in-between the reads will not break anything
+		/*	Since the lock is released between yields, cursor providers  
+		 *	have to ensure that writing in-between the reads will not break anything
 		 */
 
 		public BarbadosIdentifier OwnerName => _lock.Name;

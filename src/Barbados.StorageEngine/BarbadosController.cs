@@ -128,7 +128,7 @@ namespace Barbados.StorageEngine
 					new()
 					{
 						IndexedField = BarbadosIdentifiers.MetaCollection.CollectionDocumentNameFieldAbsolute,
-						KeyMaxLength = Constants.MetaCollectionIndexKeyMaxLength,
+						KeyMaxLength = MetaCollection.NameIndexKeyMaxLength,
 						RootPageHandle = root.MetaCollectionNameIndexRootPageHandle
 					},
 					metaLock,

@@ -3,9 +3,9 @@ using Barbados.StorageEngine.Paging.Pages;
 
 namespace Barbados.StorageEngine.Tests.Paging.Pages
 {
-	public class AllocationPageTest
+	public sealed class AllocationPageTest
 	{
-		public class On
+		public sealed class On
 		{
 			[Fact]
 			public void WasOffSetOn_IsActiveTrue()
@@ -31,7 +31,7 @@ namespace Barbados.StorageEngine.Tests.Paging.Pages
 			}
 		}
 
-		public class Off
+		public sealed class Off
 		{
 			[Fact]
 			public void SetOff_IsActiveFalse()
@@ -69,7 +69,7 @@ namespace Barbados.StorageEngine.Tests.Paging.Pages
 			}
 		}
 
-		public class TryAcquireFreeHandle
+		public sealed class TryAcquireFreeHandle
 		{
 			[Theory]
 			// First page of the bitmap

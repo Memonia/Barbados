@@ -8,10 +8,5 @@ namespace Barbados.StorageEngine
 
 		public required int CachedPageCountLimit { get; init; }
 		public required CachingStrategy CachingStrategy { get; init; }
-
-		internal StorageOptions()
-		{
-
-		}
 	}
 }

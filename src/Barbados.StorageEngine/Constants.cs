@@ -27,7 +27,6 @@ namespace Barbados.StorageEngine
 		// See 'DebugHelpers'
 		public const int ObjectPageMaxChunkLength = 1000;
 		
-		public const int MetaCollectionIndexKeyMaxLength = 64;
 		public const int MinimalMaxIndexKeyLength = 1;
 		public const int DefaultMaxIndexKeyLength = 256;
 	}

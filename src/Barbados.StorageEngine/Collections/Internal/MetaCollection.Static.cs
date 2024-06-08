@@ -9,6 +9,8 @@ namespace Barbados.StorageEngine.Collections.Internal
 {
 	internal partial class MetaCollection
 	{
+		public static int NameIndexKeyMaxLength { get; } = 64;
+
 		public static IEnumerable<BarbadosDocument> GetIndexDocuments(BarbadosDocument document)
 		{
 			if (document.TryGetDocumentArray(BarbadosIdentifiers.MetaCollection.IndexArrayField, out var indexesArray))
@@ -27,14 +29,20 @@ namespace Barbados.StorageEngine.Collections.Internal
 		)
 		{
 			var a = document.TryGetInt64(
-				BarbadosIdentifiers.MetaCollection.IndexDocumentPageHandleField, out var rawHandle
+				BarbadosIdentifiers.MetaCollection.IndexDocumentPageHandleField,
+				out var rawHandle
 			);
+
 			var b = document.TryGetInt32(
-				BarbadosIdentifiers.MetaCollection.IndexDocumentKeyMaxLengthField, out var keyMaxLength
+				BarbadosIdentifiers.MetaCollection.IndexDocumentKeyMaxLengthField,
+				out var keyMaxLength
 			);
+
 			var c = document.TryGetString(
-				BarbadosIdentifiers.MetaCollection.IndexDocumentIndexedFieldField, out var indexedField
+				BarbadosIdentifiers.MetaCollection.IndexDocumentIndexedFieldField,
+				out var indexedField
 			);
+
 			Debug.Assert(a);
 			Debug.Assert(b);
 			Debug.Assert(c);
@@ -59,14 +67,17 @@ namespace Barbados.StorageEngine.Collections.Internal
 				BarbadosIdentifiers.MetaCollection.CollectionDocumentNameFieldAbsolute,
 				out var collection
 			);
+
 			var b = document.TryGetInt64(
 				BarbadosIdentifiers.MetaCollection.CollectionDocumentPageHandleFieldAbsolute,
 				out var collectionPageHandleRaw
 			);
+
 			var c = document.TryGetInt64(
 				BarbadosIdentifiers.MetaCollection.CollectionDocumentClusteredIndexPageHandleFieldAbsolute,
 				out var clusteredIndexRootHandleRaw
 			);
+
 			Debug.Assert(a);
 			Debug.Assert(b);
 			Debug.Assert(c);

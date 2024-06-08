@@ -8,7 +8,7 @@ namespace Barbados.StorageEngine.Documents
 {
 	public partial class BarbadosDocument
 	{
-		public static readonly BarbadosDocument Empty;
+		public static BarbadosDocument Empty { get; }
 
 		static BarbadosDocument()
 		{
