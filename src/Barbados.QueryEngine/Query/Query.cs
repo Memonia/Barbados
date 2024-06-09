@@ -20,7 +20,9 @@ namespace Barbados.QueryEngine.Query
 		}
 
 		private IQueryPlanEvaluator? _translated = null;
-
+		private long _take = -1;
+		private bool _takeAll = true;
+		private bool _ascending = true;
 		private readonly QueryPlanBuilder _builder = builder;
 		private readonly IBarbadosCollection collection = collection;
 
@@ -35,6 +37,28 @@ namespace Barbados.QueryEngine.Query
 		{
 			_throwTranslated();
 			_builder.Project(projection.GetSelector());
+			return this;
+		}
+
+		public IQuery Take(long limit)
+		{
+			_throwTranslated();
+			_take = limit;
+			_takeAll = false;
+			return this;
+		}
+
+		public IQuery Ascending()
+		{
+			_throwTranslated();
+			_ascending = true;
+			return this;
+		}
+
+		public IQuery Descending()
+		{
+			_throwTranslated();
+			_ascending = false;
 			return this;
 		}
 

@@ -8,6 +8,9 @@ namespace Barbados.QueryEngine.Query
 	{
 		IQuery Filter(IFilter filter);
 		IQuery Project(IProjection projection);
+		IQuery Take(long limit);
+		IQuery Ascending();
+		IQuery Descending();
 
 		IEnumerable<BarbadosDocument> Execute();
 
