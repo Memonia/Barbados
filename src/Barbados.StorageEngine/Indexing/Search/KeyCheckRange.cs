@@ -6,14 +6,14 @@ namespace Barbados.StorageEngine.Indexing.Search
 {
 	internal abstract class KeyCheckRange(NormalisedValue lowerBound, NormalisedValue upperBound) : IKeyCheck
 	{
-		private readonly NormalisedValue _lowerBound = lowerBound;
-		private readonly NormalisedValue _upperBound = upperBound;
+		public NormalisedValue LowerBound { get; } = lowerBound;
+		public NormalisedValue UpperBound { get; } = upperBound;
 
 		public bool Check(NormalisedValueSpan key)
 		{
 			return Evaluate(
-				key.Bytes.SequenceCompareTo(_lowerBound.AsSpan().Bytes),
-				key.Bytes.SequenceCompareTo(_upperBound.AsSpan().Bytes)
+				key.Bytes.SequenceCompareTo(LowerBound.AsSpan().Bytes),
+				key.Bytes.SequenceCompareTo(UpperBound.AsSpan().Bytes)
 			);
 		}
 

@@ -14,6 +14,8 @@
 			public static readonly BarbadosIdentifier LessThan = "?lt";
 			public static readonly BarbadosIdentifier GreaterThan = "?gt";
 			public static readonly BarbadosIdentifier Inclusive = "?incl";
+			public static readonly BarbadosIdentifier Ascending = "?asc";
+			public static readonly BarbadosIdentifier Take = "?take";
 		}
 
 		public static class Collection

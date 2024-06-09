@@ -6,9 +6,22 @@ namespace Barbados.StorageEngine.Documents.Binary
 {
 	internal sealed class NormalisedValue(byte[] bytes)
 	{
-		public static bool IsSameValueType(NormalisedValueSpan x, NormalisedValueSpan y)
+		public static NormalisedValue Min => new([(byte)ValueTypeMarker.Min]);
+		public static NormalisedValue Max => new([(byte)ValueTypeMarker.Max]);
+
+		public static bool AreSameValueTypeOrInvalid(NormalisedValueSpan x, NormalisedValueSpan y)
 		{
-			return x.Bytes[0] == y.Bytes[0];
+			var xType = (ValueTypeMarker)x.Bytes[0];
+			var yType = (ValueTypeMarker)y.Bytes[0];
+			if (
+				xType == ValueTypeMarker.Min || xType == ValueTypeMarker.Max ||
+				yType == ValueTypeMarker.Min || yType == ValueTypeMarker.Max
+			)
+			{
+				return true;
+			}
+
+			return xType == yType;
 		}
 
 		public static NormalisedValue Create<T>(T value)

@@ -6,6 +6,7 @@ using Barbados.StorageEngine.Collections;
 using Barbados.StorageEngine.Documents;
 using Barbados.StorageEngine.Documents.Binary;
 using Barbados.StorageEngine.Indexing.Search;
+using Barbados.StorageEngine.Indexing.Search.Checks;
 using Barbados.StorageEngine.Paging;
 using Barbados.StorageEngine.Paging.Pages;
 
@@ -34,7 +35,7 @@ namespace Barbados.StorageEngine.Indexing
 
 		public void DeallocateNoLock()
 		{
-			base.Deallocate();
+			Deallocate();
 		}
 
 		public ICursor<ObjectId> Find(BarbadosDocument condition)
@@ -72,8 +73,15 @@ namespace Barbados.StorageEngine.Indexing
 			var doLess = condition.Buffer.TryGetBoolean(BarbadosIdentifiers.Index.LessThan.StringBufferValue, out var lt) && lt;
 			var doGreater = condition.Buffer.TryGetBoolean(BarbadosIdentifiers.Index.GreaterThan.StringBufferValue, out var gt) && gt;
 			var doInclusive = condition.Buffer.TryGetBoolean(BarbadosIdentifiers.Index.Inclusive.StringBufferValue, out var incl) && incl;
+			var doAsc = condition.Buffer.TryGetBoolean(BarbadosIdentifiers.Index.Ascending.StringBufferValue, out var asc) && asc;
+			var doTake = condition.Buffer.TryGetInt64(BarbadosIdentifiers.Index.Take.StringBufferValue, out var take);
 
-			IKeyCheck check;
+			if (doTake && take < 0)
+			{
+				throw new ArgumentException("'Take' argument must be a positive integer", nameof(condition));
+			}
+
+			KeyCheckRange check;
 			IEnumerable<ObjectId> ids;
 			if (doRange)
 			{
@@ -95,15 +103,15 @@ namespace Barbados.StorageEngine.Indexing
 
 				if (doInclusive)
 				{
-					check = KeyCheckFactory.GetBetweenCheck(start, end, KeyCheckCondition.BetweenInclusive);
-					ids = _read(start, check, true);
+					check = new KeyCheckBetweenInclusive(start, end);
+					ids = _read(check, take, doAsc, !doTake);
 
 				}
 
 				else
 				{
-					check = KeyCheckFactory.GetBetweenCheck(start, end, KeyCheckCondition.Between);
-					ids = _read(start, check, true);
+					check = new KeyCheckBetween(start, end);
+					ids = _read(check, take, doAsc, !doTake);
 				}
 			}
 
@@ -111,27 +119,27 @@ namespace Barbados.StorageEngine.Indexing
 			if (doExact || !(doLess || doGreater || doRange))
 			{
 				_throwInvalidCondition(doLess || doGreater || doRange);
-				var key = _retrieveSearchKey(condition);
-				check = KeyCheckFactory.GetCheck(key, KeyCheckCondition.Equal);
-				ids = _read(key, check, true);
+				var search = _retrieveSearchKey(condition);
+				check = new KeyCheckBetweenInclusive(search, search);
+				ids = _read(check, take, doAsc, !doTake);
 			}
 
 			else
 			if (doLess)
 			{
 				_throwInvalidCondition(doExact || doGreater || doRange);
-				var key = _retrieveSearchKey(condition);
+				var search = _retrieveSearchKey(condition);
 				if (doInclusive)
 				{
-					check = KeyCheckFactory.GetCheck(key, KeyCheckCondition.LessThanOrEqual);
-					ids = _read(key, check, false);
+					check = new KeyCheckBetweenInclusive(NormalisedValue.Min, search);
+					ids = _read(check, take, doAsc, !doTake);
 
 				}
 
 				else
 				{
-					check = KeyCheckFactory.GetCheck(key, KeyCheckCondition.LessThan);
-					ids = _read(key, check, false);
+					check = new KeyCheckBetween(NormalisedValue.Min, search);
+					ids = _read(check, take, doAsc, !doTake);
 				}
 			}
 
@@ -139,17 +147,17 @@ namespace Barbados.StorageEngine.Indexing
 			if (doGreater)
 			{
 				_throwInvalidCondition(doExact || doLess || doRange);
-				var key = _retrieveSearchKey(condition);
+				var search = _retrieveSearchKey(condition);
 				if (doInclusive)
 				{
-					check = KeyCheckFactory.GetCheck(key, KeyCheckCondition.GreaterThanOrEqual);
-					ids = _read(key, check, true);
+					check = new KeyCheckBetweenInclusive(search, NormalisedValue.Max);
+					ids = _read(check, take, doAsc, !doTake);
 				}
 
 				else
 				{
-					check = KeyCheckFactory.GetCheck(key, KeyCheckCondition.GreaterThan);
-					ids = _read(key, check, true);
+					check = new KeyCheckBetween(search, NormalisedValue.Max);
+					ids = _read(check, take, doAsc, !doTake);
 				}
 			}
 
@@ -174,15 +182,75 @@ namespace Barbados.StorageEngine.Indexing
 			if (TryFind(ikey, out var traceback))
 			{
 				var leaf = Pool.LoadPin<BTreeLeafPage>(traceback.Current);
-				var check = KeyCheckFactory.GetCheck(search, KeyCheckCondition.Equal);
-				_writeMatchingIds(in ids, leaf, search.AsSpan(), check);
+				var check = new KeyCheckBetweenInclusive(search, search);
+				_retrieveIds(in ids, leaf, check);
 				Pool.Release(leaf);
 			}
 
 			return new Cursor<ObjectId>(ids, CollectionLock);
 		}
+		
+		private IEnumerable<ObjectId> _read(KeyCheckRange check, long take, bool asc, bool takeAll)
+		{
+			BTreeIndexKey search;
+			if (asc)
+			{
+				search = ToBTreeIndexKey(check.LowerBound);
+			}
 
-		private bool _tryRetrieveFullNormalisedKey(ObjectId id, out NormalisedValue key)
+			else
+			{
+				search = ToBTreeIndexKey(check.UpperBound);
+			}
+
+			if (!TryFind(search, out var traceback))
+			{
+				yield break;
+			}
+
+			var ids = new List<ObjectId>();
+			var start = traceback.Current;
+			foreach (
+				var leaf in asc
+				? ChainHelpers.EnumerateForwardsPinned<BTreeLeafPage>(Pool, start, release: false)
+				: ChainHelpers.EnumerateBackwardsPinned<BTreeLeafPage>(Pool, start, release: false)
+			)
+			{
+				_retrieveIds(in ids, leaf, check);
+
+				Pool.Release(leaf);
+				if (ids.Count > 0)
+				{
+					foreach (var id in ids)
+					{
+						if (takeAll)
+						{
+							yield return id;
+						}
+
+						else
+						{
+							if (take <= 0)
+							{
+								yield break;
+							}
+
+							take -= 1;
+							yield return id;
+						}
+					}
+
+					ids.Clear();
+				}
+
+				else
+				{
+					yield break;
+				}
+			}
+		}
+		
+		private bool _tryGetOriginalKey(ObjectId id, out NormalisedValue key)
 		{
 			var idn = new ObjectIdNormalised(id);
 			if (ClusteredIndex.TryRead(idn, out var handle))
@@ -197,20 +265,28 @@ namespace Barbados.StorageEngine.Indexing
 			return false;
 		}
 
-		private void _writeMatchingIds(in List<ObjectId> ids, BTreeLeafPage from, NormalisedValueSpan search, IKeyCheck check)
+		private void _retrieveIds(in List<ObjectId> ids, BTreeLeafPage from, KeyCheckRange check)
 		{
-			bool _check(NormalisedValueSpan search, BTreeIndexKey storedKey, ObjectId storedId)
+			bool _check(BTreeIndexKey key, ObjectId id, bool isTrimmed)
 			{
 				var result = false;
-				if (!NormalisedValue.IsSameValueType(search, storedKey.Separator))
+				if (
+					!NormalisedValue.AreSameValueTypeOrInvalid(check.LowerBound.AsSpan(), key.Separator) ||
+					!NormalisedValue.AreSameValueTypeOrInvalid(check.UpperBound.AsSpan(), key.Separator)
+				)
 				{
 					result = false;
 				}
 
 				else
-				if (search.Bytes.Length > Info.KeyMaxLength && storedKey.IsTrimmed)
+				if (
+					isTrimmed && (
+						check.LowerBound.AsSpan().Bytes.Length > Info.KeyMaxLength ||
+						check.UpperBound.AsSpan().Bytes.Length > Info.KeyMaxLength
+					)
+				)
 				{
-					if (_tryRetrieveFullNormalisedKey(storedId, out var full))
+					if (_tryGetOriginalKey(id, out var full))
 					{
 						result = check.Check(full.AsSpan());
 					}
@@ -219,21 +295,22 @@ namespace Barbados.StorageEngine.Indexing
 				else
 				{
 					result =
-						search.Bytes.Length <= Info.KeyMaxLength && !storedKey.IsTrimmed &&
-						check.Check(storedKey.Separator);
+						check.LowerBound.AsSpan().Bytes.Length <= Info.KeyMaxLength &&
+						check.UpperBound.AsSpan().Bytes.Length <= Info.KeyMaxLength &&
+						!isTrimmed && check.Check(key.Separator);
 				}
 
 				return result;
 			}
 
 			Debug.Assert(ids.Count == 0);
-
 			var e = from.GetEnumerator();
 			while (e.TryGetNext(out var storedKey))
 			{
-				if (from.TryReadObjectId(storedKey.Separator, out var storedId, out _))
+				if (from.TryReadObjectId(storedKey.Separator, out var storedId, out var isTrimmed))
 				{
-					if (_check(search, storedKey, storedId))
+					Debug.Assert(isTrimmed == storedKey.IsTrimmed);
+					if (_check(storedKey, storedId, isTrimmed))
 					{
 						ids.Add(storedId);
 					}
@@ -242,54 +319,20 @@ namespace Barbados.StorageEngine.Indexing
 				else
 				if (from.TryReadOverflowHandle(storedKey.Separator, out var start))
 				{
-					foreach (var overflow in
+					foreach (
+						var overflow in
 						ChainHelpers.EnumerateForwardsPinned<BTreeLeafPageOverflow>(Pool, start, release: true)
 					)
 					{
 						var oe = overflow.GetEnumerator();
-						while (oe.TryGetNext(out storedId, out var isTrimmed))
+						while (oe.TryGetNext(out storedId, out isTrimmed))
 						{
-							if (_check(search, storedKey, storedId))
+							if (_check(storedKey, storedId, isTrimmed))
 							{
 								ids.Add(storedId);
 							}
 						}
 					}
-				}
-			}
-		}
-
-		private IEnumerable<ObjectId> _read(NormalisedValue search, IKeyCheck check, bool forwards)
-		{
-			var ikey = ToBTreeIndexKey(search);
-			if (!TryFind(ikey, out var traceback))
-			{
-				yield break;
-			}
-
-			var ids = new List<ObjectId>();
-			var start = traceback.Current;
-			foreach (var leaf in forwards
-				? ChainHelpers.EnumerateForwardsPinned<BTreeLeafPage>(Pool, start, release: false)
-				: ChainHelpers.EnumerateBackwardsPinned<BTreeLeafPage>(Pool, start, release: false)
-			)
-			{
-				_writeMatchingIds(ids, leaf, search.AsSpan(), check);
-
-				Pool.Release(leaf);
-				if (ids.Count > 0)
-				{
-					foreach (var id in ids)
-					{
-						yield return id;
-					}
-
-					ids.Clear();
-				}
-
-				else
-				{
-					break;
 				}
 			}
 		}
