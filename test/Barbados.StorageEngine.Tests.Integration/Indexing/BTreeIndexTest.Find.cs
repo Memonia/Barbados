@@ -26,9 +26,32 @@ namespace Barbados.StorageEngine.Tests.Integration.Indexing
 			}
 
 			[Fact]
-			public void Exact_FoundOne()
+			public void Exact_FoundNone()
 			{
-				var index = _fixture.CreateTestIndex(nameof(Exact_FoundOne));
+				var index = _fixture.CreateTestIndex(nameof(Exact_FoundNone));
+
+				var (id1, v1) = (new ObjectId(1), 1);
+				var (id2, v2) = (new ObjectId(2), 2);
+				var (id3, v3) = (new ObjectId(3), 3);
+				index.Insert(NormalisedValue.Create(v1), id1);
+				index.Insert(NormalisedValue.Create(v2), id2);
+				index.Insert(NormalisedValue.Create(v3), id3);
+
+				var (key, keyId) = (4, new ObjectId(4));
+				var condition = new BarbadosDocument.Builder()
+					.Add(BarbadosIdentifiers.Index.SearchValue, key)
+					.Add(BarbadosIdentifiers.Index.Exact, true)
+					.Build();
+
+				var result = index.Find(condition).ToList();
+
+				Assert.Empty(result);
+			}
+
+			[Fact]
+			public void Exact_FoundExact()
+			{
+				var index = _fixture.CreateTestIndex(nameof(Exact_FoundExact));
 
 				var (id1, v1) = (new ObjectId(1), 1);
 				var (id2, v2) = (new ObjectId(2), 2);
@@ -50,18 +73,21 @@ namespace Barbados.StorageEngine.Tests.Integration.Indexing
 			}
 
 			[Fact]
-			public void Exact_FoundNone()
+			public void Exact_FoundExactSeveral()
 			{
-				var index = _fixture.CreateTestIndex(nameof(Exact_FoundNone));
+				var index = _fixture.CreateTestIndex(nameof(Exact_FoundExactSeveral));
 
 				var (id1, v1) = (new ObjectId(1), 1);
 				var (id2, v2) = (new ObjectId(2), 2);
-				var (id3, v3) = (new ObjectId(3), 3);
+				var (id3, v3) = (new ObjectId(3), 2);
+				var (id4, v4) = (new ObjectId(4), 2);
+				var (id5, v5) = (new ObjectId(5), 3);
 				index.Insert(NormalisedValue.Create(v1), id1);
 				index.Insert(NormalisedValue.Create(v2), id2);
 				index.Insert(NormalisedValue.Create(v3), id3);
+				index.Insert(NormalisedValue.Create(v4), id4);
 
-				var (key, keyId) = (4, new ObjectId(4));
+				var (key, keyIds) = (v2, new ObjectId[] { id2, id3, id4 });
 				var condition = new BarbadosDocument.Builder()
 					.Add(BarbadosIdentifiers.Index.SearchValue, key)
 					.Add(BarbadosIdentifiers.Index.Exact, true)
@@ -69,7 +95,8 @@ namespace Barbados.StorageEngine.Tests.Integration.Indexing
 
 				var result = index.Find(condition).ToList();
 
-				Assert.Empty(result);
+				Assert.All(keyIds, id => Assert.Contains(id, result));
+				Assert.Equal(keyIds.Length, result.Count);
 			}
 
 			[Fact]
@@ -99,7 +126,7 @@ namespace Barbados.StorageEngine.Tests.Integration.Indexing
 				Assert.All(keyIds, id => Assert.Contains(id, result));
 				Assert.Equal(keyIds.Length, result.Count);
 			}
-
+		
 			[Fact]
 			public void GreaterThan_FoundGreater()
 			{
@@ -120,6 +147,35 @@ namespace Barbados.StorageEngine.Tests.Integration.Indexing
 				var condition = new BarbadosDocument.Builder()
 					.Add(BarbadosIdentifiers.Index.SearchValue, key)
 					.Add(BarbadosIdentifiers.Index.GreaterThan, true)
+					.Build();
+
+				var result = index.Find(condition).ToList();
+
+				Assert.All(keyIds, id => Assert.Contains(id, result));
+				Assert.Equal(keyIds.Length, result.Count);
+			}
+		
+			[Fact]
+			public void Between_FoundBetween()
+			{
+				var index = _fixture.CreateTestIndex(nameof(Between_FoundBetween));
+
+				var (id1, v1) = (new ObjectId(1), 1);
+				var (id2, v2) = (new ObjectId(2), 2);
+				var (id3, v3) = (new ObjectId(3), 3);
+				var (id4, v4) = (new ObjectId(4), 4);
+				var (id5, v5) = (new ObjectId(5), 5);
+				index.Insert(NormalisedValue.Create(v1), id1);
+				index.Insert(NormalisedValue.Create(v2), id2);
+				index.Insert(NormalisedValue.Create(v3), id3);
+				index.Insert(NormalisedValue.Create(v4), id4);
+				index.Insert(NormalisedValue.Create(v5), id5);
+
+				var (start, end, keyIds) = (v1, v5, new ObjectId[] { id2, id3, id4 });
+				var condition = new BarbadosDocument.Builder()
+					.Add(BarbadosIdentifiers.Index.GreaterThan, start)
+					.Add(BarbadosIdentifiers.Index.LessThan, end)
+					.Add(BarbadosIdentifiers.Index.Range, true)
 					.Build();
 
 				var result = index.Find(condition).ToList();
@@ -185,36 +241,7 @@ namespace Barbados.StorageEngine.Tests.Integration.Indexing
 				Assert.All(keyIds, id => Assert.Contains(id, result));
 				Assert.Equal(keyIds.Length, result.Count);
 			}
-
-			[Fact]
-			public void Between_FoundBetween()
-			{
-				var index = _fixture.CreateTestIndex(nameof(Between_FoundBetween));
-
-				var (id1, v1) = (new ObjectId(1), 1);
-				var (id2, v2) = (new ObjectId(2), 2);
-				var (id3, v3) = (new ObjectId(3), 3);
-				var (id4, v4) = (new ObjectId(4), 4);
-				var (id5, v5) = (new ObjectId(5), 5);
-				index.Insert(NormalisedValue.Create(v1), id1);
-				index.Insert(NormalisedValue.Create(v2), id2);
-				index.Insert(NormalisedValue.Create(v3), id3);
-				index.Insert(NormalisedValue.Create(v4), id4);
-				index.Insert(NormalisedValue.Create(v5), id5);
-
-				var (start, end, keyIds) = (v1, v5, new ObjectId[] { id2, id3, id4 });
-				var condition = new BarbadosDocument.Builder()
-					.Add(BarbadosIdentifiers.Index.GreaterThan, start)
-					.Add(BarbadosIdentifiers.Index.LessThan, end)
-					.Add(BarbadosIdentifiers.Index.Range, true)
-					.Build();
-
-				var result = index.Find(condition).ToList();
-
-				Assert.All(keyIds, id => Assert.Contains(id, result));
-				Assert.Equal(keyIds.Length, result.Count);
-			}
-
+			
 			[Fact]
 			public void BetweenInclusive_FoundBetweenOrEqual()
 			{
@@ -365,6 +392,158 @@ namespace Barbados.StorageEngine.Tests.Integration.Indexing
 
 				Assert.All(keyIds, id => Assert.Contains(id, result));
 				Assert.Equal(keyIds.Length, result.Count);
+			}
+
+			[Fact]
+			public void Take_LessThan_FoundLessThanLimited()
+			{
+				var index = _fixture.CreateTestIndex(nameof(Take_LessThan_FoundLessThanLimited));
+
+				var (id1, v1) = (new ObjectId(1), 1);
+				var (id2, v2) = (new ObjectId(2), 2);
+				var (id3, v3) = (new ObjectId(3), 3);
+				var (id4, v4) = (new ObjectId(4), 4);
+				var (id5, v5) = (new ObjectId(5), 5);
+				index.Insert(NormalisedValue.Create(v1), id1);
+				index.Insert(NormalisedValue.Create(v2), id2);
+				index.Insert(NormalisedValue.Create(v3), id3);
+				index.Insert(NormalisedValue.Create(v4), id4);
+				index.Insert(NormalisedValue.Create(v5), id5);
+
+				var (key, keyIds) = (v3, new ObjectId[] { id1, id2 });
+				var condition = new BarbadosDocument.Builder()
+					.Add(BarbadosIdentifiers.Index.SearchValue, key)
+					.Add(BarbadosIdentifiers.Index.LessThan, true)
+					.Add(BarbadosIdentifiers.Index.Take, (long)2)
+					.Build();
+
+				var result = index.Find(condition).ToList();
+
+				Assert.All(keyIds, id => Assert.Contains(id, result));
+				Assert.Equal(keyIds.Length, result.Count);
+			}
+
+			[Fact]
+			public void Take_GreaterThan_FoundGreaterThanLimited()
+			{
+				var index = _fixture.CreateTestIndex(nameof(Take_GreaterThan_FoundGreaterThanLimited));
+
+				var (id1, v1) = (new ObjectId(1), 1);
+				var (id2, v2) = (new ObjectId(2), 2);
+				var (id3, v3) = (new ObjectId(3), 3);
+				var (id4, v4) = (new ObjectId(4), 4);
+				var (id5, v5) = (new ObjectId(5), 5);
+				index.Insert(NormalisedValue.Create(v1), id1);
+				index.Insert(NormalisedValue.Create(v2), id2);
+				index.Insert(NormalisedValue.Create(v3), id3);
+				index.Insert(NormalisedValue.Create(v4), id4);
+				index.Insert(NormalisedValue.Create(v5), id5);
+
+				var (key, keyIds) = (v3, new ObjectId[] { id4, id5 });
+				var condition = new BarbadosDocument.Builder()
+					.Add(BarbadosIdentifiers.Index.SearchValue, key)
+					.Add(BarbadosIdentifiers.Index.GreaterThan, true)
+					.Add(BarbadosIdentifiers.Index.Take, (long)2)
+					.Build();
+
+				var result = index.Find(condition).ToList();
+
+				Assert.All(keyIds, id => Assert.Contains(id, result));
+				Assert.Equal(keyIds.Length, result.Count);
+			}
+
+			[Fact]
+			public void Take_Between_FoundBetweenLimited()
+			{
+				var index = _fixture.CreateTestIndex(nameof(Take_Between_FoundBetweenLimited));
+
+				var (id1, v1) = (new ObjectId(1), 1);
+				var (id2, v2) = (new ObjectId(2), 2);
+				var (id3, v3) = (new ObjectId(3), 3);
+				var (id4, v4) = (new ObjectId(4), 4);
+				var (id5, v5) = (new ObjectId(5), 5);
+				index.Insert(NormalisedValue.Create(v1), id1);
+				index.Insert(NormalisedValue.Create(v2), id2);
+				index.Insert(NormalisedValue.Create(v3), id3);
+				index.Insert(NormalisedValue.Create(v4), id4);
+				index.Insert(NormalisedValue.Create(v5), id5);
+
+				var (start, end, keyIds) = (v1, v5, new ObjectId[] { id2, id3 });
+				var condition = new BarbadosDocument.Builder()
+					.Add(BarbadosIdentifiers.Index.GreaterThan, start)
+					.Add(BarbadosIdentifiers.Index.LessThan, end)
+					.Add(BarbadosIdentifiers.Index.Range, true)
+					.Add(BarbadosIdentifiers.Index.Take, (long)2)
+					.Build();
+
+				var result = index.Find(condition).ToList();
+
+				Assert.All(keyIds, id => Assert.Contains(id, result));
+				Assert.Equal(keyIds.Length, result.Count);
+			}
+
+			[Fact]
+			public void Ascending_Between_FoundBetweenInAscendingOrder()
+			{
+				var index = _fixture.CreateTestIndex(nameof(Ascending_Between_FoundBetweenInAscendingOrder));
+
+				var (id1, v1) = (new ObjectId(1), 1);
+				var (id2, v2) = (new ObjectId(2), 2);
+				var (id3, v3) = (new ObjectId(3), 3);
+				var (id4, v4) = (new ObjectId(4), 4);
+				var (id5, v5) = (new ObjectId(5), 5);
+				index.Insert(NormalisedValue.Create(v1), id1);
+				index.Insert(NormalisedValue.Create(v2), id2);
+				index.Insert(NormalisedValue.Create(v3), id3);
+				index.Insert(NormalisedValue.Create(v4), id4);
+				index.Insert(NormalisedValue.Create(v5), id5);
+
+				var (start, end, keyIds) = (v1, v5, new ObjectId[] { id2, id3, id4 });
+				var condition = new BarbadosDocument.Builder()
+					.Add(BarbadosIdentifiers.Index.GreaterThan, start)
+					.Add(BarbadosIdentifiers.Index.LessThan, end)
+					.Add(BarbadosIdentifiers.Index.Range, true)
+					.Add(BarbadosIdentifiers.Index.Ascending, true)
+					.Build();
+
+				var result = index.Find(condition).ToList();
+
+				Assert.Equal(keyIds.Length, result.Count);
+				Assert.Equal(keyIds[0], result[0]);
+				Assert.Equal(keyIds[1], result[1]);
+				Assert.Equal(keyIds[2], result[2]);
+			}
+
+			[Fact]
+			public void Descending_Between_FoundBetweenInDescendingOrder()
+			{
+				var index = _fixture.CreateTestIndex(nameof(Descending_Between_FoundBetweenInDescendingOrder));
+
+				var (id1, v1) = (new ObjectId(1), 1);
+				var (id2, v2) = (new ObjectId(2), 2);
+				var (id3, v3) = (new ObjectId(3), 3);
+				var (id4, v4) = (new ObjectId(4), 4);
+				var (id5, v5) = (new ObjectId(5), 5);
+				index.Insert(NormalisedValue.Create(v1), id1);
+				index.Insert(NormalisedValue.Create(v2), id2);
+				index.Insert(NormalisedValue.Create(v3), id3);
+				index.Insert(NormalisedValue.Create(v4), id4);
+				index.Insert(NormalisedValue.Create(v5), id5);
+
+				var (start, end, keyIds) = (v1, v5, new ObjectId[] { id4, id3, id2 });
+				var condition = new BarbadosDocument.Builder()
+					.Add(BarbadosIdentifiers.Index.GreaterThan, start)
+					.Add(BarbadosIdentifiers.Index.LessThan, end)
+					.Add(BarbadosIdentifiers.Index.Range, true)
+					.Add(BarbadosIdentifiers.Index.Ascending, false)
+					.Build();
+
+				var result = index.Find(condition).ToList();
+
+				Assert.Equal(keyIds.Length, result.Count);
+				Assert.Equal(keyIds[0], result[2]);
+				Assert.Equal(keyIds[1], result[1]);
+				Assert.Equal(keyIds[2], result[0]);
 			}
 		}
 	}
