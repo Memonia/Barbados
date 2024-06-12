@@ -46,8 +46,8 @@ namespace Barbados.StorageEngine.Indexing
 					var r = nextPage.TryWriteObjectId(new(id), ikey.IsTrimmed);
 					Debug.Assert(r);
 
+					Pool.Save(nextPage);
 					Pool.SaveRelease(lastPage);
-					Pool.SaveRelease(nextPage);
 				}
 
 				// An overflow entry doesn't exist, but they key has been inserted.
@@ -66,8 +66,8 @@ namespace Barbados.StorageEngine.Indexing
 					r = overflow.TryWriteObjectId(new(id), ikey.IsTrimmed);
 					Debug.Assert(r);
 
+					Pool.Save(overflow);
 					Pool.SaveRelease(leaf);
-					Pool.SaveRelease(overflow);
 				}
 
 				// No entry is associated with a given key
@@ -120,8 +120,8 @@ namespace Barbados.StorageEngine.Indexing
 				Debug.Assert(a);
 				Debug.Assert(b);
 
+				Pool.Save(leaf);
 				Pool.SaveRelease(root);
-				Pool.SaveRelease(leaf);
 			}
 		}
 
@@ -180,7 +180,7 @@ namespace Barbados.StorageEngine.Indexing
 			Span<byte> lhkeySepCopy = stackalloc byte[lhkey.Separator.Bytes.Length];
 			lhkey.Separator.Bytes.CopyTo(lhkeySepCopy);
 
-			Pool.SaveRelease(left);
+			Pool.Save(left);
 			Pool.SaveRelease(target);
 
 			InsertSeparator(

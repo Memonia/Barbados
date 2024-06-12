@@ -17,7 +17,7 @@ namespace Barbados.StorageEngine.Collections.Internal
 		private readonly BarbadosDocument.Builder _documentBuilder;
 
 		public MetaCollection(
-			PageHandle collectionPageHandle, 
+			PageHandle collectionPageHandle,
 			PagePool pool,
 			LockAutomatic @lock,
 			BTreeIndex nameIndex,
@@ -25,7 +25,7 @@ namespace Barbados.StorageEngine.Collections.Internal
 		) : base(
 			BarbadosIdentifiers.Collection.MetaCollection,
 			collectionPageHandle,
-			pool, 
+			pool,
 			@lock,
 			clusteredIndex
 		)
@@ -60,8 +60,8 @@ namespace Barbados.StorageEngine.Collections.Internal
 				var cpage = new CollectionPage(ch);
 				var ipage = new BTreeRootPage(ih);
 
-				Pool.SaveRelease(cpage);
-				Pool.SaveRelease(ipage);
+				Pool.Save(cpage);
+				Pool.Save(ipage);
 
 				var collectionDocument = _documentBuilder
 					.Add(BarbadosIdentifiers.MetaCollection.CollectionDocumentNameFIeld, collection)

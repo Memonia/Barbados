@@ -101,13 +101,9 @@ namespace Barbados.StorageEngine.Paging
 		{
 			if (_cache.TryGetWithPin(handle, out var page))
 			{
-				if (page.Header.Marker == marker)
-				{
-					Release(page);
-					return true;
-				}
-
-				return false;
+				var result = page.Header.Marker == marker;
+				Release(page);
+				return result;
 			}
 
 			var buffer = _readPageBuffer(handle);

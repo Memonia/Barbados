@@ -157,9 +157,9 @@ namespace Barbados.StorageEngine.Indexing
 						Debug.Assert(left.CanFit(Info.KeyMaxLength * 2));
 						Debug.Assert(right.CanFit(Info.KeyMaxLength * 2));
 
+						Pool.Save(left);
+						Pool.Save(right);
 						Pool.SaveRelease(node);
-						Pool.SaveRelease(left);
-						Pool.SaveRelease(right);
 					}
 
 					else
@@ -184,8 +184,8 @@ namespace Barbados.StorageEngine.Indexing
 						Debug.Assert(node.CanFit(Info.KeyMaxLength * 2));
 						Debug.Assert(split.CanFit(Info.KeyMaxLength * 2));
 
+						Pool.Save(split);
 						Pool.SaveRelease(node);
-						Pool.SaveRelease(split);
 						Pool.SaveRelease(parent);
 					}
 				}

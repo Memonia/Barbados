@@ -61,7 +61,7 @@ namespace Barbados.StorageEngine.Caching
 					);
 
 					var r = _entries.TryAdd(key, node);
-					Debug.Assert(r);	
+					Debug.Assert(r);
 				}
 
 				return true;
@@ -145,7 +145,8 @@ namespace Barbados.StorageEngine.Caching
 			{
 				lock (_sync)
 				{
-					node.Value.Pin = true;
+					Debug.Assert(node.Value.Pins >= 0);
+					node.Value.Pins += 1;
 					if (node.List is not null)
 					{
 						_evictionList.Remove(node);
@@ -160,8 +161,12 @@ namespace Barbados.StorageEngine.Caching
 			{
 				lock (_sync)
 				{
-					node.Value.Pin = false;
-					if (node.List is null)
+					if (node.Value.Pins > 0)
+					{
+						node.Value.Pins -= 1;
+					}
+
+					if (node.List is null && node.Value.Pins == 0)
 					{
 						_evictionList.AddFirst(node);
 					}
@@ -200,7 +205,8 @@ namespace Barbados.StorageEngine.Caching
 
 		private void _refresh(LinkedListNode<ValueInfo> node)
 		{
-			if (!node.Value.Pin)
+			Debug.Assert(node.Value.Pins >= 0);
+			if (node.Value.Pins == 0)
 			{
 				_evictionList.Remove(node);
 				_evictionList.AddFirst(node);

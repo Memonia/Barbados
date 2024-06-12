@@ -176,7 +176,7 @@ namespace Barbados.StorageEngine.Indexing
 			Span<byte> lhidnCopy = stackalloc byte[Constants.ObjectIdNormalisedLength];
 			lhidn.WriteTo(lhidnCopy);
 
-			Pool.SaveRelease(left);
+			Pool.Save(left);
 			Pool.SaveRelease(target);
 
 			InsertSeparator(

@@ -7,7 +7,7 @@
 			public required K Key { get; init; }
 			public required V Value { get; set; }
 
-			public bool Pin { get; set; }
+			public int Pins { get; set; }
 			public bool Dirty { get; set; }
 		}
 	}

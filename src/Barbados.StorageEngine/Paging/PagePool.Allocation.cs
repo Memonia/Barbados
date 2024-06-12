@@ -106,8 +106,8 @@ namespace Barbados.StorageEngine.Paging
 					// See the comment at the top
 					var nap = new AllocationPage(bitmapHandle);
 					nap.On(bitmapHandle);
-					Save(nap);
 					Save(root);
+					Save(nap);
 				}
 
 				else
