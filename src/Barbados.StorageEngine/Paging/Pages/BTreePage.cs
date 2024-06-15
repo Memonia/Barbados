@@ -14,7 +14,7 @@ namespace Barbados.StorageEngine.Paging.Pages
 
 		static BTreePage()
 		{
-			DebugHelpers.AssertBTreePageHeaderAllowedLength(_headerLength, _payloadFixedLengthPart);
+			DebugHelpers.AssertBTreePageMinKeyCount(_headerLength, _payloadFixedLengthPart);
 		}
 
 		public bool IsUnderflowed => SlottedHeader.UnoccupiedPercentage > 0.5;
@@ -49,7 +49,7 @@ namespace Barbados.StorageEngine.Paging.Pages
 			base((ushort)(headerLength + _headerLength), pageHeader)
 		{
 			Debug.Assert(_headerLength + headerLength <= ushort.MaxValue);
-			DebugHelpers.AssertBTreePageHeaderAllowedLength(
+			DebugHelpers.AssertBTreePageMinKeyCount(
 				(ushort)(headerLength + _headerLength), _payloadFixedLengthPart
 			);
 		}

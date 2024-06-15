@@ -23,9 +23,9 @@ namespace Barbados.StorageEngine
 		public const int ObjectIdNormalisedLength = ObjectIdLength;
 
 		// See 'DebugHelpers'
-		public const int IndexKeyMaxLength = 1000;
+		public const int IndexKeyMaxLength = 896;
 		// See 'DebugHelpers'
-		public const int ObjectPageMaxChunkLength = 1000;
+		public const int ObjectPageMaxChunkLength = 896;
 		
 		public const int MinimalMaxIndexKeyLength = 1;
 		public const int DefaultMaxIndexKeyLength = 256;

@@ -14,7 +14,7 @@ namespace Barbados.StorageEngine.Paging.Pages
 
 		static BTreeLeafPage()
 		{
-			DebugHelpers.AssertBTreePageHeaderAllowedLength(_headerLength, _payloadFixedLengthPart);
+			DebugHelpers.AssertBTreePageMinKeyCount(_headerLength, _payloadFixedLengthPart);
 
 			// 'TryOverwriteWithOverflow' depends on this
 			Debug.Assert(Constants.ObjectIdLength == Constants.PageHandleLength);

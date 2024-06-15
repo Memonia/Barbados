@@ -13,7 +13,7 @@ namespace Barbados.StorageEngine.Paging.Pages
 
 		static ObjectPage()
 		{
-			DebugHelpers.AssertObjectPageHeaderAllowedLength(_headerLength, _payloadFixedLengthPart);
+			DebugHelpers.AssertObjectPageMinObjectCount(_headerLength, _payloadFixedLengthPart);
 		}
 
 		public PageHandle Next { get; set; }
@@ -56,7 +56,7 @@ namespace Barbados.StorageEngine.Paging.Pages
 			base((ushort)(headerLength + _headerLength), pageHeader)
 		{
 			Debug.Assert(_headerLength + headerLength <= ushort.MaxValue);
-			DebugHelpers.AssertObjectPageHeaderAllowedLength(
+			DebugHelpers.AssertObjectPageMinObjectCount(
 				(ushort)(headerLength + _headerLength), _payloadFixedLengthPart
 			);
 		}
