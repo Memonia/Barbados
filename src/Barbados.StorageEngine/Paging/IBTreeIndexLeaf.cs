@@ -1,4 +1,4 @@
-﻿using Barbados.StorageEngine.Indexing;
+﻿using Barbados.StorageEngine.Documents.Binary;
 
 namespace Barbados.StorageEngine.Paging
 {
@@ -6,8 +6,8 @@ namespace Barbados.StorageEngine.Paging
 	{
 		public bool IsUnderflowed { get; }
 
-		public bool TryReadLowest(out BTreeIndexKey key);
-		public bool TryReadHighest(out BTreeIndexKey key);
+		public bool TryReadLowest(out NormalisedValueSpan key);
+		public bool TryReadHighest(out NormalisedValueSpan key);
 
 		public void Flush(T to, bool fromHighest);
 		public void Spill(T to, bool fromHighest);

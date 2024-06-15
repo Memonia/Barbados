@@ -2,7 +2,6 @@
 using System.Diagnostics;
 
 using Barbados.StorageEngine.Documents.Binary;
-using Barbados.StorageEngine.Paging;
 using Barbados.StorageEngine.Paging.Metadata;
 using Barbados.StorageEngine.Paging.Pages;
 
@@ -109,82 +108,17 @@ namespace Barbados.StorageEngine.Indexing
 			var lh = Pool.Allocate();
 			var left = new ObjectPage(lh);
 
-			if (target.Previous.IsNull)
-			{
-				ChainHelpers.Prepend(left, target);
-			}
+			Span<byte> idBuf = stackalloc byte[Constants.ObjectIdNormalisedLength];
+			id.WriteTo(idBuf);
 
-			else
-			{
-				var previous = Pool.LoadPin<ObjectPage>(target.Previous);
-				ChainHelpers.Insert(left, previous, target);
-				Pool.SaveRelease(previous);
-			}
-
-			target.Spill(left, fromHighest: false);
-
-			var r = traceback.TryMoveUp();
+			var insertTarget = SplitLeaf(target, left, NormalisedValueSpan.FromNormalised(idBuf), traceback);
+			var r = _tryInsert(insertTarget, id, obj);
 			Debug.Assert(r);
-
-			r = target.TryReadLowestId(out var rlid);
-			Debug.Assert(r);
-			Debug.Assert(rlid.Value != id.GetObjectId().Value);
-
-			var objectLocation = PageHandle.Null;
-
-			var idr = id.GetObjectId();
-			if (idr.Value < rlid.Value)
-			{
-				// No update for the parents required, because we didn't insert the separator yet
-				r = _tryInsert(left, id, obj);
-				Debug.Assert(r);
-
-				objectLocation = lh;
-			}
-
-			else
-			{
-				r = target.TryReadHighestId(out var rhid);
-				Debug.Assert(r);
-				Debug.Assert(rhid.Value != id.GetObjectId().Value);
-
-				if (idr.Value > rhid.Value)
-				{
-					var rhidn = new ObjectIdNormalised(rhid);
-					Span<byte> idCopy = stackalloc byte[Constants.ObjectIdNormalisedLength];
-					Span<byte> rhidnCopy = stackalloc byte[Constants.ObjectIdNormalisedLength];
-					id.WriteTo(idCopy);
-					rhidn.WriteTo(rhidnCopy);
-
-					UpdateSeparatorPropagate(
-						NormalisedValueSpan.FromNormalised(rhidnCopy),
-						NormalisedValueSpan.FromNormalised(idCopy),
-						traceback.Clone()
-					);
-				}
-
-				r = _tryInsert(target, id, obj);
-				Debug.Assert(r);
-
-				objectLocation = target.Header.Handle;
-			}
-
-			r = left.TryReadHighestId(out var lhid);
-			Debug.Assert(r);
-
-			var lhidn = new ObjectIdNormalised(lhid);
-			Span<byte> lhidnCopy = stackalloc byte[Constants.ObjectIdNormalisedLength];
-			lhidn.WriteTo(lhidnCopy);
 
 			Pool.Save(left);
 			Pool.SaveRelease(target);
 
-			InsertSeparator(
-				NormalisedValueSpan.FromNormalised(lhidnCopy), lh,
-				traceback
-			);
-
-			return objectLocation;
+			return insertTarget.Header.Handle;
 		}
 
 		private bool _tryInsert(ObjectPage leaf, ObjectIdNormalised id, ObjectBuffer obj)

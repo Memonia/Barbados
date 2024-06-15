@@ -1,7 +1,6 @@
 ﻿using System.Diagnostics;
 
 using Barbados.StorageEngine.Documents.Binary;
-using Barbados.StorageEngine.Indexing;
 
 namespace Barbados.StorageEngine.Paging.Pages
 {
@@ -9,11 +8,11 @@ namespace Barbados.StorageEngine.Paging.Pages
 	{
 		public bool IsUnderflowed => SlottedHeader.UnoccupiedPercentage > 0.5;
 
-		bool IBTreeIndexLeaf<ObjectPage>.TryReadLowest(out BTreeIndexKey key)
+		bool IBTreeIndexLeaf<ObjectPage>.TryReadLowest(out NormalisedValueSpan key)
 		{
 			if (TryReadFromLowest(out var lkey, out _, out _))
 			{
-				key = new(NormalisedValueSpan.FromNormalised(lkey), false);
+				key = NormalisedValueSpan.FromNormalised(lkey);
 				return true;
 			}
 
@@ -21,11 +20,11 @@ namespace Barbados.StorageEngine.Paging.Pages
 			return false;
 		}
 
-		bool IBTreeIndexLeaf<ObjectPage>.TryReadHighest(out BTreeIndexKey key)
+		bool IBTreeIndexLeaf<ObjectPage>.TryReadHighest(out NormalisedValueSpan key)
 		{
 			if (TryReadFromHighest(out var hkey, out _, out _))
 			{
-				key = new(NormalisedValueSpan.FromNormalised(hkey), false);
+				key = NormalisedValueSpan.FromNormalised(hkey);
 				return true;
 			}
 

@@ -68,12 +68,11 @@ namespace Barbados.StorageEngine.Paging.Pages
 			return new Enumerator(this);
 		}
 
-		public bool TryReadLowest(out BTreeIndexKey key)
+		public bool TryReadLowest(out NormalisedValueSpan key)
 		{
-			if (TryReadFromLowest(out var lkey, out _, out var flags))
+			if (TryReadFromLowest(out var lkey, out _, out _))
 			{
-				var eflags = new Flags(flags);
-				key = new(NormalisedValueSpan.FromNormalised(lkey), eflags.IsTrimmed);
+				key = NormalisedValueSpan.FromNormalised(lkey);
 				return true;
 			}
 
@@ -81,12 +80,11 @@ namespace Barbados.StorageEngine.Paging.Pages
 			return false;
 		}
 
-		public bool TryReadHighest(out BTreeIndexKey key)
+		public bool TryReadHighest(out NormalisedValueSpan key)
 		{
-			if (TryReadFromHighest(out var hkey, out _, out var flags))
+			if (TryReadFromHighest(out var hkey, out _, out _))
 			{
-				var eflags = new Flags(flags);
-				key = new(NormalisedValueSpan.FromNormalised(hkey), eflags.IsTrimmed);
+				key = NormalisedValueSpan.FromNormalised(hkey);
 				return true;
 			}
 
@@ -140,9 +138,9 @@ namespace Barbados.StorageEngine.Paging.Pages
 			return false;
 		}
 
-		public bool TryOverwriteWithOverflow(BTreeIndexKey key, PageHandle overflow)
+		public bool TryOverwriteWithOverflow(NormalisedValueSpan key, PageHandle overflowHandle)
 		{
-			if (TryRead(key.Separator.Bytes, out var data, out var flags))
+			if (TryRead(key.Bytes, out var data, out var flags))
 			{
 				var eflags = new Flags(flags);
 				if (eflags.HasDuplicate)
@@ -150,43 +148,46 @@ namespace Barbados.StorageEngine.Paging.Pages
 					return false;
 				}
 
-				HelpWrite.AsPageHandle(data, overflow);
+				eflags = eflags with { HasDuplicate = true, IsTrimmed = false };
+				var r = TrySetFlags(key.Bytes, eflags);
+				Debug.Assert(r); 
 
-				var r = TrySetFlags(key.Separator.Bytes, eflags with { HasDuplicate = true });
-				Debug.Assert(r);
+				HelpWrite.AsPageHandle(data, overflowHandle);
 				return true;
 			}
 
 			return false;
 		}
 
-		public bool TryReadOverflowHandle(NormalisedValueSpan key, out PageHandle handle)
+		public bool TryReadOverflowHandle(NormalisedValueSpan key, out PageHandle overflowHandle)
 		{
 			if (TryRead(key.Bytes, out var data, out var flags))
 			{
 				var eflags = new Flags(flags);
 				if (eflags.HasDuplicate)
 				{
-					handle = HelpRead.AsPageHandle(data);
+					overflowHandle = HelpRead.AsPageHandle(data);
 					return true;
 				}
 			}
 
-			handle = default!;
+			overflowHandle = default!;
 			return false;
 		}
 
-		public bool TryRemoveOverflowHandle(BTreeIndexKey key)
+		public bool TryRemoveOverflowHandle(NormalisedValueSpan key, out PageHandle overflowHandle)
 		{
-			if (TryRead(key.Separator.Bytes, out _, out var flags))
+			if (TryRead(key.Bytes, out var data, out var flags))
 			{
 				var eflags = new Flags(flags);
-				if (eflags.HasDuplicate && eflags.IsTrimmed == key.IsTrimmed)
+				if (eflags.HasDuplicate)
 				{
-					return TryRemove(key.Separator.Bytes);
+					overflowHandle = HelpRead.AsPageHandle(data);
+					return TryRemove(key.Bytes);
 				}
 			}
 
+			overflowHandle = default!;
 			return false;
 		}
 
@@ -225,11 +226,11 @@ namespace Barbados.StorageEngine.Paging.Pages
 				(fromHighest ? TryReadHighest(out var key) : TryReadLowest(out key))
 			)
 			{
-				if (TryReadObjectId(key.Separator, out var id, out _))
+				if (TryReadObjectId(key, out var id, out var isTrimmed))
 				{
-					if (to.TryWriteObjectId(key, id))
+					if (to.TryWriteObjectId(new(key, isTrimmed), id))
 					{
-						var r = TryRemove(key.Separator.Bytes);
+						var r = TryRemove(key.Bytes);
 						Debug.Assert(r);
 					}
 
@@ -240,14 +241,15 @@ namespace Barbados.StorageEngine.Paging.Pages
 				}
 
 				else
-				if (TryReadOverflowHandle(key.Separator, out var handle))
+				if (TryReadOverflowHandle(key, out var handle))
 				{
-					if (to.TryWriteObjectId(key, ObjectId.Invalid))
+					var k = new BTreeIndexKey(key, false);
+					if (to.TryWriteObjectId(k, ObjectId.Invalid))
 					{
-						var r = to.TryOverwriteWithOverflow(key, handle);
+						var r = to.TryOverwriteWithOverflow(k.Separator, handle);
 						Debug.Assert(r);
 
-						r = TryRemove(key.Separator.Bytes);
+						r = TryRemove(key.Bytes);
 						Debug.Assert(r);
 					}
 

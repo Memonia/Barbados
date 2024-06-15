@@ -56,7 +56,7 @@ namespace Barbados.StorageEngine.Indexing
 				if (leaf.TryReadObjectId(ikey.Separator, out var storedId, out var isTrimmed))
 				{
 					var oh = Pool.Allocate();
-					var r = leaf.TryOverwriteWithOverflow(ikey, oh);
+					var r = leaf.TryOverwriteWithOverflow(ikey.Separator, oh);
 					Debug.Assert(r);
 
 					var overflow = new BTreeLeafPageOverflow(oh);
@@ -77,8 +77,8 @@ namespace Barbados.StorageEngine.Indexing
 					var r = leaf.TryReadHighest(out var hlkey);
 					Debug.Assert(r);
 
-					Span<byte> hlkeySepCopy = stackalloc byte[hlkey.Separator.Bytes.Length];
-					hlkey.Separator.Bytes.CopyTo(hlkeySepCopy);
+					Span<byte> hlkeySepCopy = stackalloc byte[hlkey.Bytes.Length];
+					hlkey.Bytes.CopyTo(hlkeySepCopy);
 
 					if (leaf.TryWriteObjectId(ikey, id))
 					{
@@ -131,62 +131,12 @@ namespace Barbados.StorageEngine.Indexing
 			var lh = Pool.Allocate();
 			var left = new BTreeLeafPage(lh);
 
-			if (target.Previous.IsNull)
-			{
-				ChainHelpers.Prepend(left, target);
-			}
-
-			else
-			{
-				var previous = Pool.LoadPin<BTreeLeafPage>(target.Previous);
-				ChainHelpers.Insert(left, previous, target);
-				Pool.SaveRelease(previous);
-			}
-
-			target.Spill(left, fromHighest: false);
-
-			var r = traceback.TryMoveUp();
+			var insertTarget = SplitLeaf(target, left, key.Separator, traceback);
+			var r = insertTarget.TryWriteObjectId(key, id);
 			Debug.Assert(r);
-
-			r = target.TryReadLowest(out var rlkey);
-			Debug.Assert(r);
-			Debug.Assert(!rlkey.Separator.Bytes.SequenceEqual(key.Separator.Bytes));
-
-			if (key.Separator.Bytes.SequenceCompareTo(rlkey.Separator.Bytes) < 0)
-			{
-				// No update for the parents required, because we didn't insert the separator yet
-				r = left.TryWriteObjectId(key, id);
-				Debug.Assert(r);
-			}
-
-			else
-			{
-				r = target.TryReadHighest(out var rhkey);
-				Debug.Assert(r);
-				Debug.Assert(!rhkey.Separator.Bytes.SequenceEqual(key.Separator.Bytes));
-
-				if (key.Separator.Bytes.SequenceCompareTo(rhkey.Separator.Bytes) > 0)
-				{
-					UpdateSeparatorPropagate(rhkey.Separator, key.Separator, traceback.Clone());
-				}
-
-				r = target.TryWriteObjectId(key, id);
-				Debug.Assert(r);
-			}
-
-			r = left.TryReadHighest(out var lhkey);
-			Debug.Assert(r);
-
-			Span<byte> lhkeySepCopy = stackalloc byte[lhkey.Separator.Bytes.Length];
-			lhkey.Separator.Bytes.CopyTo(lhkeySepCopy);
 
 			Pool.Save(left);
 			Pool.SaveRelease(target);
-
-			InsertSeparator(
-				NormalisedValueSpan.FromNormalised(lhkeySepCopy), lh,
-				traceback
-			);
 		}
 	}
 }

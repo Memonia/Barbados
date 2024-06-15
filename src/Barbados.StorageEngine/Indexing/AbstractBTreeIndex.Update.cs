@@ -134,8 +134,6 @@ namespace Barbados.StorageEngine.Indexing
 					{
 						RemoveSeparatorPropagate(separator, tracebackCopy);
 					}
-
-					_balance(traceback);
 				}
 
 				else
@@ -150,6 +148,78 @@ namespace Barbados.StorageEngine.Indexing
 			}
 		}
 
+		protected T SplitLeaf(T target, T left, NormalisedValueSpan separator, BTreeIndexTraceback traceback)
+		{
+			if (target.Previous.IsNull)
+			{
+				ChainHelpers.Prepend(left, target);
+			}
+
+			else
+			{
+				var previous = Pool.LoadPin<T>(target.Previous);
+				ChainHelpers.Insert(left, previous, target);
+				Pool.SaveRelease(previous);
+			}
+
+			target.Spill(left, fromHighest: false);
+
+			var r = traceback.TryMoveUp();
+			Debug.Assert(r);
+
+			r = left.TryReadHighest(out var lhkey);
+			Debug.Assert(r);
+			Debug.Assert(!lhkey.Bytes.SequenceEqual(separator.Bytes));
+
+			r = target.TryReadLowest(out var rlkey);
+			Debug.Assert(r);
+			Debug.Assert(!rlkey.Bytes.SequenceEqual(separator.Bytes));
+
+			T leaf;
+			var insertLeft = false;
+			if (separator.Bytes.SequenceCompareTo(rlkey.Bytes) < 0)
+			{
+				// No update for the parents required, because we didn't insert the separator yet
+				leaf = left;
+				insertLeft = true;
+			}
+
+			else
+			{
+				r = target.TryReadHighest(out var rhkey);
+				Debug.Assert(r);
+				Debug.Assert(!rhkey.Bytes.SequenceEqual(separator.Bytes));
+
+				if (separator.Bytes.SequenceCompareTo(rhkey.Bytes) > 0)
+				{
+					UpdateSeparatorPropagate(rhkey, separator, traceback.Clone());
+				}
+
+				leaf = target;
+			}
+
+			Pool.Save(left);
+			Pool.Save(target);
+
+			if (insertLeft && separator.Bytes.SequenceCompareTo(lhkey.Bytes) > 0)
+			{
+				InsertSeparator(separator, left.Header.Handle, traceback);
+			}
+
+			else
+			{
+				Span<byte> lhkeySepCopy = stackalloc byte[lhkey.Bytes.Length];
+				lhkey.Bytes.CopyTo(lhkeySepCopy);
+
+				InsertSeparator(
+					NormalisedValueSpan.FromNormalised(lhkeySepCopy), left.Header.Handle,
+					traceback
+				);
+			}
+
+			return leaf;
+		}
+
 		protected void BalanceLeaf(BTreeIndexTraceback traceback)
 		{
 			void _merge(T left, T right)
@@ -159,18 +229,18 @@ namespace Barbados.StorageEngine.Indexing
 				Debug.Assert(a);
 				Debug.Assert(b);
 
-				Span<byte> lhkeySepCopy = stackalloc byte[lhkey.Separator.Bytes.Length];
-				Span<byte> rhkeySepCopy = stackalloc byte[rhkey.Separator.Bytes.Length];
-				lhkey.Separator.Bytes.CopyTo(lhkeySepCopy);
-				rhkey.Separator.Bytes.CopyTo(rhkeySepCopy);
+				Span<byte> lhkeySepCopy = stackalloc byte[lhkey.Bytes.Length];
+				Span<byte> rhkeySepCopy = stackalloc byte[rhkey.Bytes.Length];
+				lhkey.Bytes.CopyTo(lhkeySepCopy);
+				rhkey.Bytes.CopyTo(rhkeySepCopy);
 
 				right.Flush(left, fromHighest: false);
 
 				var r = left.TryReadHighest(out var nlhkey);
 				Debug.Assert(r);
 
-				Span<byte> nlhkeySepCopy = stackalloc byte[nlhkey.Separator.Bytes.Length];
-				nlhkey.Separator.Bytes.CopyTo(nlhkeySepCopy);
+				Span<byte> nlhkeySepCopy = stackalloc byte[nlhkey.Bytes.Length];
+				nlhkey.Bytes.CopyTo(nlhkeySepCopy);
 
 				r = traceback.TryMoveUp();
 				Debug.Assert(r);
@@ -220,21 +290,21 @@ namespace Barbados.StorageEngine.Indexing
 				r = next.TryReadHighest(out var nhkey);
 				Debug.Assert(r);
 
-				if (!next.IsUnderflowed && _parentContains(parentHandle, nhkey.Separator))
+				if (!next.IsUnderflowed && _parentContains(parentHandle, nhkey))
 				{
 					r = target.TryReadHighest(out var lhkey);
 					Debug.Assert(r);
 
-					Span<byte> lhkeySepCopy = stackalloc byte[lhkey.Separator.Bytes.Length];
-					lhkey.Separator.Bytes.CopyTo(lhkeySepCopy);
+					Span<byte> lhkeySepCopy = stackalloc byte[lhkey.Bytes.Length];
+					lhkey.Bytes.CopyTo(lhkeySepCopy);
 
 					next.Spill(target, fromHighest: false);
 
 					r = target.TryReadHighest(out var nlhkey);
 					Debug.Assert(r);
 
-					Span<byte> nlhkeySepCopy = stackalloc byte[nlhkey.Separator.Bytes.Length];
-					nlhkey.Separator.Bytes.CopyTo(nlhkeySepCopy);
+					Span<byte> nlhkeySepCopy = stackalloc byte[nlhkey.Bytes.Length];
+					nlhkey.Bytes.CopyTo(nlhkeySepCopy);
 
 					r = traceback.TryMoveUp();
 					Debug.Assert(r);
@@ -252,7 +322,7 @@ namespace Barbados.StorageEngine.Indexing
 				}
 
 				else
-				if (next.IsUnderflowed && _parentContains(parentHandle, nhkey.Separator))
+				if (next.IsUnderflowed && _parentContains(parentHandle, nhkey))
 				{
 					_merge(left: target, right: next);
 				}
@@ -271,21 +341,21 @@ namespace Barbados.StorageEngine.Indexing
 				r = previous.TryReadHighest(out var phkey);
 				Debug.Assert(r);
 
-				if (!previous.IsUnderflowed && _parentContains(parentHandle, phkey.Separator))
+				if (!previous.IsUnderflowed && _parentContains(parentHandle, phkey))
 				{
 					r = previous.TryReadHighest(out var lhkey);
 					Debug.Assert(r);
 
-					Span<byte> lhkeySepCopy = stackalloc byte[lhkey.Separator.Bytes.Length];
-					lhkey.Separator.Bytes.CopyTo(lhkeySepCopy);
+					Span<byte> lhkeySepCopy = stackalloc byte[lhkey.Bytes.Length];
+					lhkey.Bytes.CopyTo(lhkeySepCopy);
 
 					previous.Spill(target, fromHighest: true);
 
 					r = previous.TryReadHighest(out var nlhkey);
 					Debug.Assert(r);
 
-					Span<byte> nlhkeySepCopy = stackalloc byte[nlhkey.Separator.Bytes.Length];
-					nlhkey.Separator.Bytes.CopyTo(nlhkeySepCopy);
+					Span<byte> nlhkeySepCopy = stackalloc byte[nlhkey.Bytes.Length];
+					nlhkey.Bytes.CopyTo(nlhkeySepCopy);
 
 					r = traceback.TryMoveUp();
 					Debug.Assert(r);
@@ -303,7 +373,7 @@ namespace Barbados.StorageEngine.Indexing
 				}
 
 				else
-				if (previous.IsUnderflowed && _parentContains(parentHandle, phkey.Separator))
+				if (previous.IsUnderflowed && _parentContains(parentHandle, phkey))
 				{
 					_merge(left: previous, right: target);
 				}
@@ -319,25 +389,6 @@ namespace Barbados.StorageEngine.Indexing
 			{
 				Pool.Release(target);
 			}
-		}
-
-		private void _balance(BTreeIndexTraceback traceback)
-		{
-			// Can't rebalance the root
-			if (!traceback.CanMoveUp)
-			{
-				return;
-			}
-
-			var target = Pool.LoadPin<BTreePage>(traceback.Current);
-			if (!target.IsUnderflowed)
-			{
-				Pool.Release(target);
-				return;
-			}
-
-			Pool.Release(target);
-			// Balancing goes here
 		}
 
 		private bool _parentContains(PageHandle parentHandle, NormalisedValueSpan separator)
