@@ -73,19 +73,11 @@ namespace Barbados.StorageEngine.Collections.Internal
 				out var collectionPageHandleRaw
 			);
 
-			var c = document.TryGetInt64(
-				BarbadosIdentifiers.MetaCollection.CollectionDocumentClusteredIndexPageHandleFieldAbsolute,
-				out var clusteredIndexRootHandleRaw
-			);
-
 			Debug.Assert(a);
 			Debug.Assert(b);
-			Debug.Assert(c);
 
-			var clusteredIndex = new BTreeClusteredIndex(pool, new(clusteredIndexRootHandleRaw));
-			return new BarbadosCollection(
-				collection, new(collectionPageHandleRaw), pool, @lock, clusteredIndex
-			);
+			var clusteredIndex = new BTreeClusteredIndex(pool, new(collectionPageHandleRaw));
+			return new BarbadosCollection(collection, pool, @lock, clusteredIndex);
 		}
 	}
 }

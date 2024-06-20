@@ -51,5 +51,39 @@ namespace Barbados.StorageEngine.Indexing
 			handle = default!;
 			return false;
 		}
+
+		public bool TryGetLeftmostLeafHandle(out PageHandle handle)
+		{
+			var min = new ObjectIdNormalised(ObjectId.MinValue);
+			Span<byte> kBuf = stackalloc byte[Constants.ObjectIdNormalisedLength];
+			min.WriteTo(kBuf);
+
+			var k = _toBTreeIndexKey(kBuf);
+			if (TryFind(k, out var traceback))
+			{
+				handle = traceback.Current;
+				return true;
+			}
+
+			handle = default!;
+			return false;
+		}
+
+		public bool TryGetRightmostLeafHandle(out PageHandle handle)
+		{
+			var max = new ObjectIdNormalised(ObjectId.MaxValue);
+			Span<byte> kBuf = stackalloc byte[Constants.ObjectIdNormalisedLength];
+			max.WriteTo(kBuf);
+
+			var k = _toBTreeIndexKey(kBuf);
+			if (TryFind(k, out var traceback))
+			{
+				handle = traceback.Current;
+				return true;
+			}
+
+			handle = default!;
+			return false;
+		}
 	}
 }

@@ -5,7 +5,7 @@ using Barbados.StorageEngine.Paging.Metadata;
 
 namespace Barbados.StorageEngine.Paging.Pages
 {
-	internal sealed class CollectionPage : ObjectPage
+	internal sealed class CollectionPage : BTreePage
 	{
 		private const ushort _headerLength = Constants.ObjectIdLength;
 

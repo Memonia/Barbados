@@ -37,8 +37,13 @@ namespace Barbados.StorageEngine.Collections
 					buffer.Clear();
 				}
 
+				if (!ClusteredIndex.TryGetLeftmostLeafHandle(out var h))
+				{
+					yield break;
+				}
+
 				var buffer = new List<(ObjectId, ObjectBuffer)>();
-				var page = Pool.LoadPin<ObjectPage>(CollectionPageHandle);
+				var page = Pool.LoadPin<ObjectPage>(h);
 				var next = page.Next;
 				var previous = page.Previous;
 				foreach (var doc in _retrieve(buffer, page))
@@ -50,7 +55,7 @@ namespace Barbados.StorageEngine.Collections
 				while (!next.IsNull)
 				{
 					page = Pool.LoadPin<ObjectPage>(next);
-					foreach (var doc in _retrieve(buffer,page))
+					foreach (var doc in _retrieve(buffer, page))
 					{
 						yield return doc;
 					}

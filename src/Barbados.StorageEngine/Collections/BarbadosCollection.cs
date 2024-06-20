@@ -2,7 +2,6 @@
 using Barbados.StorageEngine.Exceptions;
 using Barbados.StorageEngine.Indexing;
 using Barbados.StorageEngine.Paging;
-using Barbados.StorageEngine.Paging.Metadata;
 
 namespace Barbados.StorageEngine.Collections
 {
@@ -20,11 +19,10 @@ namespace Barbados.StorageEngine.Collections
 
 		public BarbadosCollection(
 			BarbadosIdentifier name,
-			PageHandle collectionPageHandle,
 			PagePool pool,
 			LockAutomatic @lock,
 			BTreeClusteredIndex clusteredIndex
-		) : base(name, collectionPageHandle, pool, @lock, clusteredIndex)
+		) : base(name, pool, @lock, clusteredIndex)
 		{
 
 		}

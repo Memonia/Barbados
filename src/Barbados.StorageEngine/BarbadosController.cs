@@ -123,7 +123,7 @@ namespace Barbados.StorageEngine
 				var root = Pool.LoadPin<RootPage>(PageHandle.Root);
 				var metaLock = Lock.GetLock(BarbadosIdentifiers.Collection.MetaCollection);
 
-				var clusteredIndex = new BTreeClusteredIndex(Pool, root.MetaCollectionClusteredIndexRootPageHandle);
+				var clusteredIndex = new BTreeClusteredIndex(Pool, root.MetaCollectionPageHandle);
 				var index = new BTreeIndex(
 					new()
 					{
@@ -136,7 +136,7 @@ namespace Barbados.StorageEngine
 					Pool
 				);
 
-				var meta = new MetaCollection(root.MetaCollectionPageHandle, Pool, metaLock, index, clusteredIndex);
+				var meta = new MetaCollection(Pool, metaLock, index, clusteredIndex);
 				var r = _instances.TryAdd(BarbadosIdentifiers.Collection.MetaCollection, meta);
 				Debug.Assert(r);
 

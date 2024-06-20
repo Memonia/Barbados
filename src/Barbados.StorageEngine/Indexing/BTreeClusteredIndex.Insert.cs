@@ -9,7 +9,7 @@ namespace Barbados.StorageEngine.Indexing
 {
 	internal partial class BTreeClusteredIndex
 	{
-		public PageHandle Insert(ObjectIdNormalised id, ObjectBuffer obj, PageHandle collectionPageHandle)
+		public PageHandle Insert(ObjectIdNormalised id, ObjectBuffer obj)
 		{
 			Span<byte> kBuf = stackalloc byte[Constants.ObjectIdNormalisedLength];
 			id.WriteTo(kBuf);
@@ -82,11 +82,11 @@ namespace Barbados.StorageEngine.Indexing
 
 			else
 			{
-				var root = Pool.LoadPin<BTreeRootPage>(Info.RootPageHandle);
-				Debug.Assert(!root.TryReadLowestSeparatorHandle(out _, out _));
+				var root = Pool.LoadPin<CollectionPage>(Info.RootPageHandle);
+				Debug.Assert(root.Count() == 0);
 
-				var leaf = Pool.LoadPin<CollectionPage>(collectionPageHandle);
-				Debug.Assert(leaf.Count() == 0);
+				var lh = Pool.Allocate();
+				var leaf = new ObjectPage(lh);
 
 				var a = root.TryWriteSeparatorHandle(ikey.Separator, leaf.Header.Handle);
 				var b = _tryInsert(leaf, id, obj);

@@ -3,14 +3,13 @@ using System.Diagnostics;
 
 using Barbados.StorageEngine.Documents.Binary;
 using Barbados.StorageEngine.Paging;
-using Barbados.StorageEngine.Paging.Metadata;
 using Barbados.StorageEngine.Paging.Pages;
 
 namespace Barbados.StorageEngine.Indexing
 {
 	internal partial class BTreeClusteredIndex
 	{
-		public bool TryRemove(ObjectIdNormalised id, PageHandle collectionPageHandle)
+		public bool TryRemove(ObjectIdNormalised id)
 		{
 			Span<byte> idbuf = stackalloc byte[Constants.ObjectIdNormalisedLength];
 			id.WriteTo(idbuf);
@@ -45,18 +44,10 @@ namespace Barbados.StorageEngine.Indexing
 				return false;
 			}
 
-			// Remove the leaf if it's empty, unless it is the collection page
+			// Remove the leaf if it's empty
 			if (leaf.Count() == 0)
 			{
-				if (leaf.Header.Handle.Handle != collectionPageHandle.Handle)
-				{
-					ChainHelpers.RemoveAndDeallocate(leaf, Pool);
-				}
-
-				else
-				{
-					Pool.SaveRelease(leaf);
-				}
+				ChainHelpers.RemoveAndDeallocate(leaf, Pool);
 
 				var tracebackCopy = traceback.Clone();
 				var r = tracebackCopy.TryMoveUp();
@@ -69,6 +60,8 @@ namespace Barbados.StorageEngine.Indexing
 			{
 				var r = leaf.TryReadHighestId(out var hid);
 				Debug.Assert(r);
+
+				Pool.SaveRelease(leaf);
 
 				// Update the parent if the removed id was the highest
 				var hidn = new ObjectIdNormalised(hid);
@@ -88,21 +81,7 @@ namespace Barbados.StorageEngine.Indexing
 					);
 				}
 
-				// 'CollectionPage' might be deallocated in the process
-				if (
-					leaf.Next.Handle != collectionPageHandle.Handle &&
-					leaf.Previous.Handle != collectionPageHandle.Handle &&
-					leaf.Header.Handle.Handle != collectionPageHandle.Handle
-				)
-				{
-					Pool.SaveRelease(leaf);
-					BalanceLeaf(traceback);
-				}
-
-				else
-				{
-					Pool.SaveRelease(leaf);
-				}
+				BalanceLeaf(traceback);
 			}
 
 			return true;

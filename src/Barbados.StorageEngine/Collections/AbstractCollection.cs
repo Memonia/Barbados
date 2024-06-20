@@ -4,7 +4,6 @@ using Barbados.StorageEngine.Documents;
 using Barbados.StorageEngine.Exceptions;
 using Barbados.StorageEngine.Indexing;
 using Barbados.StorageEngine.Paging;
-using Barbados.StorageEngine.Paging.Metadata;
 using Barbados.StorageEngine.Paging.Pages;
 
 namespace Barbados.StorageEngine.Collections
@@ -12,7 +11,6 @@ namespace Barbados.StorageEngine.Collections
 	internal abstract partial class AbstractCollection : IBarbadosCollection
 	{
 		public BarbadosIdentifier Name { get; set; }
-		public PageHandle CollectionPageHandle { get; }
 		public PagePool Pool { get; }
 		public LockAutomatic Lock { get; }
 		public BTreeClusteredIndex ClusteredIndex { get; }
@@ -23,14 +21,12 @@ namespace Barbados.StorageEngine.Collections
 
 		protected AbstractCollection(
 			BarbadosIdentifier name,
-			PageHandle collectionPageHandle,
 			PagePool pool,
 			LockAutomatic @lock,
 			BTreeClusteredIndex clusteredIndex
 		)
 		{
 			Name = name;
-			CollectionPageHandle = collectionPageHandle;
 			Pool = pool;
 			Lock = @lock;
 			ClusteredIndex = clusteredIndex;
@@ -189,7 +185,7 @@ namespace Barbados.StorageEngine.Collections
 
 		protected ObjectId InsertNoLock(BarbadosDocument document)
 		{
-			var collection = Pool.LoadPin<CollectionPage>(CollectionPageHandle);
+			var collection = Pool.LoadPin<CollectionPage>(ClusteredIndex.Info.RootPageHandle);
 			if (collection.TryGetNextObjectId(out var nextId))
 			{
 				// Save next available document id
@@ -209,7 +205,7 @@ namespace Barbados.StorageEngine.Collections
 		protected void InsertNoLock(ObjectId id, BarbadosDocument document)
 		{
 			var idn = new ObjectIdNormalised(id);
-			ClusteredIndex.Insert(idn, document.Buffer, CollectionPageHandle);
+			ClusteredIndex.Insert(idn, document.Buffer);
 
 			foreach (var index in Indexes)
 			{
@@ -263,7 +259,7 @@ namespace Barbados.StorageEngine.Collections
 				return false;
 			}
 
-			if (!ClusteredIndex.TryRemove(idn, CollectionPageHandle))
+			if (!ClusteredIndex.TryRemove(idn))
 			{
 				throw new BarbadosException(BarbadosExceptionCode.InternalError);
 			}

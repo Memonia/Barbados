@@ -4,6 +4,7 @@
 	{
 		public static ObjectId Invalid { get; } = new(0);
 		public static ObjectId MaxValue { get; } = new(long.MaxValue);
+		public static ObjectId MinValue { get; } = new(long.MinValue);
 
 		public bool IsValid => Value != 0;
 

@@ -41,7 +41,10 @@ namespace Barbados.StorageEngine.Paging.Pages
 
 			else
 			{
-				Debug.Assert(GetPageMarker(buffer) == PageMarker.BTreeRoot);
+				Debug.Assert(
+					GetPageMarker(buffer) == PageMarker.BTreeRoot ||
+					GetPageMarker(buffer) == PageMarker.Collection
+				);
 			}
 		}
 

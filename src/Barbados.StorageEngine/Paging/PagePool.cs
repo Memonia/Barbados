@@ -20,7 +20,6 @@ namespace Barbados.StorageEngine.Paging
 			var apageHandle = root.IncrementNextAvailablePageHandle();
 			var cpageHandle = root.IncrementNextAvailablePageHandle();
 			var ipageHandle = root.IncrementNextAvailablePageHandle();
-			var cipageHandle = root.IncrementNextAvailablePageHandle();
 
 			// Init the allocation bitmap
 			var apage = new AllocationPage(apageHandle);
@@ -30,18 +29,15 @@ namespace Barbados.StorageEngine.Paging
 			// Init the meta collection
 			var cpage = new CollectionPage(cpageHandle);
 			var ipage = new BTreeRootPage(ipageHandle);
-			var cipage = new BTreeRootPage(cipageHandle);
 
 			root.MetaCollectionPageHandle = cpage.Header.Handle;
 			root.MetaCollectionNameIndexRootPageHandle = ipage.Header.Handle;
-			root.MetaCollectionClusteredIndexRootPageHandle = cipage.Header.Handle;
 
 			// Mark created pages as active
 			apage.On(root.Header.Handle);
 			apage.On(apage.Header.Handle);
 			apage.On(cpage.Header.Handle);
 			apage.On(ipage.Header.Handle);
-			apage.On(cipage.Header.Handle);
 
 			// Mark null handle as active so it can't be allocated
 			apage.On(PageHandle.Null);
@@ -50,7 +46,6 @@ namespace Barbados.StorageEngine.Paging
 			_writePageBuffer(fileHandle, apage);
 			_writePageBuffer(fileHandle, cpage);
 			_writePageBuffer(fileHandle, ipage);
-			_writePageBuffer(fileHandle, cipage);
 
 			RandomAccess.FlushToDisk(fileHandle);
 		}
@@ -143,27 +138,41 @@ namespace Barbados.StorageEngine.Paging
 				}
 
 				var buffer = _readPageBuffer(handle);
-				page = typeof(T) switch
+				if (typeof(T) == typeof(BTreePage))
 				{
-					Type bpage when bpage == typeof(BTreePage) =>
-						AbstractPage.GetPageMarker(buffer) == PageMarker.BTreeRoot
-							? new BTreeRootPage(buffer)
-							: new BTreePage(buffer),
+					var marker = AbstractPage.GetPageMarker(buffer);
+					if (marker == PageMarker.BTreeRoot)
+					{
+						page = new BTreeRootPage(buffer);
+					}
 
-					Type opage when opage == typeof(ObjectPage) =>
-						AbstractPage.GetPageMarker(buffer) == PageMarker.Collection
-							? new CollectionPage(buffer)
-							: new ObjectPage(buffer),
+					else 
+					if (marker == PageMarker.Collection)
+					{
+						page = new CollectionPage(buffer);
+					}
 
-					Type rpage when rpage == typeof(RootPage) => new RootPage(buffer),
-					Type apage when apage == typeof(AllocationPage) => new AllocationPage(buffer),
-					Type cpage when cpage == typeof(CollectionPage) => new CollectionPage(buffer),
-					Type brpage when brpage == typeof(BTreeRootPage) => new BTreeRootPage(buffer),
-					Type blpage when blpage == typeof(BTreeLeafPage) => new BTreeLeafPage(buffer),
-					Type opopage when opopage == typeof(ObjectPageOverflow) => new ObjectPageOverflow(buffer),
-					Type blopage when blopage == typeof(BTreeLeafPageOverflow) => new BTreeLeafPageOverflow(buffer),
-					_ => throw new BarbadosException(BarbadosExceptionCode.InternalError),
-				};
+					else
+					{
+						page = new BTreePage(buffer);
+					}
+				}
+
+				else
+				{
+					page = typeof(T) switch
+					{
+						Type rpage when rpage == typeof(RootPage) => new RootPage(buffer),
+						Type opage when opage == typeof(ObjectPage) => new ObjectPage(buffer),
+						Type apage when apage == typeof(AllocationPage) => new AllocationPage(buffer),
+						Type cpage when cpage == typeof(CollectionPage) => new CollectionPage(buffer),
+						Type brpage when brpage == typeof(BTreeRootPage) => new BTreeRootPage(buffer),
+						Type blpage when blpage == typeof(BTreeLeafPage) => new BTreeLeafPage(buffer),
+						Type opopage when opopage == typeof(ObjectPageOverflow) => new ObjectPageOverflow(buffer),
+						Type blopage when blopage == typeof(BTreeLeafPageOverflow) => new BTreeLeafPageOverflow(buffer),
+						_ => throw new BarbadosException(BarbadosExceptionCode.InternalError),
+					};
+				}
 
 				// If all pages in the cache are pinned, the page will be flushed to disk on the next save
 				if (_cache.TryCache(handle, page))

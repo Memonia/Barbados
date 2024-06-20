@@ -6,7 +6,6 @@ using Barbados.StorageEngine.Documents;
 using Barbados.StorageEngine.Exceptions;
 using Barbados.StorageEngine.Indexing;
 using Barbados.StorageEngine.Paging;
-using Barbados.StorageEngine.Paging.Metadata;
 using Barbados.StorageEngine.Paging.Pages;
 
 namespace Barbados.StorageEngine.Collections.Internal
@@ -17,14 +16,12 @@ namespace Barbados.StorageEngine.Collections.Internal
 		private readonly BarbadosDocument.Builder _documentBuilder;
 
 		public MetaCollection(
-			PageHandle collectionPageHandle,
 			PagePool pool,
 			LockAutomatic @lock,
 			BTreeIndex nameIndex,
 			BTreeClusteredIndex clusteredIndex
 		) : base(
 			BarbadosIdentifiers.Collection.MetaCollection,
-			collectionPageHandle,
 			pool,
 			@lock,
 			clusteredIndex
@@ -55,18 +52,14 @@ namespace Barbados.StorageEngine.Collections.Internal
 		{
 			using (Lock.Acquire(LockMode.Write))
 			{
-				var ch = Pool.Allocate();
-				var ih = Pool.Allocate();
-				var cpage = new CollectionPage(ch);
-				var ipage = new BTreeRootPage(ih);
+				var h = Pool.Allocate();
+				var page = new CollectionPage(h);
 
-				Pool.Save(cpage);
-				Pool.Save(ipage);
+				Pool.Save(page);
 
 				var collectionDocument = _documentBuilder
 					.Add(BarbadosIdentifiers.MetaCollection.CollectionDocumentNameFIeld, collection)
-					.Add(BarbadosIdentifiers.MetaCollection.CollectionDocumentPageHandleField, ch.Handle)
-					.Add(BarbadosIdentifiers.MetaCollection.CollectionDocumentClusteredIndexPageHandleField, ih.Handle)
+					.Add(BarbadosIdentifiers.MetaCollection.CollectionDocumentPageHandleField, h.Handle)
 					.Build();
 
 				var document = _documentBuilder
@@ -161,8 +154,7 @@ namespace Barbados.StorageEngine.Collections.Internal
 			{
 				_documentBuilder
 					.Add(BarbadosIdentifiers.MetaCollection.CollectionDocumentNameFieldAbsolute, name)
-					.AddFieldFrom(BarbadosIdentifiers.MetaCollection.CollectionDocumentPageHandleFieldAbsolute, document)
-					.AddFieldFrom(BarbadosIdentifiers.MetaCollection.CollectionDocumentClusteredIndexPageHandleFieldAbsolute, document);
+					.AddFieldFrom(BarbadosIdentifiers.MetaCollection.CollectionDocumentPageHandleFieldAbsolute, document);
 
 				if (document.TryGetDocumentArray(BarbadosIdentifiers.MetaCollection.IndexArrayField, out var indexesArray))
 				{

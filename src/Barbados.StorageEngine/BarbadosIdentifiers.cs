@@ -33,10 +33,8 @@
 			public static readonly BarbadosIdentifier CollectionDocumentField = "?c";
 			public static readonly BarbadosIdentifier CollectionDocumentNameFIeld = "?n";
 			public static readonly BarbadosIdentifier CollectionDocumentPageHandleField = "?ph";
-			public static readonly BarbadosIdentifier CollectionDocumentClusteredIndexPageHandleField = "?ciph";
 			public static readonly BarbadosIdentifier CollectionDocumentNameFieldAbsolute = "?c.?n";
 			public static readonly BarbadosIdentifier CollectionDocumentPageHandleFieldAbsolute = "?c.?ph";
-			public static readonly BarbadosIdentifier CollectionDocumentClusteredIndexPageHandleFieldAbsolute = "?c.?ciph";
 		}
 	}
 }

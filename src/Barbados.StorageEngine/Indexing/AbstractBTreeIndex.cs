@@ -35,7 +35,7 @@ namespace Barbados.StorageEngine.Indexing
 			void _deallocate(PageHandle handle)
 			{
 				if (
-					!Pool.IsPageType(handle, PageMarker.BTreeRoot) &&
+					handle.Handle != Info.RootPageHandle.Handle &&	
 					!Pool.IsPageType(handle, PageMarker.BTreeNode)
 				)
 				{
@@ -62,7 +62,7 @@ namespace Barbados.StorageEngine.Indexing
 
 		protected bool TryFind(BTreeIndexKey search, out BTreeIndexTraceback traceback)
 		{
-			var root = Pool.LoadPin<BTreeRootPage>(Info.RootPageHandle);
+			var root = Pool.LoadPin<BTreePage>(Info.RootPageHandle);
 			var trace = new List<PageHandle>
 			{
 				Info.RootPageHandle
@@ -141,7 +141,7 @@ namespace Barbados.StorageEngine.Indexing
 
 				else
 				{
-					if (node.Header.Marker == PageMarker.BTreeRoot)
+					if (node.Header.Handle.Handle == Info.RootPageHandle.Handle)
 					{
 						var lh = Pool.Allocate();
 						var rh = Pool.Allocate();

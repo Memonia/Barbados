@@ -6,7 +6,7 @@ using Barbados.StorageEngine.Paging.Metadata;
 
 namespace Barbados.StorageEngine.Paging.Pages
 {
-	internal partial class ObjectPage : SlottedPage, IBTreeIndexLeaf<ObjectPage>
+	internal sealed partial class ObjectPage : SlottedPage, IBTreeIndexLeaf<ObjectPage>
 	{
 		private const ushort _headerLength = Constants.PageHandleLength * 2;
 		private const ushort _payloadFixedLengthPart = sizeof(int) + Constants.PageHandleLength;
