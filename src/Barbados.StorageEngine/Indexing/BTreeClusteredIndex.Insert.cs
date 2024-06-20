@@ -1,5 +1,4 @@
-﻿using System;
-using System.Diagnostics;
+﻿using System.Diagnostics;
 
 using Barbados.StorageEngine.Documents.Binary;
 using Barbados.StorageEngine.Paging.Metadata;
@@ -11,10 +10,7 @@ namespace Barbados.StorageEngine.Indexing
 	{
 		public PageHandle Insert(ObjectIdNormalised id, ObjectBuffer obj)
 		{
-			Span<byte> kBuf = stackalloc byte[Constants.ObjectIdNormalisedLength];
-			id.WriteTo(kBuf);
-
-			var ikey = _toBTreeIndexKey(kBuf);
+			var ikey = _toBTreeIndexKey(id);
 			if (TryFindWithPreemptiveSplit(ikey, out var traceback))
 			{
 				var leaf = Pool.LoadPin<ObjectPage>(traceback.Current);
@@ -62,17 +58,12 @@ namespace Barbados.StorageEngine.Indexing
 				var nhid = new ObjectIdNormalised(hid);
 				if (updateParent && nhid.CompareTo(id) < 0)
 				{
-					Span<byte> idBuf = stackalloc byte[Constants.ObjectIdNormalisedLength];
-					Span<byte> hidBuf = stackalloc byte[Constants.ObjectIdNormalisedLength];
-					id.WriteTo(idBuf);
-					nhid.WriteTo(hidBuf);
-
 					r = traceback.TryMoveUp();
 					Debug.Assert(r);
 
 					UpdateSeparatorPropagate(
-						NormalisedValueSpan.FromNormalised(hidBuf),
-						NormalisedValueSpan.FromNormalised(idBuf),
+						NormalisedValueSpan.FromNormalised(nhid),
+						NormalisedValueSpan.FromNormalised(id),
 						traceback
 					);
 				}
@@ -108,10 +99,7 @@ namespace Barbados.StorageEngine.Indexing
 			var lh = Pool.Allocate();
 			var left = new ObjectPage(lh);
 
-			Span<byte> idBuf = stackalloc byte[Constants.ObjectIdNormalisedLength];
-			id.WriteTo(idBuf);
-
-			var insertTarget = SplitLeaf(target, left, NormalisedValueSpan.FromNormalised(idBuf), traceback);
+			var insertTarget = SplitLeaf(target, left, NormalisedValueSpan.FromNormalised(id), traceback);
 			var r = _tryInsert(insertTarget, id, obj);
 			Debug.Assert(r);
 

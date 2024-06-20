@@ -1,5 +1,4 @@
-﻿using System;
-using System.Diagnostics;
+﻿using System.Diagnostics;
 
 using Barbados.StorageEngine.Documents.Binary;
 using Barbados.StorageEngine.Paging;
@@ -11,10 +10,7 @@ namespace Barbados.StorageEngine.Indexing
 	{
 		public bool TryRemove(ObjectIdNormalised id)
 		{
-			Span<byte> idbuf = stackalloc byte[Constants.ObjectIdNormalisedLength];
-			id.WriteTo(idbuf);
-
-			var ikey = _toBTreeIndexKey(idbuf);
+			var ikey = _toBTreeIndexKey(id);
 			if (!TryFind(ikey, out var traceback))
 			{
 				return false;
@@ -53,7 +49,7 @@ namespace Barbados.StorageEngine.Indexing
 				var r = tracebackCopy.TryMoveUp();
 				Debug.Assert(r);
 
-				RemoveSeparatorPropagate(NormalisedValueSpan.FromNormalised(idbuf), tracebackCopy);
+				RemoveSeparatorPropagate(NormalisedValueSpan.FromNormalised(id), tracebackCopy);
 			}
 
 			else
@@ -67,16 +63,13 @@ namespace Barbados.StorageEngine.Indexing
 				var hidn = new ObjectIdNormalised(hid);
 				if (hidn.CompareTo(id) < 0)
 				{
-					Span<byte> hidbuf = stackalloc byte[Constants.ObjectIdNormalisedLength];
-					hidn.WriteTo(hidbuf);
-
 					var tracebackCopy = traceback.Clone();
 					r = tracebackCopy.TryMoveUp();
 					Debug.Assert(r);
 
 					UpdateSeparatorPropagate(
-						NormalisedValueSpan.FromNormalised(idbuf),
-						NormalisedValueSpan.FromNormalised(hidbuf),
+						NormalisedValueSpan.FromNormalised(id),
+						NormalisedValueSpan.FromNormalised(hidn),
 						tracebackCopy
 					);
 				}

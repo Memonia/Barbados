@@ -1,5 +1,4 @@
-﻿using System;
-using System.Diagnostics;
+﻿using System.Diagnostics;
 
 using Barbados.StorageEngine.Helpers;
 using Barbados.StorageEngine.Paging.Metadata;
@@ -50,13 +49,10 @@ namespace Barbados.StorageEngine.Paging.Pages
 
 		public bool TryWriteObjectId(ObjectIdNormalised id, bool isTrimmed)
 		{
-			Span<byte> key = stackalloc byte[Constants.ObjectIdNormalisedLength];
-			id.WriteTo(key);
-
-			if (TryWrite(key, []))
+			if (TryWrite(id, []))
 			{
 				var eflags = new BTreeLeafPage.Flags { IsTrimmed = isTrimmed };
-				var r = TrySetFlags(key, eflags);
+				var r = TrySetFlags(id, eflags);
 				Debug.Assert(r);
 
 				return true;
@@ -67,10 +63,7 @@ namespace Barbados.StorageEngine.Paging.Pages
 
 		public bool TryRemoveObjectId(ObjectIdNormalised id)
 		{
-			Span<byte> key = stackalloc byte[Constants.ObjectIdNormalisedLength];
-			id.WriteTo(key);
-
-			return TryRemove(key);
+			return TryRemove(id);
 		}
 
 		public override PageBuffer UpdateAndGetBuffer()

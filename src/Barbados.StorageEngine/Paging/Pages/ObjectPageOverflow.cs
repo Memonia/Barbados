@@ -35,17 +35,11 @@ namespace Barbados.StorageEngine.Paging.Pages
 
 		public bool TryReadObjectChunk(ObjectIdNormalised id, out Span<byte> chunk)
 		{
-			Span<byte> key = stackalloc byte[Constants.ObjectIdNormalisedLength];
-			id.WriteTo(key);
-
-			return TryRead(key, out chunk, out _);
+			return TryRead(id, out chunk, out _);
 		}
 
 		public bool TryWriteObjectChunk(ObjectIdNormalised id, ReadOnlySpan<byte> obj, out int written)
 		{
-			Span<byte> key = stackalloc byte[Constants.ObjectIdNormalisedLength];
-			id.WriteTo(key);
-
 			var free = GetMaxAllocatableRegionLength();
 			if (free > Constants.ObjectIdNormalisedLength + 1)
 			{
@@ -53,7 +47,7 @@ namespace Barbados.StorageEngine.Paging.Pages
 					? free - Constants.ObjectIdNormalisedLength 
 					: obj.Length;
 
-				var r = TryAllocate(key, written, out var span);
+				var r = TryAllocate(id, written, out var span);
 				Debug.Assert(r);
 
 				obj[..written].CopyTo(span);
@@ -66,10 +60,7 @@ namespace Barbados.StorageEngine.Paging.Pages
 
 		public bool TryRemoveObjectChunk(ObjectIdNormalised id)
 		{
-			Span<byte> key = stackalloc byte[Constants.ObjectIdNormalisedLength];
-			id.WriteTo(key);
-
-			return TryRemove(key);
+			return TryRemove(id);
 		}
 
 		public override PageBuffer UpdateAndGetBuffer()

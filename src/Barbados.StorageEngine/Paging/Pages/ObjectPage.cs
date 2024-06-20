@@ -40,25 +40,15 @@ namespace Barbados.StorageEngine.Paging.Pages
 
 		public ObjectPage(PageBuffer buffer) : base(buffer)
 		{
-			if (GetPageMarker(buffer) == PageMarker.Object)
-			{
-				ReadBaseAndGetStartBufferOffset();
-				Debug.Assert(Header.Marker == PageMarker.Object);
-			}
+			var i = base.ReadBaseAndGetStartBufferOffset();
+			var span = PageBuffer.AsSpan();
 
-			else
-			{
-				Debug.Assert(GetPageMarker(buffer) == PageMarker.Collection);
-			}
-		}
+			Next = HelpRead.AsPageHandle(span[i..]);
+			i += Constants.PageHandleLength;
+			Previous = HelpRead.AsPageHandle(span[i..]);
+			i += Constants.PageHandleLength;
 
-		protected ObjectPage(ushort headerLength, PageHeader pageHeader) :
-			base((ushort)(headerLength + _headerLength), pageHeader)
-		{
-			Debug.Assert(_headerLength + headerLength <= ushort.MaxValue);
-			DebugHelpers.AssertObjectPageMinObjectCount(
-				(ushort)(headerLength + _headerLength), _payloadFixedLengthPart
-			);
+			Debug.Assert(Header.Marker == PageMarker.Object);
 		}
 
 		public Enumerator GetEnumerator()
@@ -92,10 +82,7 @@ namespace Barbados.StorageEngine.Paging.Pages
 
 		public bool TryReadObject(ObjectIdNormalised id, out Span<byte> obj)
 		{
-			Span<byte> key = stackalloc byte[Constants.ObjectIdNormalisedLength];
-			id.WriteTo(key);
-
-			if (TryRead(key, out obj, out var flags))
+			if (TryRead(id, out obj, out var flags))
 			{
 				var eflags = new Flags(flags);
 				if (!eflags.IsChunk)
@@ -115,12 +102,9 @@ namespace Barbados.StorageEngine.Paging.Pages
 				return false;
 			}
 
-			Span<byte> key = stackalloc byte[Constants.ObjectIdNormalisedLength];
-			id.WriteTo(key);
-
-			if (TryWrite(key, obj))
+			if (TryWrite(id, obj))
 			{
-				var r = TrySetFlags(key, 0);
+				var r = TrySetFlags(id, 0);
 				Debug.Assert(r);
 				return true;
 			}
@@ -130,10 +114,7 @@ namespace Barbados.StorageEngine.Paging.Pages
 
 		public bool TryReadObjectChunk(ObjectIdNormalised id, out Span<byte> chunk, out int objectLength, out PageHandle overflowHandle)
 		{
-			Span<byte> key = stackalloc byte[Constants.ObjectIdNormalisedLength];
-			id.WriteTo(key);
-
-			if (TryRead(key, out var data, out var flags))
+			if (TryRead(id, out var data, out var flags))
 			{
 				var eflags = new Flags(flags);
 				if (eflags.IsChunk)
@@ -187,10 +168,7 @@ namespace Barbados.StorageEngine.Paging.Pages
 
 		public bool TrySetOverfowHandle(ObjectIdNormalised id, PageHandle overflowHandle)
 		{
-			Span<byte> key = stackalloc byte[Constants.ObjectIdNormalisedLength];
-			id.WriteTo(key);
-
-			if (TryRead(key, out var data, out var flags))
+			if (TryRead(id, out var data, out var flags))
 			{
 				var eflags = new Flags(flags);
 				if (eflags.IsChunk)
@@ -209,12 +187,9 @@ namespace Barbados.StorageEngine.Paging.Pages
 
 		public bool TryRemoveObject(ObjectIdNormalised id)
 		{
-			Span<byte> key = stackalloc byte[Constants.ObjectIdNormalisedLength];
-			id.WriteTo(key);
-
 			if (TryReadObject(id, out _))
 			{
-				var r = TryRemove(key);
+				var r = TryRemove(id);
 				Debug.Assert(r);
 				return true;
 			}
@@ -224,12 +199,9 @@ namespace Barbados.StorageEngine.Paging.Pages
 
 		public bool TryRemoveObjectChunk(ObjectIdNormalised id, out PageHandle overflowHandle)
 		{
-			Span<byte> key = stackalloc byte[Constants.ObjectIdNormalisedLength];
-			id.WriteTo(key);
-
 			if (TryReadObjectChunk(id, out _, out _, out overflowHandle))
 			{
-				var r = TryRemove(key);
+				var r = TryRemove(id);
 				Debug.Assert(r);
 				return true;
 			}
@@ -239,25 +211,6 @@ namespace Barbados.StorageEngine.Paging.Pages
 
 		public override PageBuffer UpdateAndGetBuffer()
 		{
-			WriteBaseAndGetStartBufferOffset();
-			return PageBuffer;
-		}
-
-		protected new int ReadBaseAndGetStartBufferOffset()
-		{
-			var i = base.ReadBaseAndGetStartBufferOffset();
-			var span = PageBuffer.AsSpan();
-
-			Next = HelpRead.AsPageHandle(span[i..]);
-			i += Constants.PageHandleLength;
-			Previous = HelpRead.AsPageHandle(span[i..]);
-			i += Constants.PageHandleLength;
-
-			return i;
-		}
-
-		protected new int WriteBaseAndGetStartBufferOffset()
-		{
 			var i = base.WriteBaseAndGetStartBufferOffset();
 			var span = PageBuffer.AsSpan();
 
@@ -266,23 +219,20 @@ namespace Barbados.StorageEngine.Paging.Pages
 			HelpWrite.AsPageHandle(span[i..], Previous);
 			i += Constants.PageHandleLength;
 
-			return i;
+			return PageBuffer;
 		}
 
 		private bool _tryWriteObjectChunk(ObjectIdNormalised id, ReadOnlySpan<byte> obj, int chunkLength, int objectLength, PageHandle overflowHandle)
 		{
-			Span<byte> key = stackalloc byte[Constants.ObjectIdNormalisedLength];
-			id.WriteTo(key);
-
 			var toAllocate = chunkLength + sizeof(int) + Constants.PageHandleLength;
-			if (TryAllocate(key, toAllocate, out var span))
+			if (TryAllocate(id, toAllocate, out var span))
 			{
 				var eflags = new Flags
 				{
 					IsChunk = true,
 				};
 
-				var r = TrySetFlags(key, eflags);
+				var r = TrySetFlags(id, eflags);
 				Debug.Assert(r);
 
 				var entry = new Chunk(span)

@@ -38,10 +38,7 @@ namespace Barbados.StorageEngine.Indexing
 
 		public bool TryRead(ObjectIdNormalised id, out PageHandle handle)
 		{
-			Span<byte> kBuf = stackalloc byte[Constants.ObjectIdNormalisedLength];
-			id.WriteTo(kBuf);
-
-			var ikey = _toBTreeIndexKey(kBuf);
+			var ikey = _toBTreeIndexKey(id);
 			if (TryFind(ikey, out var traceback))
 			{
 				handle = traceback.Current;
@@ -55,10 +52,7 @@ namespace Barbados.StorageEngine.Indexing
 		public bool TryGetLeftmostLeafHandle(out PageHandle handle)
 		{
 			var min = new ObjectIdNormalised(ObjectId.MinValue);
-			Span<byte> kBuf = stackalloc byte[Constants.ObjectIdNormalisedLength];
-			min.WriteTo(kBuf);
-
-			var k = _toBTreeIndexKey(kBuf);
+			var k = _toBTreeIndexKey(min);
 			if (TryFind(k, out var traceback))
 			{
 				handle = traceback.Current;
@@ -72,10 +66,7 @@ namespace Barbados.StorageEngine.Indexing
 		public bool TryGetRightmostLeafHandle(out PageHandle handle)
 		{
 			var max = new ObjectIdNormalised(ObjectId.MaxValue);
-			Span<byte> kBuf = stackalloc byte[Constants.ObjectIdNormalisedLength];
-			max.WriteTo(kBuf);
-
-			var k = _toBTreeIndexKey(kBuf);
+			var k = _toBTreeIndexKey(max);
 			if (TryFind(k, out var traceback))
 			{
 				handle = traceback.Current;
