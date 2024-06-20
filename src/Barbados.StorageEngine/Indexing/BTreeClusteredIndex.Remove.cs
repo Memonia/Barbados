@@ -1,8 +1,4 @@
-﻿using System.Diagnostics;
-
-using Barbados.StorageEngine.Documents.Binary;
-using Barbados.StorageEngine.Paging;
-using Barbados.StorageEngine.Paging.Pages;
+﻿using Barbados.StorageEngine.Paging.Pages;
 
 namespace Barbados.StorageEngine.Indexing
 {
@@ -40,43 +36,7 @@ namespace Barbados.StorageEngine.Indexing
 				return false;
 			}
 
-			// Remove the leaf if it's empty
-			if (leaf.Count() == 0)
-			{
-				ChainHelpers.RemoveAndDeallocate(leaf, Pool);
-
-				var tracebackCopy = traceback.Clone();
-				var r = tracebackCopy.TryMoveUp();
-				Debug.Assert(r);
-
-				RemoveSeparatorPropagate(NormalisedValueSpan.FromNormalised(id), tracebackCopy);
-			}
-
-			else
-			{
-				var r = leaf.TryReadHighestId(out var hid);
-				Debug.Assert(r);
-
-				Pool.SaveRelease(leaf);
-
-				// Update the parent if the removed id was the highest
-				var hidn = new ObjectIdNormalised(hid);
-				if (hidn.CompareTo(id) < 0)
-				{
-					var tracebackCopy = traceback.Clone();
-					r = tracebackCopy.TryMoveUp();
-					Debug.Assert(r);
-
-					UpdateSeparatorPropagate(
-						NormalisedValueSpan.FromNormalised(id),
-						NormalisedValueSpan.FromNormalised(hidn),
-						tracebackCopy
-					);
-				}
-
-				BalanceLeaf(traceback);
-			}
-
+			HandlePostRemoval(leaf, ikey.Separator, traceback);
 			return true;
 		}
 	}

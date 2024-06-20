@@ -131,6 +131,7 @@ namespace Barbados.StorageEngine.Indexing
 			var lh = Pool.Allocate();
 			var left = new BTreeLeafPage(lh);
 
+			HandleBeforeSplit(target, left);
 			var insertTarget = SplitLeaf(target, left, key.Separator, traceback);
 			var r = insertTarget.TryWriteObjectId(key, id);
 			Debug.Assert(r);

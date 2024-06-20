@@ -1,5 +1,4 @@
-﻿using System;
-using System.Diagnostics;
+﻿using System.Diagnostics;
 
 using Barbados.StorageEngine.Documents.Binary;
 using Barbados.StorageEngine.Paging;
@@ -86,44 +85,7 @@ namespace Barbados.StorageEngine.Indexing
 				Debug.Assert(r);
 			}
 
-			// Remove the leaf if it's empty
-			if (leaf.Count() == 0)
-			{
-				ChainHelpers.RemoveAndDeallocate(leaf, Pool);
-
-				var tracebackCopy = traceback.Clone();
-				var r = tracebackCopy.TryMoveUp();
-				Debug.Assert(r);
-
-				RemoveSeparatorPropagate(ikey.Separator, tracebackCopy);
-			}
-
-			else
-			{
-				var r = leaf.TryReadHighest(out var hkey);
-				Debug.Assert(r);
-
-				Span<byte> hkeySepCopy = stackalloc byte[hkey.Bytes.Length];
-				hkey.Bytes.CopyTo(hkeySepCopy);
-
-				Pool.SaveRelease(leaf);
-
-				// Update the parent if the removed key was the highest
-				if (hkeySepCopy.SequenceCompareTo(ikey.Separator.Bytes) <= 0)
-				{
-					var tracebackCopy = traceback.Clone();
-					r = tracebackCopy.TryMoveUp();
-					Debug.Assert(r);
-
-					UpdateSeparatorPropagate(
-						ikey.Separator, NormalisedValueSpan.FromNormalised(hkeySepCopy),
-						tracebackCopy
-					);
-				}
-
-				BalanceLeaf(traceback);
-			}
-
+			HandlePostRemoval(leaf, ikey.Separator, traceback);
 			return true;
 		}
 	}

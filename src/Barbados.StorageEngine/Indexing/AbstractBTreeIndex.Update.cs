@@ -150,18 +150,6 @@ namespace Barbados.StorageEngine.Indexing
 
 		protected T SplitLeaf(T target, T left, NormalisedValueSpan separator, BTreeIndexTraceback traceback)
 		{
-			if (target.Previous.IsNull)
-			{
-				ChainHelpers.Prepend(left, target);
-			}
-
-			else
-			{
-				var previous = Pool.LoadPin<T>(target.Previous);
-				ChainHelpers.Insert(left, previous, target);
-				Pool.SaveRelease(previous);
-			}
-
 			target.Spill(left, fromHighest: false);
 
 			var r = traceback.TryMoveUp();
@@ -388,6 +376,62 @@ namespace Barbados.StorageEngine.Indexing
 			else
 			{
 				Pool.Release(target);
+			}
+		}
+
+		protected void HandleBeforeSplit(T target, T left)
+		{
+			if (target.Previous.IsNull)
+			{
+				ChainHelpers.Prepend(left, target);
+			}
+
+			else
+			{
+				var previous = Pool.LoadPin<T>(target.Previous);
+				ChainHelpers.Insert(left, previous, target);
+				Pool.SaveRelease(previous);
+			}
+		}
+
+		protected void HandlePostRemoval(T target, NormalisedValueSpan separator, BTreeIndexTraceback traceback)
+		{
+			// Remove the leaf if it's empty
+			if (!target.TryReadLowest(out _))
+			{
+				ChainHelpers.RemoveAndDeallocate(target, Pool);
+
+				var tracebackCopy = traceback.Clone();
+				var r = tracebackCopy.TryMoveUp();
+				Debug.Assert(r);
+
+				RemoveSeparatorPropagate(separator, tracebackCopy);
+			}
+
+			else
+			{
+				var r = target.TryReadHighest(out var hsep);
+				Debug.Assert(r);
+
+				Span<byte> hsepCopy = stackalloc byte[hsep.Bytes.Length];
+				hsep.Bytes.CopyTo(hsepCopy);
+
+				Pool.SaveRelease(target);
+
+				// Update the parent if the removed separator was the highest
+				if (hsep.Bytes.SequenceCompareTo(separator.Bytes) < 0)
+				{
+					var tracebackCopy = traceback.Clone();
+					r = tracebackCopy.TryMoveUp();
+					Debug.Assert(r);
+
+					UpdateSeparatorPropagate(
+						separator, NormalisedValueSpan.FromNormalised(hsepCopy), 
+						tracebackCopy
+					);
+				}
+
+				BalanceLeaf(traceback);
 			}
 		}
 
