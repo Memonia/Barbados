@@ -1,16 +1,15 @@
 #### Status
 This is a personal project. No consistent development or maintenance is planned for the future.
 
-## About
-Barbados is an embedded, single-file document store supporting simple CRUD operations and querying capabilities. Some of the features include:
-* **BTree-based indexing:** each collection has a clustered index by default and may have an unlimited number of non-clustered indexes.
+## About  
+Barbados is an embedded document store, which works in multithreaded environments and handles nested documents without sacrificing performance or features. 
+* **BTree-based indexing:** each collection has a default clustered index and may have an unlimited number of non-clustered indexes.
 * **Concurrency control:** supports multiple simultaneous readers or a single writer per collection.
 * **Nested documents:** allows for partial loading and indexing of nested documents at any depth.
-* **Zero maintenance:** supports automatic index rebalancing and automatic page compacting.
-* **Custom storage format:** loading documents into memory does not require a deserialisation step.
+* **Custom storage format:** loading documents in memory does not require a deserialisation step.
 
 ## How to use it
-Barbados is shipped as two separate NuGet packages: [Barbados.StorageEngine](https://www.nuget.org/packages/Memonia.Barbados.StorageEngine) and [Barbados.QueryEngine](https://www.nuget.org/packages/Memonia.Barbados.QueryEngine). The storage engine provides collections, indexing and documents, while the query engine builds on top of it and provides support for queries. Below is a code snippet highlighting some basic functionality.
+Barbados is shipped as two separate NuGet packages: [Barbados.StorageEngine](https://www.nuget.org/packages/Memonia.Barbados.StorageEngine) and [Barbados.QueryEngine](https://www.nuget.org/packages/Memonia.Barbados.QueryEngine). The storage engine provides collections, indexing and documents, while the query engine builds on top of it and provides support for queries. Below is a code snippet highlighting basic functionality.
 
 ```c#
  using Barbados.QueryEngine.Query;
