@@ -67,17 +67,17 @@ namespace Barbados.StorageEngine.Documents
 
 		public bool HasGroup(BarbadosIdentifier group)
 		{
-			return Buffer.PrefixExists(group.StringBufferValue);
+			return Buffer.PrefixExists(group.BinaryName.AsSpan());
 		}
 
 		public bool HasField(BarbadosIdentifier field)
 		{
-			return Buffer.ValueExists(field.StringBufferValue);
+			return Buffer.ValueExists(field.BinaryName.AsSpan());
 		}
 
 		public bool TryGet(BarbadosIdentifier field, out object value)
 		{
-			if (!Buffer.ValueExists(field.StringBufferValue, out var marker, out var isArray))
+			if (!Buffer.ValueExists(field.BinaryName.AsSpan(), out var marker, out var isArray))
 			{
 				value = default!;
 				return false;
@@ -89,67 +89,67 @@ namespace Barbados.StorageEngine.Documents
 				switch (marker)
 				{
 					case ValueTypeMarker.Int8:
-						retrieved = Buffer.TryGetInt8Array(field.StringBufferValue, out var i8);
+						retrieved = Buffer.TryGetInt8Array(field.BinaryName.AsSpan(), out var i8);
 						value = i8;
 						break;
 
 					case ValueTypeMarker.Int16:
-						retrieved = Buffer.TryGetInt16Array(field.StringBufferValue, out var i16);
+						retrieved = Buffer.TryGetInt16Array(field.BinaryName.AsSpan(), out var i16);
 						value = i16;
 						break;
 
 					case ValueTypeMarker.Int32:
-						retrieved = Buffer.TryGetInt32Array(field.StringBufferValue, out var i32);
+						retrieved = Buffer.TryGetInt32Array(field.BinaryName.AsSpan(), out var i32);
 						value = i32;
 						break;
 
 					case ValueTypeMarker.Int64:
-						retrieved = Buffer.TryGetInt64Array(field.StringBufferValue, out var i64);
+						retrieved = Buffer.TryGetInt64Array(field.BinaryName.AsSpan(), out var i64);
 						value = i64;
 						break;
 
 					case ValueTypeMarker.UInt8:
-						retrieved = Buffer.TryGetUInt8Array(field.StringBufferValue, out var u8);
+						retrieved = Buffer.TryGetUInt8Array(field.BinaryName.AsSpan(), out var u8);
 						value = u8;
 						break;
 
 					case ValueTypeMarker.UInt16:
-						retrieved = Buffer.TryGetUInt16Array(field.StringBufferValue, out var u16);
+						retrieved = Buffer.TryGetUInt16Array(field.BinaryName.AsSpan(), out var u16);
 						value = u16;
 						break;
 
 					case ValueTypeMarker.UInt32:
-						retrieved = Buffer.TryGetUInt32Array(field.StringBufferValue, out var u32);
+						retrieved = Buffer.TryGetUInt32Array(field.BinaryName.AsSpan(), out var u32);
 						value = u32;
 						break;
 
 					case ValueTypeMarker.UInt64:
-						retrieved = Buffer.TryGetUInt64Array(field.StringBufferValue, out var u64);
+						retrieved = Buffer.TryGetUInt64Array(field.BinaryName.AsSpan(), out var u64);
 						value = u64;
 						break;
 
 					case ValueTypeMarker.Float32:
-						retrieved = Buffer.TryGetFloat32Array(field.StringBufferValue, out var f32);
+						retrieved = Buffer.TryGetFloat32Array(field.BinaryName.AsSpan(), out var f32);
 						value = f32;
 						break;
 
 					case ValueTypeMarker.Float64:
-						retrieved = Buffer.TryGetFloat64Array(field.StringBufferValue, out var f64);
+						retrieved = Buffer.TryGetFloat64Array(field.BinaryName.AsSpan(), out var f64);
 						value = f64;
 						break;
 
 					case ValueTypeMarker.Boolean:
-						retrieved = Buffer.TryGetBooleanArray(field.StringBufferValue, out var b);
+						retrieved = Buffer.TryGetBooleanArray(field.BinaryName.AsSpan(), out var b);
 						value = b;
 						break;
 
 					case ValueTypeMarker.DateTime:
-						retrieved = Buffer.TryGetDateTimeArray(field.StringBufferValue, out var dt);
+						retrieved = Buffer.TryGetDateTimeArray(field.BinaryName.AsSpan(), out var dt);
 						value = dt;
 						break;
 
 					case ValueTypeMarker.String:
-						retrieved = Buffer.TryGetStringArray(field.StringBufferValue, out var str);
+						retrieved = Buffer.TryGetStringArray(field.BinaryName.AsSpan(), out var str);
 						value = str;
 						break;
 
@@ -163,67 +163,67 @@ namespace Barbados.StorageEngine.Documents
 				switch (marker)
 				{
 					case ValueTypeMarker.Int8:
-						retrieved = Buffer.TryGetInt8(field.StringBufferValue, out var i8);
+						retrieved = Buffer.TryGetInt8(field.BinaryName.AsSpan(), out var i8);
 						value = i8;
 						break;
 
 					case ValueTypeMarker.Int16:
-						retrieved = Buffer.TryGetInt16(field.StringBufferValue, out var i16);
+						retrieved = Buffer.TryGetInt16(field.BinaryName.AsSpan(), out var i16);
 						value = i16;
 						break;
 
 					case ValueTypeMarker.Int32:
-						retrieved = Buffer.TryGetInt32(field.StringBufferValue, out var i32);
+						retrieved = Buffer.TryGetInt32(field.BinaryName.AsSpan(), out var i32);
 						value = i32;
 						break;
 
 					case ValueTypeMarker.Int64:
-						retrieved = Buffer.TryGetInt64(field.StringBufferValue, out var i64);
+						retrieved = Buffer.TryGetInt64(field.BinaryName.AsSpan(), out var i64);
 						value = i64;
 						break;
 
 					case ValueTypeMarker.UInt8:
-						retrieved = Buffer.TryGetUInt8(field.StringBufferValue, out var u8);
+						retrieved = Buffer.TryGetUInt8(field.BinaryName.AsSpan(), out var u8);
 						value = u8;
 						break;
 
 					case ValueTypeMarker.UInt16:
-						retrieved = Buffer.TryGetUInt16(field.StringBufferValue, out var u16);
+						retrieved = Buffer.TryGetUInt16(field.BinaryName.AsSpan(), out var u16);
 						value = u16;
 						break;
 
 					case ValueTypeMarker.UInt32:
-						retrieved = Buffer.TryGetUInt32(field.StringBufferValue, out var u32);
+						retrieved = Buffer.TryGetUInt32(field.BinaryName.AsSpan(), out var u32);
 						value = u32;
 						break;
 
 					case ValueTypeMarker.UInt64:
-						retrieved = Buffer.TryGetUInt64(field.StringBufferValue, out var u64);
+						retrieved = Buffer.TryGetUInt64(field.BinaryName.AsSpan(), out var u64);
 						value = u64;
 						break;
 
 					case ValueTypeMarker.Float32:
-						retrieved = Buffer.TryGetFloat32(field.StringBufferValue, out var f32);
+						retrieved = Buffer.TryGetFloat32(field.BinaryName.AsSpan(), out var f32);
 						value = f32;
 						break;
 
 					case ValueTypeMarker.Float64:
-						retrieved = Buffer.TryGetFloat64(field.StringBufferValue, out var f64);
+						retrieved = Buffer.TryGetFloat64(field.BinaryName.AsSpan(), out var f64);
 						value = f64;
 						break;
 
 					case ValueTypeMarker.Boolean:
-						retrieved = Buffer.TryGetBoolean(field.StringBufferValue, out var b);
+						retrieved = Buffer.TryGetBoolean(field.BinaryName.AsSpan(), out var b);
 						value = b;
 						break;
 
 					case ValueTypeMarker.DateTime:
-						retrieved = Buffer.TryGetDateTime(field.StringBufferValue, out var dt);
+						retrieved = Buffer.TryGetDateTime(field.BinaryName.AsSpan(), out var dt);
 						value = dt;
 						break;
 
 					case ValueTypeMarker.String:
-						retrieved = Buffer.TryGetString(field.StringBufferValue, out var str);
+						retrieved = Buffer.TryGetString(field.BinaryName.AsSpan(), out var str);
 						value = str;
 						break;
 
@@ -243,7 +243,7 @@ namespace Barbados.StorageEngine.Documents
 				return TryGetDocument(field, out extracted);
 			}
 
-			if (Buffer.TryGetBuffer(field.StringBufferValue, out var valueBuffer))
+			if (Buffer.TryGetBuffer(field.BinaryName.AsSpan(), out var valueBuffer))
 			{
 				var buffer = new ObjectBuffer.Builder()
 					.AddBuffer(field, valueBuffer)
@@ -257,34 +257,33 @@ namespace Barbados.StorageEngine.Documents
 			return false;
 		}
 
-		public bool TryGetInt8(BarbadosIdentifier field, out sbyte value) => Buffer.TryGetInt8(field.StringBufferValue, out value);
-		public bool TryGetInt16(BarbadosIdentifier field, out short value) => Buffer.TryGetInt16(field.StringBufferValue, out value);
-		public bool TryGetInt32(BarbadosIdentifier field, out int value) => Buffer.TryGetInt32(field.StringBufferValue, out value);
-		public bool TryGetInt64(BarbadosIdentifier field, out long value) => Buffer.TryGetInt64(field.StringBufferValue, out value);
-		public bool TryGetUInt8(BarbadosIdentifier field, out byte value) => Buffer.TryGetUInt8(field.StringBufferValue, out value);
-		public bool TryGetUInt16(BarbadosIdentifier field, out ushort value) => Buffer.TryGetUInt16(field.StringBufferValue, out value);
-		public bool TryGetUInt32(BarbadosIdentifier field, out uint value) => Buffer.TryGetUInt32(field.StringBufferValue, out value);
-		public bool TryGetUInt64(BarbadosIdentifier field, out ulong value) => Buffer.TryGetUInt64(field.StringBufferValue, out value);
-		public bool TryGetFloat32(BarbadosIdentifier field, out float value) => Buffer.TryGetFloat32(field.StringBufferValue, out value);
-		public bool TryGetFloat64(BarbadosIdentifier field, out double value) => Buffer.TryGetFloat64(field.StringBufferValue, out value);
-		public bool TryGetDateTime(BarbadosIdentifier field, out DateTime value) => Buffer.TryGetDateTime(field.StringBufferValue, out value);
-		public bool TryGetBoolean(BarbadosIdentifier field, out bool value) => Buffer.TryGetBoolean(field.StringBufferValue, out value);
-		public bool TryGetString(BarbadosIdentifier field, out string value) => Buffer.TryGetString(field.StringBufferValue, out value);
-
-		public bool TryGetInt8Array(BarbadosIdentifier field, out sbyte[] array) => Buffer.TryGetInt8Array(field.StringBufferValue, out array);
-		public bool TryGetInt16Array(BarbadosIdentifier field, out short[] array) => Buffer.TryGetInt16Array(field.StringBufferValue, out array);
-		public bool TryGetInt32Array(BarbadosIdentifier field, out int[] array) => Buffer.TryGetInt32Array(field.StringBufferValue, out array);
-		public bool TryGetInt64Array(BarbadosIdentifier field, out long[] array) => Buffer.TryGetInt64Array(field.StringBufferValue, out array);
-		public bool TryGetUInt8Array(BarbadosIdentifier field, out byte[] array) => Buffer.TryGetUInt8Array(field.StringBufferValue, out array);
-		public bool TryGetUInt16Array(BarbadosIdentifier field, out ushort[] array) => Buffer.TryGetUInt16Array(field.StringBufferValue, out array);
-		public bool TryGetUInt32Array(BarbadosIdentifier field, out uint[] array) => Buffer.TryGetUInt32Array(field.StringBufferValue, out array);
-		public bool TryGetUInt64Array(BarbadosIdentifier field, out ulong[] array) => Buffer.TryGetUInt64Array(field.StringBufferValue, out array);
-		public bool TryGetFloat32Array(BarbadosIdentifier field, out float[] array) => Buffer.TryGetFloat32Array(field.StringBufferValue, out array);
-		public bool TryGetFloat64Array(BarbadosIdentifier field, out double[] array) => Buffer.TryGetFloat64Array(field.StringBufferValue, out array);
-		public bool TryGetDateTimeArray(BarbadosIdentifier field, out DateTime[] array) => Buffer.TryGetDateTimeArray(field.StringBufferValue, out array);
-		public bool TryGetBooleanArray(BarbadosIdentifier field, out bool[] array) => Buffer.TryGetBooleanArray(field.StringBufferValue, out array);
-		public bool TryGetStringArray(BarbadosIdentifier field, out string[] array) => Buffer.TryGetStringArray(field.StringBufferValue, out array);
-
+		public bool TryGetInt8(BarbadosIdentifier field, out sbyte value) => Buffer.TryGetInt8(field.BinaryName.AsSpan(), out value);
+		public bool TryGetInt16(BarbadosIdentifier field, out short value) => Buffer.TryGetInt16(field.BinaryName.AsSpan(), out value);
+		public bool TryGetInt32(BarbadosIdentifier field, out int value) => Buffer.TryGetInt32(field.BinaryName.AsSpan(), out value);
+		public bool TryGetInt64(BarbadosIdentifier field, out long value) => Buffer.TryGetInt64(field.BinaryName.AsSpan(), out value);
+		public bool TryGetUInt8(BarbadosIdentifier field, out byte value) => Buffer.TryGetUInt8(field.BinaryName.AsSpan(), out value);
+		public bool TryGetUInt16(BarbadosIdentifier field, out ushort value) => Buffer.TryGetUInt16(field.BinaryName.AsSpan(), out value);
+		public bool TryGetUInt32(BarbadosIdentifier field, out uint value) => Buffer.TryGetUInt32(field.BinaryName.AsSpan(), out value);
+		public bool TryGetUInt64(BarbadosIdentifier field, out ulong value) => Buffer.TryGetUInt64(field.BinaryName.AsSpan(), out value);
+		public bool TryGetFloat32(BarbadosIdentifier field, out float value) => Buffer.TryGetFloat32(field.BinaryName.AsSpan(), out value);
+		public bool TryGetFloat64(BarbadosIdentifier field, out double value) => Buffer.TryGetFloat64(field.BinaryName.AsSpan(), out value);
+		public bool TryGetDateTime(BarbadosIdentifier field, out DateTime value) => Buffer.TryGetDateTime(field.BinaryName.AsSpan(), out value);
+		public bool TryGetBoolean(BarbadosIdentifier field, out bool value) => Buffer.TryGetBoolean(field.BinaryName.AsSpan(), out value);
+		public bool TryGetString(BarbadosIdentifier field, out string value) => Buffer.TryGetString(field.BinaryName.AsSpan(), out value);
+		public bool TryGetInt8Array(BarbadosIdentifier field, out sbyte[] array) => Buffer.TryGetInt8Array(field.BinaryName.AsSpan(), out array);
+		public bool TryGetInt16Array(BarbadosIdentifier field, out short[] array) => Buffer.TryGetInt16Array(field.BinaryName.AsSpan(), out array);
+		public bool TryGetInt32Array(BarbadosIdentifier field, out int[] array) => Buffer.TryGetInt32Array(field.BinaryName.AsSpan(), out array);
+		public bool TryGetInt64Array(BarbadosIdentifier field, out long[] array) => Buffer.TryGetInt64Array(field.BinaryName.AsSpan(), out array);
+		public bool TryGetUInt8Array(BarbadosIdentifier field, out byte[] array) => Buffer.TryGetUInt8Array(field.BinaryName.AsSpan(), out array);
+		public bool TryGetUInt16Array(BarbadosIdentifier field, out ushort[] array) => Buffer.TryGetUInt16Array(field.BinaryName.AsSpan(), out array);
+		public bool TryGetUInt32Array(BarbadosIdentifier field, out uint[] array) => Buffer.TryGetUInt32Array(field.BinaryName.AsSpan(), out array);
+		public bool TryGetUInt64Array(BarbadosIdentifier field, out ulong[] array) => Buffer.TryGetUInt64Array(field.BinaryName.AsSpan(), out array);
+		public bool TryGetFloat32Array(BarbadosIdentifier field, out float[] array) => Buffer.TryGetFloat32Array(field.BinaryName.AsSpan(), out array);
+		public bool TryGetFloat64Array(BarbadosIdentifier field, out double[] array) => Buffer.TryGetFloat64Array(field.BinaryName.AsSpan(), out array);
+		public bool TryGetDateTimeArray(BarbadosIdentifier field, out DateTime[] array) => Buffer.TryGetDateTimeArray(field.BinaryName.AsSpan(), out array);
+		public bool TryGetBooleanArray(BarbadosIdentifier field, out bool[] array) => Buffer.TryGetBooleanArray(field.BinaryName.AsSpan(), out array);
+		public bool TryGetStringArray(BarbadosIdentifier field, out string[] array) => Buffer.TryGetStringArray(field.BinaryName.AsSpan(), out array);
+	
 		public bool TryGetDocument(BarbadosIdentifier field, out BarbadosDocument document)
 		{
 			if (!field.IsGroup)
@@ -292,7 +291,7 @@ namespace Barbados.StorageEngine.Documents
 				field = field.GetGroupIdentifier();
 			}
 
-			if (Buffer.TryCollect(field.StringBufferValue, truncateNames: true, out var buffer))
+			if (Buffer.TryCollect(field.BinaryName.AsSpan(), truncateNames: true, out var buffer))
 			{
 				document = new BarbadosDocument(ObjectId.Invalid, buffer);
 				return true;
@@ -301,11 +300,12 @@ namespace Barbados.StorageEngine.Documents
 			document = default!;
 			return false;
 		}
+		
 		public bool TryGetDocumentArray(BarbadosIdentifier field, out BarbadosDocument[] documents)
 		{
 			var sb = new StringBuilder($"{field}.0");
 			BarbadosIdentifier firstItemName = sb.ToString();
-			if (!Buffer.PrefixExists(firstItemName.StringBufferValue))
+			if (!Buffer.PrefixExists(firstItemName.BinaryName.AsSpan()))
 			{
 				documents = default!;
 				return false;

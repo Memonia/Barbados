@@ -2,6 +2,7 @@
 
 using Barbados.QueryEngine.Helpers;
 using Barbados.StorageEngine;
+using Barbados.StorageEngine.Collections;
 using Barbados.StorageEngine.Documents;
 
 namespace Barbados.QueryEngine.Evaluation
@@ -11,9 +12,9 @@ namespace Barbados.QueryEngine.Evaluation
 		public IReadOnlyCollection<IQueryPlanEvaluator> Children => [];
 
 		private readonly ValueSelector _selector;
-		private readonly IBarbadosCollection _collection;
+		private readonly IReadOnlyBarbadosCollection _collection;
 
-		public CollectionScanEvaluator(IBarbadosCollection collection, ValueSelector selector)
+		public CollectionScanEvaluator(IReadOnlyBarbadosCollection collection, ValueSelector selector)
 		{
 			_selector = selector;
 			_collection = collection;

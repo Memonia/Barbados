@@ -10,11 +10,14 @@ namespace Barbados.StorageEngine
 		public static implicit operator BarbadosIdentifier(string identifier) => new(identifier);
 		public static implicit operator string(BarbadosIdentifier identifier) => identifier.Identifier;
 
+		public static bool operator ==(BarbadosIdentifier a, BarbadosIdentifier b) => a.Identifier == b.Identifier;
+		public static bool operator !=(BarbadosIdentifier a, BarbadosIdentifier b) => a.Identifier != b.Identifier;
+
 		public bool IsGroup { get; }
 		public bool IsReserved { get; }
 		public string Identifier { get; }
 
-		internal byte[] StringBufferValue { get; }
+		internal ValueName BinaryName { get; }
 
 		public BarbadosIdentifier(string identifier)
 		{
@@ -23,7 +26,12 @@ namespace Barbados.StorageEngine
 				throw new ArgumentException("Identifier may not be empty", nameof(identifier));
 			}
 
-			if (identifier.TrimStart().StartsWith('?'))
+			if (identifier.StartsWith(CommonIdentifiers.NestingSeparator))
+			{
+				throw new ArgumentException("Identifier may not start with a nesting separator", nameof(identifier));
+			}
+
+			if (identifier.TrimStart().StartsWith(CommonIdentifiers.ReservedNamePrefix))
 			{
 				IsReserved = true;
 			}
@@ -32,7 +40,7 @@ namespace Barbados.StorageEngine
 			foreach (var c in identifier)
 			{
 				consecutiveNesting += 1;
-				if (c != BarbadosIdentifiers.NestingSeparator[0])
+				if (c != CommonIdentifiers.NestingSeparator[0])
 				{
 					consecutiveNesting = 0;
 				}
@@ -43,20 +51,9 @@ namespace Barbados.StorageEngine
 				}
 			}
 
-			IsGroup = identifier.EndsWith(BarbadosIdentifiers.NestingSeparator[0]);
+			IsGroup = identifier.EndsWith(CommonIdentifiers.NestingSeparator[0]);
 			Identifier = identifier;
-			StringBufferValue = new byte[ValueBufferRawHelpers.GetLength(identifier)];
-			ValueBufferRawHelpers.WriteStringValue(StringBufferValue, identifier);
-		}
-
-		public BarbadosIdentifier Nest(BarbadosIdentifier identifier)
-		{
-			if (!IsGroup)
-			{
-				return $"{Identifier}{BarbadosIdentifiers.NestingSeparator}{identifier}";
-			}
-
-			return $"{Identifier}{identifier}";
+			BinaryName = new(identifier);
 		}
 
 		public override string ToString() => Identifier;
@@ -78,7 +75,7 @@ namespace Barbados.StorageEngine
 				throw new InvalidOperationException("This instance is not a value identifier");
 			}
 
-			return Identifier + BarbadosIdentifiers.NestingSeparator[0];
+			return Identifier + CommonIdentifiers.NestingSeparator[0];
 		}
 
 		internal IEnumerator<int> GetSplitIndices()
@@ -86,7 +83,7 @@ namespace Barbados.StorageEngine
 			var i = 0;
 			while (i < Identifier.Length)
 			{
-				var j = Identifier.IndexOf(BarbadosIdentifiers.NestingSeparator[0], i);
+				var j = Identifier.IndexOf(CommonIdentifiers.NestingSeparator[0], i);
 				if (j == -1)
 				{
 					j = Identifier.Length;
@@ -96,5 +93,17 @@ namespace Barbados.StorageEngine
 				i = j + 1;
 			}
 		}
+
+		public override bool Equals(object? obj)
+		{
+			if (obj is BarbadosIdentifier identifier)
+			{
+				return Identifier == identifier.Identifier;
+			}
+
+			return false;
+		}
+
+		public override int GetHashCode() => Identifier.GetHashCode();
 	}
 }

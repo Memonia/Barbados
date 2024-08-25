@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Buffers.Binary;
 
-using Barbados.StorageEngine.Paging.Metadata;
+using Barbados.StorageEngine.Storage.Paging;
 
 namespace Barbados.StorageEngine.Helpers
 {

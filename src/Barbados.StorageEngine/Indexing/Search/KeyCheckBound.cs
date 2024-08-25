@@ -6,12 +6,12 @@ namespace Barbados.StorageEngine.Indexing.Search
 {
 	internal abstract class KeyCheckBound(NormalisedValue bound) : IKeyCheck
 	{
-		private readonly NormalisedValue _bound = bound;
+		public NormalisedValue Bound { get; } = bound;
 
 		public bool Check(NormalisedValueSpan key)
 		{
 			return Evaluate(
-				key.Bytes.SequenceCompareTo(_bound.AsSpan().Bytes)
+				key.Bytes.SequenceCompareTo(Bound.AsSpan().Bytes)
 			);
 		}
 

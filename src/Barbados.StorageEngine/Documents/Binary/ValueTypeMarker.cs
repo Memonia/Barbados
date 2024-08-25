@@ -18,8 +18,8 @@ namespace Barbados.StorageEngine.Documents.Binary
 				ValueTypeMarker.UInt64 => sizeof(ulong),
 				ValueTypeMarker.Float32 => sizeof(float),
 				ValueTypeMarker.Float64 => sizeof(double),
-				ValueTypeMarker.Boolean => sizeof(bool),
 				ValueTypeMarker.DateTime => sizeof(long),
+				ValueTypeMarker.Boolean => sizeof(bool),
 				ValueTypeMarker.String => throw new InvalidOperationException(),
 				_ => throw new NotImplementedException()
 			};
@@ -35,7 +35,8 @@ namespace Barbados.StorageEngine.Documents.Binary
 	{
 		/* Normalised values of different types are sorted according to the marker's value */
 
-		Int8 = 1,
+		Min = 1,
+		Int8,
 		Int16,
 		Int32,
 		Int64,
@@ -47,6 +48,7 @@ namespace Barbados.StorageEngine.Documents.Binary
 		Float64,
 		DateTime,
 		Boolean,
-		String
+		String,
+		Max = 255
 	}
 }

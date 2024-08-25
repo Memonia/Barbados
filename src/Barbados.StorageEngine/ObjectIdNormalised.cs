@@ -1,41 +1,42 @@
 ﻿using System;
 using System.Buffers.Binary;
+using System.Runtime.CompilerServices;
 
 namespace Barbados.StorageEngine
 {
 	internal readonly struct ObjectIdNormalised
 	{
+		[InlineArray(sizeof(ulong))]
+		private struct UInt64Buffer
+		{
+#pragma warning disable IDE0051 // Remove unused private members
+#pragma warning disable IDE0044 // Add readonly modifier
+			private byte _f;
+#pragma warning restore IDE0044 // Add readonly modifier
+#pragma warning restore IDE0051 // Remove unused private members
+		}
+
+		public static implicit operator ReadOnlySpan<byte>(in ObjectIdNormalised id) => id._value[..];
+
 		public static ObjectId FromNormalised(ReadOnlySpan<byte> source)
 		{
-			var normalised = BinaryPrimitives.ReadUInt64BigEndian(source);
-			return new ObjectId(_restore(normalised));
+			return new ObjectId(
+				(long)(BinaryPrimitives.ReadUInt64BigEndian(source) ^ 0x8000_0000_0000_0000)
+			);
 		}
 
-		private static long _restore(ulong normalised)
-		{
-			return (long)(normalised ^ 0x8000_0000_0000_0000);
-		}
-
-		private readonly ulong _normalisedValue;
+		// Careful with defensive copies. 'UInt64Buffer' cannot be readonly (InlineArray)
+		private readonly UInt64Buffer _value;
 
 		public ObjectIdNormalised(ObjectId id)
 		{
-			_normalisedValue = (ulong)id.Value ^ 0x8000_0000_0000_0000;
-		}
-
-		public ObjectId GetObjectId()
-		{
-			return new ObjectId(_restore(_normalisedValue));
-		}
-
-		public void WriteTo(Span<byte> destination)
-		{
-			BinaryPrimitives.WriteUInt64BigEndian(destination, _normalisedValue);
+			_value = new();
+			BinaryPrimitives.WriteUInt64BigEndian(_value, (ulong)id.Value ^ 0x8000_0000_0000_0000);
 		}
 
 		public int CompareTo(ObjectIdNormalised other)
 		{
-			return _normalisedValue.CompareTo(other._normalisedValue);
+			return ((ReadOnlySpan<byte>)this).SequenceCompareTo(other);
 		}
 	}
 }

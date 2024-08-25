@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Text;
 
 using Barbados.StorageEngine.Documents.Binary;
+using Barbados.StorageEngine.Exceptions;
 
 namespace Barbados.StorageEngine.Documents
 {
@@ -10,26 +11,6 @@ namespace Barbados.StorageEngine.Documents
 	{
 		public sealed class Builder
 		{
-			private static void _throwGroupIdentifier(BarbadosIdentifier identifier)
-			{
-				if (identifier.IsGroup)
-				{
-					throw new ArgumentException(
-						$"Expected a field identifier, got a group '{identifier}'", nameof(identifier)
-					);
-				}
-			}
-
-			private static void _throwFieldIdentifier(BarbadosIdentifier identifier)
-			{
-				if (!identifier.IsGroup)
-				{
-					throw new ArgumentException(
-						$"Expected a group identifier, got a field '{identifier}'", nameof(identifier)
-					);
-				}
-			}
-
 			private ObjectId _id;
 			private readonly ObjectBuffer.Builder _builder;
 
@@ -65,8 +46,8 @@ namespace Barbados.StorageEngine.Documents
 
 			public Builder AddGroupFrom(BarbadosIdentifier group, BarbadosDocument document)
 			{
-				_throwFieldIdentifier(group);
-				if (!document.Buffer.TryCollect(group.StringBufferValue, false, out var buffer))
+				BarbadosArgumentException.ThrowFieldIdentifierWhenGroupExpected(group, nameof(group));
+				if (!document.Buffer.TryCollect(group.BinaryName.AsSpan(), false, out var buffer))
 				{
 					throw new ArgumentException($"Given document did not contain a group '{group}'", nameof(group));
 				}
@@ -85,7 +66,7 @@ namespace Barbados.StorageEngine.Documents
 
 			public Builder AddFieldFrom(BarbadosIdentifier field, BarbadosDocument document)
 			{
-				_throwGroupIdentifier(field);
+				BarbadosArgumentException.ThrowGroupIdentifierWhenFieldExpected(field, nameof(field));
 				if (document.TryGetDocument(field, out var value))
 				{
 					Add(field, value);
@@ -99,7 +80,7 @@ namespace Barbados.StorageEngine.Documents
 
 				else
 				{
-					if (!document.Buffer.TryGetBuffer(field.StringBufferValue, out var valueBuffer))
+					if (!document.Buffer.TryGetBuffer(field.BinaryName.AsSpan(), out var valueBuffer))
 					{
 						throw new ArgumentException(
 							$"Given document did not contain a field '{field}'", nameof(field)
@@ -142,7 +123,7 @@ namespace Barbados.StorageEngine.Documents
 
 			public Builder Add(BarbadosIdentifier field, BarbadosDocument document)
 			{
-				_throwGroupIdentifier(field);
+				BarbadosArgumentException.ThrowGroupIdentifierWhenFieldExpected(field, nameof(field));
 				if (document.Count() == 0)
 				{
 					throw new ArgumentException("Cannot add an empty document", nameof(document));
@@ -196,7 +177,7 @@ namespace Barbados.StorageEngine.Documents
 
 			private Builder _add(BarbadosIdentifier field, Action add)
 			{
-				_throwGroupIdentifier(field);
+				BarbadosArgumentException.ThrowGroupIdentifierWhenFieldExpected(field, nameof(field));
 				add();
 				return this;
 			}

@@ -7,6 +7,7 @@ using Barbados.QueryEngine.Build.Expressions;
 using Barbados.QueryEngine.Evaluation;
 using Barbados.QueryEngine.Evaluation.Expressions;
 using Barbados.StorageEngine;
+using Barbados.StorageEngine.Collections;
 using Barbados.StorageEngine.Documents;
 
 namespace Barbados.QueryEngine
@@ -17,7 +18,10 @@ namespace Barbados.QueryEngine
 		 * the simplest expressions, only examining the closest filter to the scan
 		 */
 
-		public static IQueryPlanEvaluator TranslatePlan(IQueryPlan plan, IBarbadosCollection collection)
+		public static IQueryPlanEvaluator TranslatePlan(
+			IQueryPlan plan,
+			IReadOnlyBarbadosCollection collection
+		)
 		{
 			IReadOnlyCollection<IQueryPlanEvaluator> _translate(IQueryPlan child, List<IQueryExpression> filterExpressions)
 			{
@@ -105,12 +109,19 @@ namespace Barbados.QueryEngine
 				var builder = new BarbadosDocument.Builder();
 				return expr switch
 				{
+					ConstantExpression<sbyte> cesb => new ConstantExpressionEvaluator(expr, builder.Add(cesb.Name, cesb.Value).Build()),
 					ConstantExpression<int> cei => new ConstantExpressionEvaluator(expr, builder.Add(cei.Name, cei.Value).Build()),
+					ConstantExpression<short> ces => new ConstantExpressionEvaluator(expr, builder.Add(ces.Name, ces.Value).Build()),
 					ConstantExpression<long> cel => new ConstantExpressionEvaluator(expr, builder.Add(cel.Name, cel.Value).Build()),
+					ConstantExpression<byte> ceb => new ConstantExpressionEvaluator(expr, builder.Add(ceb.Name, ceb.Value).Build()),
 					ConstantExpression<uint> ceui => new ConstantExpressionEvaluator(expr, builder.Add(ceui.Name, ceui.Value).Build()),
+					ConstantExpression<ushort> ceus => new ConstantExpressionEvaluator(expr, builder.Add(ceus.Name, ceus.Value).Build()),
 					ConstantExpression<ulong> ceul => new ConstantExpressionEvaluator(expr, builder.Add(ceul.Name, ceul.Value).Build()),
-					ConstantExpression<string> ces => new ConstantExpressionEvaluator(expr, builder.Add(ces.Name, ces.Value).Build()),
+					ConstantExpression<float> cef => new ConstantExpressionEvaluator(expr, builder.Add(cef.Name, cef.Value).Build()),
+					ConstantExpression<double> ced => new ConstantExpressionEvaluator(expr, builder.Add(ced.Name, ced.Value).Build()),
+					ConstantExpression<DateTime> cedt => new ConstantExpressionEvaluator(expr, builder.Add(cedt.Name, cedt.Value).Build()),
 					ConstantExpression<bool> ceb => new ConstantExpressionEvaluator(expr, builder.Add(ceb.Name, ceb.Value).Build()),
+					ConstantExpression<string> ces => new ConstantExpressionEvaluator(expr, builder.Add(ces.Name, ces.Value).Build()),
 					_ => throw new ArgumentException($"Constant expression of type {expr.GetType().GetGenericArguments()[0]} is not supported")
 				};
 			}
@@ -122,7 +133,10 @@ namespace Barbados.QueryEngine
 		}
 
 		private static bool _tryGetMatchingIndexSeekEvaluator(
-			IQueryExpression expression, IBarbadosCollection collection, ValueSelector selector, out IndexSeekEvaluator evaluator
+			IQueryExpression expression, 
+			IReadOnlyBarbadosCollection collection, 
+			ValueSelector selector,
+			out IndexSeekEvaluator evaluator
 		)
 		{
 			if (expression is ComparisonExpression ce)
@@ -140,67 +154,37 @@ namespace Barbados.QueryEngine
 					return false;
 				}
 
-				var conditionBuilder = new BarbadosDocument.Builder();
-				switch (expr)
-				{
-					case ConstantExpression<int> cei:
-						conditionBuilder.Add(BarbadosIdentifiers.Index.SearchValue, cei.Value);
-						break;
-
-					case ConstantExpression<long> cel:
-						conditionBuilder.Add(BarbadosIdentifiers.Index.SearchValue, cel.Value);
-						break;
-
-					case ConstantExpression<uint> ceui:
-						conditionBuilder.Add(BarbadosIdentifiers.Index.SearchValue, ceui.Value);
-						break;
-
-					case ConstantExpression<ulong> ceul:
-						conditionBuilder.Add(BarbadosIdentifiers.Index.SearchValue, ceul.Value);
-						break;
-
-					case ConstantExpression<string> ces:
-						conditionBuilder.Add(BarbadosIdentifiers.Index.SearchValue, ces.Value);
-						break;
-
-					case ConstantExpression<bool> ceb:
-						conditionBuilder.Add(BarbadosIdentifiers.Index.SearchValue, ceb.Value);
-						break;
-
-					default:
-						throw new NotImplementedException();
-				}
-
-				if (!collection.TryGetBTreeIndexLookup(ce.ComparedField, out var index))
+				if (!collection.TryGetBTreeIndex(ce.ComparedField, out var index))
 				{
 					evaluator = default!;
 					return false;
 				}
 
+				var conditionBuilder = new BarbadosDocument.Builder();
 				switch (ce.Operator)
 				{
 					case BinaryOperator.Equals:
-						conditionBuilder.Add(BarbadosIdentifiers.Index.Exact, true);
+						conditionBuilder.Add(CommonIdentifiers.Index.Exact, true);
 						break;
 
 					case BinaryOperator.LessThan:
-						conditionBuilder.Add(BarbadosIdentifiers.Index.LessThan, true);
+						conditionBuilder.Add(CommonIdentifiers.Index.LessThan, true);
 						break;
 
 					case BinaryOperator.GreaterThan:
-						conditionBuilder.Add(BarbadosIdentifiers.Index.GreaterThan, true);
+						conditionBuilder.Add(CommonIdentifiers.Index.GreaterThan, true);
 						break;
 
 					case BinaryOperator.LessThanOrEqual:
 						conditionBuilder
-							.Add(BarbadosIdentifiers.Index.Inclusive, true)
-							.Add(BarbadosIdentifiers.Index.LessThan, true);
+							.Add(CommonIdentifiers.Index.Inclusive, true)
+							.Add(CommonIdentifiers.Index.LessThan, true);
 						break;
 
 					case BinaryOperator.GreaterThanOrEqual:
 						conditionBuilder
-							.Add(BarbadosIdentifiers.Index.Inclusive, true)
-							.Add(BarbadosIdentifiers.Index.GreaterThan, true);
+							.Add(CommonIdentifiers.Index.Inclusive, true)
+							.Add(CommonIdentifiers.Index.GreaterThan, true);
 						break;
 
 					default:
@@ -208,12 +192,79 @@ namespace Barbados.QueryEngine
 						return false;
 				}
 
+				_addSearchValueToIndexCondition(conditionBuilder, expr);
 				evaluator = new IndexSeekEvaluator(selector, conditionBuilder.Build(), index, collection);
 				return true;
 			}
 
 			evaluator = default!;
 			return false;
+		}
+
+		private static void _addSearchValueToIndexCondition(
+			BarbadosDocument.Builder conditionBuilder,
+			IQueryExpression expression
+		)
+		{
+			switch (expression)
+			{
+				case ConstantExpression<sbyte> cesb:
+					conditionBuilder.Add(CommonIdentifiers.Index.SearchValue, cesb.Value);
+					break;
+
+				case ConstantExpression<int> cei:
+					conditionBuilder.Add(CommonIdentifiers.Index.SearchValue, cei.Value);
+					break;
+
+				case ConstantExpression<short> ces:
+					conditionBuilder.Add(CommonIdentifiers.Index.SearchValue, ces.Value);
+					break;
+
+				case ConstantExpression<long> cel:
+					conditionBuilder.Add(CommonIdentifiers.Index.SearchValue, cel.Value);
+					break;
+
+				case ConstantExpression<byte> ceb:
+					conditionBuilder.Add(CommonIdentifiers.Index.SearchValue, ceb.Value);
+					break;
+
+				case ConstantExpression<uint> ceui:
+					conditionBuilder.Add(CommonIdentifiers.Index.SearchValue, ceui.Value);
+					break;
+
+				case ConstantExpression<ushort> ceus:
+					conditionBuilder.Add(CommonIdentifiers.Index.SearchValue, ceus.Value);
+					break;
+
+				case ConstantExpression<ulong> ceul:
+					conditionBuilder.Add(CommonIdentifiers.Index.SearchValue, ceul.Value);
+					break;
+
+				case ConstantExpression<float> cef:
+					conditionBuilder.Add(CommonIdentifiers.Index.SearchValue, cef.Value);
+					break;
+
+				case ConstantExpression<double> ced:
+					conditionBuilder.Add(CommonIdentifiers.Index.SearchValue, ced.Value);
+					break;
+
+				case ConstantExpression<DateTime> cedt:
+					conditionBuilder.Add(CommonIdentifiers.Index.SearchValue, cedt.Value);
+					break;
+
+				case ConstantExpression<bool> ceb:
+					conditionBuilder.Add(CommonIdentifiers.Index.SearchValue, ceb.Value);
+					break;
+
+				case ConstantExpression<string> ces:
+					conditionBuilder.Add(CommonIdentifiers.Index.SearchValue, ces.Value);
+					break;
+
+				default:
+					throw new ArgumentException(
+						$"Constant expression of type {expression.GetType().GetGenericArguments()[0]} is not supported"
+					);
+			}
 		}
 	}
 }
