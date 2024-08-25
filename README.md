@@ -2,98 +2,105 @@
 This is a personal project. No consistent development or maintenance is planned for the future.
 
 ## About  
-Barbados is an embedded document store, which works in multithreaded environments and handles nested documents without sacrificing performance or features. 
-* **BTree-based indexing:** each collection has a default clustered index and may have an unlimited number of non-clustered indexes.
-* **Concurrency control:** supports multiple simultaneous readers or a single writer per collection.
-* **Nested documents:** allows for partial loading and indexing of nested documents at any depth.
+Barbados is an embedded, ACID-compliant, thread-safe document store. Major features include: write-ahead log, transaction processing, custom storage format and nested documents.
+* **Transaction processing:** each operation is a part of an automatic transaction or a user-created explicit transaction.
+* **Disaster recovery**: transactions rely on WAL (Write-Ahead Log) to avoid data loss.
+* **Indexing:** indexes are implemented as BTrees. Collections are organised as clustered indexes and may have an unlimited number of non-clustered indexes.
+* **Concurrency:** collections and indexes support multiple simultaneous readers or a single writer.
+* **Nested documents:** nested documents can be indexed and loaded partially just like the top-level fields.
 * **Custom storage format:** loading documents in memory does not require a deserialisation step.
 
 ## How to use it
 Barbados is shipped as two separate NuGet packages: [Barbados.StorageEngine](https://www.nuget.org/packages/Memonia.Barbados.StorageEngine) and [Barbados.QueryEngine](https://www.nuget.org/packages/Memonia.Barbados.QueryEngine). The storage engine provides collections, indexing and documents, while the query engine builds on top of it and provides support for queries. Below is a code snippet highlighting basic functionality.
 
 ```c#
- using Barbados.QueryEngine.Query;
- using Barbados.QueryEngine.Query.Extensions;
- using Barbados.StorageEngine;
- using Barbados.StorageEngine.Documents;
+using Barbados.QueryEngine.Query;
+using Barbados.QueryEngine.Query.Extensions;
+using Barbados.StorageEngine;
+using Barbados.StorageEngine.Configuration;
+using Barbados.StorageEngine.Documents;
+using Barbados.StorageEngine.Transactions;
 
- // Our database file is called 'barbados.db'
- using var context = new BarbadosContext("barbados.db", openOrCreate: true);
+var connectionSettings = new ConnectionSettingsBuilder()
+	.SetDatabaseFilePath("Barbados.db")
+	.SetOnConnectAction(OnConnectAction.EnsureDatabaseOverwritten)
+	.Build();
 
- // Create a collection
- context.BarbadosController.CreateCollection("users");
- var collection = context.BarbadosController.GetCollection("users");
+using var context = new BarbadosContext(connectionSettings);
 
- // Builder is used to create documents
- var documentBuilder = new BarbadosDocument.Builder();
+// Create a collection and some indexes
+context.Database.Collections.EnsureCreated("users");
+context.Database.Indexes.EnsureCreated("users", "username");
+context.Database.Indexes.EnsureCreated("users", "favouriteGame.name");
+context.Database.Indexes.EnsureCreated("users", "favouriteGame.hoursPlayed");
 
- // Create a few user documents
- var user1FavGame = documentBuilder
-     .Add("name", "Genshin Impact")
-     .Add("review", "Fix Mona!")
-     .Add("reviewScore", (byte)20)
-     .Add("hoursPlayed", 17)
-     .Build();
+var users = context.Database.Collections.Get("users");
 
- var user1 = documentBuilder
-     .Add("username", "Gold")
-     .Add("email", "jackjoe@example.com")
-     .Add("favouriteGame", user1FavGame)
-     .Build();
+// Prepare some documents
+var documentBuilder = new BarbadosDocument.Builder();
+var user1FavGame = documentBuilder
+	.Add("name", "Genshin Impact")
+	.Add("review", "Fix Mona!")
+	.Add("reviewScore", (byte)20)
+	.Add("hoursPlayed", 17)
+	.Build();
 
- var user2FavGame = documentBuilder
-     .Add("name", "Trackmania")
-     .Add("hoursPlayed", 11690)
-     .Build();
+var user2FavGame = documentBuilder
+	.Add("name", "Trackmania")
+	.Add("hoursPlayed", 11690)
+	.Build();
 
- var user2OwnedGames = new BarbadosDocument[]
- {
-     documentBuilder
-         .Add("name", "Cyberpunk 2077")
-         .Add("achievments", 45)
-         .Add("hoursPlayed", 56)
-         .Build(),
+var user1 = documentBuilder
+	.Add("username", "Gold")
+	.Add("email", "jackjoe@example.com")
+	.Add("favouriteGame", user1FavGame)
+	.Build();
 
-     documentBuilder
-         .Add("name", "Grand Theft Auto VI")
-         .Add("hoursPlayed", 110)
-         .Add("inGameNickname", "Goldie")
-         .Build()
- };
+var user2 = documentBuilder
+	.Add("username", "ddXxXbb")
+	.Add("favouriteGame", user2FavGame)
+	.Add("achievementIds", new int[] { 177091, 177144, 178002 })
+	.Build();
 
- var user2 = documentBuilder
-     .Add("username", "ddXxXbb")
-     .Add("favouriteGame", user2FavGame)
-     .Add("ownedGames", user2OwnedGames)
-     .Build();
+// Prepate a transaction which includes a single 'user' collection
+var txBuilder = context.Database.CreateTransaction(TransactionMode.ReadWrite)
+	.Include(users);
 
- // Insert the documents into the collection
- collection.Insert(user1);
- collection.Insert(user2);
+// Insert both documents as a part of an explicit transaction
+using (var _ = txBuilder.BeginTransaction())
+{
+	users.Insert(user1);
+	users.Insert(user2);
 
- // Create an index on the 'hoursPlayed' field in the 'favouriteGame' document
- context.BarbadosController.CreateIndex("users", "favouriteGame.hoursPlayed");
+	context.Database.CommitTransaction();
+}
 
- // Write out all documents in the collection
- foreach (var doc in collection.GetCursor())
- {
-     Console.WriteLine(doc);
-     Console.WriteLine();
- }
+// Write out all documents in the collection
+foreach (var doc in users.GetCursor())
+{
+	Console.WriteLine(doc);
+	Console.WriteLine();
+}
 
- // Find all users who have played more than 100 hours of their favourite game
- // and get the username of the player and the name of the first game in their games list
- var query = collection.Load()
-     .Filter(QueryBuilder.Filters.Gt("favouriteGame.hoursPlayed", 100))
-     .Project(QueryBuilder.Projection
-         .Include("ownedGames.0.name")
-         .Include("username")
-     );
+// Find all users who have played more than 100 hours of their favourite game
+// and get the username of the player, the name of their favourite game and the
+// id of the first achievement in their achievement list
+var query = users.Load()
+	.Filter(QueryBuilder.Filters.Gt("favouriteGame.hoursPlayed", 100))
+	.Project(QueryBuilder.Projection
+		.Include("username")
+		.Include("favouriteGame.name")
+		.Include("achievementIds.0")
+	);
 
- // Write out the result
- foreach (var doc in query.Execute())
- {
-     Console.WriteLine(doc);
-     Console.WriteLine();
- }
+// Check the query execution plan
+Console.WriteLine(query.FormatTranslated());
+Console.WriteLine();
+
+// Write out the result
+foreach (var doc in query.Execute())
+{
+	Console.WriteLine(doc);
+	Console.WriteLine();
+}
 ```
