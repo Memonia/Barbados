@@ -16,9 +16,10 @@ namespace Barbados.StorageEngine.Documents.Binary
 				var nextValueOffset = absValueTableOffset;
 				var nextNameOffset = absNameTableOffset;
 				int count = 0;
-				foreach (var nameBuffer in accumulator.GetSortedNameBuffersEnumerator())
+				foreach (var valueName in accumulator.GetSortedValueNameEnumerator())
 				{
-					var r = accumulator.TryGet(nameBuffer, out var valueBuffer);
+					var nameBuffer = valueName.GetBuffer();
+					var r = accumulator.TryGet(valueName, out var valueBuffer);
 					Debug.Assert(r);
 
 					var descriptor = new ValueDescriptor(

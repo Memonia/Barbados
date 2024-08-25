@@ -2,8 +2,10 @@
 
 using Barbados.QueryEngine.Helpers;
 using Barbados.StorageEngine;
+using Barbados.StorageEngine.Collections;
 using Barbados.StorageEngine.Documents;
 using Barbados.StorageEngine.Exceptions;
+using Barbados.StorageEngine.Indexing;
 
 namespace Barbados.QueryEngine.Evaluation
 {
@@ -14,13 +16,13 @@ namespace Barbados.QueryEngine.Evaluation
 		private readonly ValueSelector _selector;
 		private readonly BarbadosDocument _condition;
 		private readonly IReadOnlyBTreeIndex _index;
-		private readonly IBarbadosCollection _collection;
+		private readonly IReadOnlyBarbadosCollection _collection;
 
 		public IndexSeekEvaluator(
 			ValueSelector selector,
 			BarbadosDocument condition,
 			IReadOnlyBTreeIndex index,
-			IBarbadosCollection collection
+			IReadOnlyBarbadosCollection collection
 		)
 		{
 			_selector = selector;
@@ -32,18 +34,18 @@ namespace Barbados.QueryEngine.Evaluation
 		public IEnumerable<BarbadosDocument> Evaluate()
 		{
 			var cursor = _index.Find(_condition);
-			foreach (var id in _index.Find(_condition))
+			foreach (var id in cursor)
 			{
 				if (!_collection.TryRead(id, _selector, out var document))
 				{
 					cursor.Close();
-					throw new BarbadosException(BarbadosExceptionCode.InternalError);
+					throw new BarbadosInternalErrorException();
 				}
 
 				yield return document;
 			}
 		}
 
-		public override string ToString() => FormatHelpers.FormatValueSelector($"IndexSeek({_index.IndexedField})", _selector);
+		public override string ToString() => FormatHelpers.FormatValueSelector($"IndexSeek({_index.IndexField})", _selector);
 	}
 }

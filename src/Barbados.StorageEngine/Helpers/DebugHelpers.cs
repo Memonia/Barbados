@@ -2,7 +2,7 @@
 using System.Reflection;
 
 using Barbados.StorageEngine.Documents.Binary;
-using Barbados.StorageEngine.Paging.Pages;
+using Barbados.StorageEngine.Storage.Paging.Pages;
 
 namespace Barbados.StorageEngine.Helpers
 {

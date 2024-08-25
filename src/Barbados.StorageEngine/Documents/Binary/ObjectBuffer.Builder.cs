@@ -55,7 +55,7 @@ namespace Barbados.StorageEngine.Documents.Binary
 
 			public Builder AddBuffer(string name, IValueBuffer buffer)
 			{
-				_accumulator.Add(new ValueStringBuffer(name), buffer);
+				_accumulator.Add(new(name), buffer);
 				return this;
 			}
 		}

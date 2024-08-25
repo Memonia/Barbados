@@ -1,149 +1,122 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
-using System.Linq;
 
 using Barbados.StorageEngine.Caching;
-using Barbados.StorageEngine.Paging;
-
-using Microsoft.Win32.SafeHandles;
+using Barbados.StorageEngine.Configuration;
+using Barbados.StorageEngine.Storage;
+using Barbados.StorageEngine.Transactions;
+using Barbados.StorageEngine.Transactions.Locks;
+using Barbados.StorageEngine.Transactions.Recovery;
 
 namespace Barbados.StorageEngine
 {
 	public sealed class BarbadosContext : IDisposable
 	{
-		public static void CreateDatabaseFile(string path)
-		{
-			using var fs = File.Create(path);
-			PagePool.AllocateRoot(fs.SafeFileHandle);
-		}
+		public IDatabaseFacade Database => DatabaseFacade;
 
-		public string DatabaseFilePath { get; }
-		public IBarbadosController BarbadosController => Controller;
+		public StorageOptions StorageOptions { get; }
+		public ConnectionSettings ConnectionSettings { get; }
 
-		internal BarbadosController Controller { get; }
+		internal DatabaseFacade DatabaseFacade { get; }
 
-		private bool _disposed;
-		private readonly SafeFileHandle _fileHandle;
+		private readonly IStorageWrapper _db;
+		private readonly IStorageWrapper _wal;
 
-		public BarbadosContext(string path) : this(path, openOrCreate: false)
+		public BarbadosContext(string path) : this(path, StorageOptions.Default)
 		{
 
 		}
 
-		public BarbadosContext(string path, bool openOrCreate) : this(path, openOrCreate, StorageOptions.Default)
+		public BarbadosContext(string path, StorageOptions storageOptions) :
+			this(
+				new ConnectionSettingsBuilder().SetDatabaseFilePath(path).Build(), storageOptions
+			)
 		{
 
 		}
 
-		public BarbadosContext(string path, StorageOptions options) : this(path, openOrCreate: false, options)
+		public BarbadosContext(ConnectionSettings connectionSettings) : this(connectionSettings, StorageOptions.Default)
 		{
 
 		}
 
-		public BarbadosContext(string path, bool openOrCreate, StorageOptions options)
+		public BarbadosContext(ConnectionSettings connectionSettings, StorageOptions storageOptions)
 		{
-			if (openOrCreate && !File.Exists(path))
+			var factory = new StorageWrapperFactory(false);
+			switch (connectionSettings.OnConnectAction)
 			{
-				CreateDatabaseFile(path);
+				case OnConnectAction.EnsureDatabaseCreated:
+					DatabaseFacade.EnsureCreated(
+						connectionSettings.DatabaseFilePath, connectionSettings.WalFilePath, factory
+					);
+					break;
+
+				case OnConnectAction.EnsureDatabaseOverwritten:
+					File.Delete(connectionSettings.WalFilePath);
+					File.Delete(connectionSettings.DatabaseFilePath);
+					DatabaseFacade.EnsureCreated(
+						connectionSettings.DatabaseFilePath, connectionSettings.WalFilePath, factory
+					);
+					break;
+
+				case OnConnectAction.ThrowIfDatabaseNotFound:
+					if (!File.Exists(connectionSettings.DatabaseFilePath))
+					{
+						throw new FileNotFoundException(
+							"Database file not found", connectionSettings.DatabaseFilePath
+						);
+					}
+
+					DatabaseFacade.EnsureCreated(
+						connectionSettings.DatabaseFilePath, connectionSettings.WalFilePath, factory
+					);
+					break;
+
+				default:
+					throw new NotImplementedException();
 			}
 
-			DatabaseFilePath = Path.GetFullPath(path);
-			var cacheFactory = new CacheFactory(
-				options.CachedPageCountLimit,
-				options.CachingStrategy
-			);
+			_db = factory.Create(connectionSettings.DatabaseFilePath);
+			_wal = factory.Create(connectionSettings.WalFilePath);
 
-			_fileHandle = File.OpenHandle(DatabaseFilePath, FileMode.Open, FileAccess.ReadWrite);
-			Controller = new BarbadosController(
-				new PagePool(_fileHandle, cacheFactory),
-				new LockManager()
-			);
-
-			AppDomain.CurrentDomain.ProcessExit += (sender, e) => Dispose();
-		}
-
-		public bool IndexExists(string collection, string field)
-		{
-			return GetIndexedFields(collection).Any(e => e == field);
-		}
-
-		public bool CollectionExists(string name)
-		{
-			if (name == BarbadosIdentifiers.Collection.MetaCollection)
+			WalBuffer walBuffer;
+			try
 			{
-				return true;
-			}
-
-			var meta = Controller.GetMetaCollection();
-			return meta.Find(name, out _);
-		}
-
-		public IEnumerable<string> GetCollections()
-		{
-			var meta = Controller.GetMetaCollection();
-			yield return meta.Name;
-
-			var cursor = meta.GetCursor();
-			foreach (var document in cursor)
-			{
-				var r = document.TryGetString(
-					BarbadosIdentifiers.MetaCollection.CollectionDocumentNameFieldAbsolute, out var name
+				walBuffer = new WalBuffer(
+					_db,
+					_wal,
+					new CacheFactory(
+						storageOptions.CachedPageCountLimit,
+						storageOptions.CachingStrategy
+					),
+					storageOptions.WalPageCountLimit,
+					storageOptions.WalBufferedPageCountLimit
 				);
 
-				Debug.Assert(r);
-				yield return name;
-			}
-		}
-
-		public IEnumerable<string> GetIndexedFields(string collection)
-		{
-			if (collection == BarbadosIdentifiers.Collection.MetaCollection)
-			{
-				yield return BarbadosIdentifiers.MetaCollection.CollectionDocumentNameFieldAbsolute;
-				yield break;
+				walBuffer.Restore();
 			}
 
-			var meta = Controller.GetMetaCollection();
-			if (!meta.Find(collection, out var document))
+			catch
 			{
-				yield break;
+				_db.Dispose();
+				_wal.Dispose();
+				throw;
 			}
 
-			if (document.TryGetDocumentArray(BarbadosIdentifiers.MetaCollection.IndexArrayField, out var indexArray))
-			{
-				foreach (var index in indexArray)
-				{
-					var r = index.TryGetString(
-						BarbadosIdentifiers.MetaCollection.IndexDocumentIndexedFieldField, out var name
-					);
-					
-					Debug.Assert(r);
-					yield return name;
-				}
-			}
+			var lockManager = new LockManager();
+			var txManager = new TransactionManager(
+				storageOptions.TransactionAcquireLockTimeout, walBuffer, lockManager
+			);
+
+			DatabaseFacade = new DatabaseFacade(lockManager, txManager);
+			StorageOptions = storageOptions;
+			ConnectionSettings = connectionSettings;
 		}
 
 		public void Dispose()
 		{
-			_dispose(disposing: true);
-			GC.SuppressFinalize(this);
-		}
-
-		private void _dispose(bool disposing)
-		{
-			if (!_disposed)
-			{
-				if (disposing)
-				{
-					Controller.Pool.Flush();
-					_fileHandle.Close();
-					_fileHandle.Dispose();
-				}
-
-				_disposed = true;
-			}
+			_db.Dispose();
+			_wal.Dispose();
 		}
 	}
 }

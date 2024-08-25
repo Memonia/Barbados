@@ -1,8 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-
-using Barbados.StorageEngine.Documents.Binary.ValueBuffers;
 
 namespace Barbados.StorageEngine.Documents.Binary
 {
@@ -12,66 +9,64 @@ namespace Barbados.StorageEngine.Documents.Binary
 		{
 			public sealed class Accumulator
 			{
-				private sealed class NameBuffer : IComparable<NameBuffer>
-				{
-					private static readonly IValueSpanComparer _comparer =
-						ValueSpanComparerFactory.GetComparer(ValueTypeMarker.String);
+				public int Count => _nameBuffers.Count;
+				public int NameTableLength { get; private set; }
+				public int ValueTableLength { get; private set; }
+				public int DescriptorTableLength { get; private set; }
 
-					public ValueStringBuffer Buffer { get; }
-
-					private readonly byte[] _bytes;
-
-					public NameBuffer(ValueStringBuffer buffer)
-					{
-						Buffer = buffer;
-						_bytes = new byte[buffer.ValueLength];
-						Buffer.WriteValueTo(_bytes);
-					}
-
-					public int CompareTo(NameBuffer? other)
-					{
-						return _comparer.Compare(_bytes, other!._bytes);
-					}
-				}
-
-				public int Count => _buffers.Count;
-				public int NameTableLength { get; private set; } = 0;
-				public int ValueTableLength { get; private set; } = 0;
-				public int DescriptorTableLength { get; private set; } = 0;
-
-				private readonly SortedList<NameBuffer, IValueBuffer> _buffers;
+				private readonly List<(ValueName name, IValueBuffer buffer)> _nameBuffers;
 
 				public Accumulator()
 				{
-					_buffers = new();
+					NameTableLength = 0;
+					ValueTableLength = 0;
+					DescriptorTableLength = 0;
+					_nameBuffers = [];
 				}
 
-				public bool Contains(ValueStringBuffer nameBuffer)
+				public bool Contains(ValueName name)
 				{
-					return _buffers.ContainsKey(new(nameBuffer));
+					var index = _valueNameBinarySearch(name);
+					return index >= 0;
 				}
 
-				public bool TryGet(ValueStringBuffer nameBuffer, out IValueBuffer buffer)
+				public bool TryGet(ValueName name, out IValueBuffer buffer)
 				{
-					return _buffers.TryGetValue(new(nameBuffer), out buffer!);
+					var index = _valueNameBinarySearch(name);
+					if (index >= 0)
+					{
+						buffer = _nameBuffers[index].buffer;
+						return true;
+					}
+
+					buffer = default!;
+					return false;
 				}
 
-				public void Add(ValueStringBuffer name, IValueBuffer buffer)
+				public void Add(ValueName name, IValueBuffer buffer)
 				{
+					var nameBuffer = name.GetBuffer();
 					if (
-						name.GetLength() > MaxNameTableLength ||
+						nameBuffer.GetLength() > MaxNameTableLength ||
 						buffer.GetLength() > MaxValueTableLength ||
-						name.GetLength() + NameTableLength > MaxNameTableLength ||
+						nameBuffer.GetLength() + NameTableLength > MaxNameTableLength ||
 						buffer.GetLength() + ValueTableLength > MaxValueTableLength
 					)
 					{
 						throw new InvalidOperationException("The buffer exceeded the maximum allowed length");
 					}
 
-					NameTableLength += name.GetLength();
+					NameTableLength += nameBuffer.GetLength();
 					ValueTableLength += buffer.GetLength();
 					DescriptorTableLength += ValueDescriptor.BinaryLength;
-					_buffers.Add(new(name), buffer);
+
+					var index = _valueNameBinarySearch(name);
+					if (index >= 0)
+					{
+						throw new ArgumentException("Value with a given name already exists", nameof(name));
+					}
+
+					_nameBuffers.Insert(~index, (name, buffer));
 				}
 
 				public void Clear()
@@ -79,10 +74,46 @@ namespace Barbados.StorageEngine.Documents.Binary
 					NameTableLength = 0;
 					ValueTableLength = 0;
 					DescriptorTableLength = 0;
-					_buffers.Clear();
+					_nameBuffers.Clear();
 				}
 
-				public IEnumerable<ValueStringBuffer> GetSortedNameBuffersEnumerator() => _buffers.Keys.Select(e => e.Buffer);
+				public IEnumerable<ValueName> GetSortedValueNameEnumerator()
+				{
+					foreach (var (name, _) in _nameBuffers)
+					{
+						yield return name;
+					}
+				}
+
+				private int _valueNameBinarySearch(ValueName name)
+				{
+					int left = 0;
+					int right = _nameBuffers.Count - 1;
+					while (left <= right)
+					{
+						// Idea taken from .NET runtime implementation
+						int m = (int)((uint)left + (uint)right >> 1);
+						int c = name.AsSpan().SequenceCompareTo(_nameBuffers[m].name.AsSpan());
+
+						if (c == 0)
+						{
+							return m;
+						}
+
+						else
+						if (c > 0)
+						{
+							left = m + 1;
+						}
+
+						else
+						{
+							right = m - 1;
+						}
+					}
+
+					return ~left;
+				}
 			}
 		}
 	}

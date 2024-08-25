@@ -2,12 +2,12 @@
 using System.Collections.Generic;
 
 using Barbados.QueryEngine.Helpers;
-using Barbados.StorageEngine;
+using Barbados.StorageEngine.Collections;
 using Barbados.StorageEngine.Documents;
 
 namespace Barbados.QueryEngine.Query
 {
-	internal sealed class Query(IBarbadosCollection collection, QueryPlanBuilder builder) : IQuery
+	internal sealed class Query(IReadOnlyBarbadosCollection collection, QueryPlanBuilder builder) : IQuery
 	{
 		private void _throwTranslated()
 		{
@@ -22,7 +22,7 @@ namespace Barbados.QueryEngine.Query
 		private IQueryPlanEvaluator? _translated = null;
 
 		private readonly QueryPlanBuilder _builder = builder;
-		private readonly IBarbadosCollection collection = collection;
+		private readonly IReadOnlyBarbadosCollection collection = collection;
 
 		public IQuery Filter(IFilter filter)
 		{

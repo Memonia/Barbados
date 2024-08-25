@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
 
-using Barbados.StorageEngine.Documents.Binary.ValueBuffers;
-
 namespace Barbados.StorageEngine.Documents.Binary
 {
 	internal sealed partial class ObjectBuffer
@@ -50,6 +48,11 @@ namespace Barbados.StorageEngine.Documents.Binary
 		{
 			return new(this);
 		}
+		
+		public bool PrefixExists(ReadOnlySpan<byte> name)
+		{
+			return _descriptorBinarySearch(_buffer, name, prefixComparison: true) >= 0;
+		}
 
 		public bool ValueExists(ReadOnlySpan<byte> name)
 		{
@@ -77,11 +80,6 @@ namespace Barbados.StorageEngine.Documents.Binary
 			return true;
 		}
 
-		public bool PrefixExists(ReadOnlySpan<byte> name)
-		{
-			return _descriptorBinarySearch(_buffer, name, prefixComparison: true) >= 0;
-		}
-
 		public bool TryCollect(ReadOnlySpan<byte> group, bool truncateNames, out ObjectBuffer buffer)
 		{
 			buffer = Collect(_buffer, group);
@@ -92,10 +90,6 @@ namespace Barbados.StorageEngine.Documents.Binary
 
 			if (truncateNames)
 			{
-				// TODO: 
-				// One allocation for the buffer, then one for every field value in the buffer,
-				// then for every truncated name and finally another buffer. That's way too many
-
 				var acc = new Builder.Accumulator();
 				var e = buffer.GetNameEnumerator();
 				while (e.TryGetNext(out var raw, out _))
@@ -107,7 +101,7 @@ namespace Barbados.StorageEngine.Documents.Binary
 					var truncated = raw[group.Length..];
 
 					acc.Add(
-						new ValueStringBuffer(ValueBufferRawHelpers.ReadStringFromValue(truncated)), valueBuffer
+						new(ValueBufferRawHelpers.ReadStringFromValue(truncated)), valueBuffer
 					);
 				}
 

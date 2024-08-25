@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
 
-using Barbados.StorageEngine.Documents.Binary.ValueBuffers;
-
 namespace Barbados.StorageEngine.Documents.Binary
 {
 	internal partial class ObjectBuffer
@@ -119,19 +117,19 @@ namespace Barbados.StorageEngine.Documents.Binary
 			var acc = new Builder.Accumulator();
 			foreach (var identifier in selector)
 			{
-				if (acc.Contains(new ValueStringBuffer(identifier)))
+				if (acc.Contains(identifier.BinaryName))
 				{
 					continue;
 				}
 
 				if (identifier.IsGroup)
 				{
-					var collected = Collect(buffer, identifier.StringBufferValue);
+					var collected = Collect(buffer, identifier.BinaryName.AsSpan());
 					var e = collected.GetNameEnumerator();
 					while (e.TryGetNext(out var raw, out var name))
 					{
-						var nameBuffer = new ValueStringBuffer(name);
-						if (acc.Contains(nameBuffer))
+						var valueName = new ValueName(name);
+						if (acc.Contains(valueName))
 						{
 							continue;
 						}
@@ -139,19 +137,19 @@ namespace Barbados.StorageEngine.Documents.Binary
 						var r = collected.TryGetBuffer(raw, out var valueBuffer);
 						Debug.Assert(r);
 
-						acc.Add(nameBuffer, valueBuffer);
+						acc.Add(valueName, valueBuffer);
 					}
 				}
 
 				else
 				{
-					var index = _descriptorBinarySearch(buffer, identifier.StringBufferValue, false);
+					var index = _descriptorBinarySearch(buffer, identifier.BinaryName.AsSpan(), false);
 					if (index >= 0)
 					{
 						var descriptor = _getDescriptor(buffer, index);
 						var valueBufferRaw = _getValueBufferBytes(buffer, descriptor);
 						acc.Add(
-							new ValueStringBuffer(identifier),
+							identifier.BinaryName,
 							ValueBufferFactory.CreateFromRawBuffer(valueBufferRaw, descriptor.Marker)
 						);
 					}

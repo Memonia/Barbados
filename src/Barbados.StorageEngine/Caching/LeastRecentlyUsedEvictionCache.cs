@@ -7,11 +7,10 @@ namespace Barbados.StorageEngine.Caching
 {
 	internal sealed partial class LeastRecentlyUsedEvictionCache<K, V> : ICache<K, V>
 		where K : notnull
+		where V : class
 	{
 		/* A simple cache with LRU eviction
 		 */
-
-		public event Action<K, V>? OnDirtyValueEviction;
 
 		public int Count => _entries.Count;
 		public ICollection<K> Keys => _entries.Keys;
@@ -22,8 +21,8 @@ namespace Barbados.StorageEngine.Caching
 		private readonly object _sync;
 
 		// Most recently accessed value is stored at the head of the list
-		private readonly LinkedList<ValueInfo> _evictionList;
-		private readonly ConcurrentDictionary<K, LinkedListNode<ValueInfo>> _entries;
+		private readonly LinkedList<ValueWrapper> _evictionList;
+		private readonly ConcurrentDictionary<K, LinkedListNode<ValueWrapper>> _entries;
 
 		public LeastRecentlyUsedEvictionCache(int maxCount)
 		{
@@ -41,14 +40,16 @@ namespace Barbados.StorageEngine.Caching
 
 		public bool TryCache(K key, V value)
 		{
-			if (_entries.TryGetValue(key, out var node))
+			if (_entries.TryRemove(key, out var node))
 			{
 				lock (_sync)
 				{
 					_refresh(node);
-					node.Value.Value = value;
+					node.Value = new(key, value);
 				}
 
+				var r = _entries.TryAdd(key, node);
+				Debug.Assert(r);
 				return true;
 			}
 
@@ -56,10 +57,7 @@ namespace Barbados.StorageEngine.Caching
 			{
 				lock (_sync)
 				{
-					node = _evictionList.AddFirst(
-						new ValueInfo() { Key = key, Value = value }
-					);
-
+					node = _evictionList.AddFirst(new ValueWrapper(key, value));
 					var r = _entries.TryAdd(key, node);
 					Debug.Assert(r);
 				}
@@ -74,104 +72,19 @@ namespace Barbados.StorageEngine.Caching
 		{
 			if (_entries.TryGetValue(key, out var node))
 			{
-				lock (_sync)
+				if (node.Value.WeakRef.TryGetTarget(out value!))
 				{
-					_refresh(node);
-					value = node.Value.Value!;
+					lock (_sync)
+					{
+						_refresh(node);
+					}
+
 					return true;
 				}
 			}
 
 			value = default!;
 			return false;
-		}
-
-		public bool TryGetWithPin(K key, out V value)
-		{
-			if (_entries.TryGetValue(key, out var node))
-			{
-				Pin(key);
-				value = node.Value.Value!;
-				return true;
-			}
-
-			value = default!;
-			return false;
-		}
-
-		public bool TryPop(K key, out V value)
-		{
-			if (_entries.Remove(key, out var node))
-			{
-				lock (_sync)
-				{
-					_evictionList.Remove(node);
-					value = node.Value.Value!;
-					return true;
-				}
-			}
-
-			value = default!;
-			return false;
-		}
-
-		public void MarkDirty(K key)
-		{
-			if (_entries.TryGetValue(key, out var node))
-			{
-				lock (_sync)
-				{
-					_refresh(node);
-					node.Value.Dirty = true;
-				}
-			}
-		}
-
-		public void MarkClean(K key)
-		{
-			if (_entries.TryGetValue(key, out var node))
-			{
-				lock (_sync)
-				{
-					_refresh(node);
-					node.Value.Dirty = false;
-				}
-			}
-		}
-
-		public void Pin(K key)
-		{
-			if (_entries.TryGetValue(key, out var node))
-			{
-				lock (_sync)
-				{
-					Debug.Assert(node.Value.Pins >= 0);
-					node.Value.Pins += 1;
-					if (node.List is not null)
-					{
-						_evictionList.Remove(node);
-					}
-				}
-			}
-		}
-
-		public void Release(K key)
-		{
-			if (_entries.TryGetValue(key, out var node))
-			{
-				lock (_sync)
-				{
-					if (node.Value.Pins > 0)
-					{
-						node.Value.Pins -= 1;
-					}
-
-					if (node.List is null && node.Value.Pins == 0)
-					{
-						_evictionList.AddFirst(node);
-					}
-				}
-			}
 		}
 
 		public bool ContainsKey(K key)
@@ -187,15 +100,10 @@ namespace Barbados.StorageEngine.Caching
 				{
 					var node = _evictionList.Last;
 					Debug.Assert(node is not null);
+					var r = _entries.TryRemove(node.Value.Key, out _);
+					Debug.Assert(r);
 
 					_evictionList.RemoveLast();
-					_entries.Remove(node!.Value.Key, out _);
-
-					if (node!.Value.Dirty)
-					{
-						OnDirtyValueEviction?.Invoke(node.Value.Key, node.Value.Value!);
-					}
-
 					return true;
 				}
 
@@ -203,14 +111,10 @@ namespace Barbados.StorageEngine.Caching
 			}
 		}
 
-		private void _refresh(LinkedListNode<ValueInfo> node)
+		private void _refresh(LinkedListNode<ValueWrapper> node)
 		{
-			Debug.Assert(node.Value.Pins >= 0);
-			if (node.Value.Pins == 0)
-			{
-				_evictionList.Remove(node);
-				_evictionList.AddFirst(node);
-			}
+			_evictionList.Remove(node);
+			_evictionList.AddFirst(node);
 		}
 	}
 }

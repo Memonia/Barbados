@@ -9,12 +9,12 @@
 		<RepositoryUrl>https://github.com/Memonia/Barbados</RepositoryUrl>
 		<RepositoryType>git</RepositoryType>
 	</PropertyGroup>
-	
+
 	<ItemGroup>
 		<InternalsVisibleTo Include="Sandbox" />
 	</ItemGroup>
 
 	<ItemGroup>
-	  <ProjectReference Include="..\Barbados.StorageEngine\Barbados.StorageEngine.csproj" />
+		<ProjectReference Include="..\Barbados.StorageEngine\Barbados.StorageEngine.csproj" />
 	</ItemGroup>
 </Project>

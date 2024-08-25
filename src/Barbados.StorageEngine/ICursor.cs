@@ -3,9 +3,9 @@ using System.Collections.Generic;
 
 namespace Barbados.StorageEngine
 {
-	public interface ICursor<T> : IEnumerable<T>, IDisposable
+	public interface ICursor<T> : IDisposable, IEnumerable<T>
 	{
-		BarbadosIdentifier OwnerName { get; }
+		ObjectId CollectionId { get; }
 
 		void Close();
 	}

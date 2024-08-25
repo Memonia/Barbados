@@ -17,13 +17,13 @@ namespace Barbados.StorageEngine.Documents
 
 		public static bool TryCompareFields(BarbadosIdentifier field, BarbadosDocument a, BarbadosDocument b, out int result)
 		{
-			if (!a.Buffer.TryGetBufferValueBytesRaw(field.StringBufferValue, out var ma, out var rawa))
+			if (!a.Buffer.TryGetBufferValueBytesRaw(field.BinaryName.AsSpan(), out var ma, out var rawa))
 			{
 				result = default!;
 				return false;
 			}
 
-			if (!b.Buffer.TryGetBufferValueBytesRaw(field.StringBufferValue, out var mb, out var rawb))
+			if (!b.Buffer.TryGetBufferValueBytesRaw(field.BinaryName.AsSpan(), out var mb, out var rawb))
 			{
 				result = default!;
 				return false;
@@ -51,7 +51,7 @@ namespace Barbados.StorageEngine.Documents
 
 			if (spaces == 0)
 			{
-				builder.AppendFormat(format, BarbadosIdentifiers.Id, document.Id);
+				builder.AppendFormat(format, CommonIdentifiers.Id, document.Id);
 			}
 
 			foreach (var field in document.GetFields())

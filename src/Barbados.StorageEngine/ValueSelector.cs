@@ -8,6 +8,7 @@ namespace Barbados.StorageEngine
 	public class ValueSelector : IEnumerable<BarbadosIdentifier>
 	{
 		public static ValueSelector SelectAll { get; } = new() { All = true };
+		public static ValueSelector SelectNone { get; } = new() { All = false };
 
 		private readonly BarbadosIdentifier[] _identifiers;
 

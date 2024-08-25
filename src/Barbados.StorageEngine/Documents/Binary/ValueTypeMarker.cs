@@ -18,8 +18,8 @@ namespace Barbados.StorageEngine.Documents.Binary
 				ValueTypeMarker.UInt64 => sizeof(ulong),
 				ValueTypeMarker.Float32 => sizeof(float),
 				ValueTypeMarker.Float64 => sizeof(double),
-				ValueTypeMarker.Boolean => sizeof(bool),
 				ValueTypeMarker.DateTime => sizeof(long),
+				ValueTypeMarker.Boolean => sizeof(bool),
 				ValueTypeMarker.String => throw new InvalidOperationException(),
 				_ => throw new NotImplementedException()
 			};
