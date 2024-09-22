@@ -63,7 +63,7 @@ var user2 = documentBuilder
 	.Add("achievementIds", new int[] { 177091, 177144, 178002 })
 	.Build();
 
-// Prepate a transaction which includes a single 'user' collection
+// Prepare a transaction which includes a single 'user' collection
 var txBuilder = context.Database.CreateTransaction(TransactionMode.ReadWrite)
 	.Include(users);
 
