@@ -3,7 +3,7 @@ repos:
     hooks:
       - id: check-sandbox
         name: check-sandbox
-        entry: hooks/check-sandbox.sh
+        entry: hooks/check-sandbox.ps1
         language: script
 
         # run once
