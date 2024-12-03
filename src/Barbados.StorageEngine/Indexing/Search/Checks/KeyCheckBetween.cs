@@ -1,6 +1,4 @@
-﻿using Barbados.StorageEngine.Documents.Binary;
-
-namespace Barbados.StorageEngine.Indexing.Search.Checks
+﻿namespace Barbados.StorageEngine.Indexing.Search.Checks
 {
 	internal sealed class KeyCheckBetween(NormalisedValue lowerBound, NormalisedValue upperBound) : KeyCheckRange(lowerBound, upperBound)
 	{

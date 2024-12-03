@@ -1,6 +1,5 @@
 ﻿using System;
 
-using Barbados.StorageEngine.Documents.Binary;
 using Barbados.StorageEngine.Indexing.Search.Checks;
 
 namespace Barbados.StorageEngine.Indexing.Search

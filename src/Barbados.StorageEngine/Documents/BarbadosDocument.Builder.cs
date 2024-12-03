@@ -1,8 +1,7 @@
 ﻿using System;
-using System.Diagnostics;
 using System.Text;
 
-using Barbados.StorageEngine.Documents.Binary;
+using Barbados.StorageEngine.Documents.Serialisation;
 using Barbados.StorageEngine.Exceptions;
 
 namespace Barbados.StorageEngine.Documents
@@ -12,7 +11,7 @@ namespace Barbados.StorageEngine.Documents
 		public sealed class Builder
 		{
 			private ObjectId _id;
-			private readonly ObjectBuffer.Builder _builder;
+			private readonly RadixTreeBuffer.Builder _builder;
 
 			public Builder()
 			{
@@ -44,21 +43,23 @@ namespace Barbados.StorageEngine.Documents
 				return this;
 			}
 
-			public Builder AddGroupFrom(BarbadosIdentifier group, BarbadosDocument document)
+			public Builder AddDocumentFrom(BarbadosIdentifier field, BarbadosDocument document)
 			{
-				BarbadosArgumentException.ThrowFieldIdentifierWhenGroupExpected(group, nameof(group));
-				if (!document.Buffer.TryCollect(group.BinaryName.AsSpan(), false, out var buffer))
+				BarbadosArgumentException.ThrowFieldIdentifierWhenDocumentExpected(field, nameof(field));
+				if (!document.Buffer.TryExtract(field.BinaryName.AsBytes(), out var buffer))
 				{
-					throw new ArgumentException($"Given document did not contain a group '{group}'", nameof(group));
+					throw new ArgumentException(
+						$"Given document did not contain a document identifier '{field}'", nameof(field)
+					);
 				}
 
-				var e = buffer.GetNameEnumerator();
-				while (e.TryGetNext(out var raw, out var name))
+				var sb = new StringBuilder();
+				var e = buffer.GetKeyValueEnumerator();
+				while (e.TryGetNext(out var key, out var valueBuffer))
 				{
-					var r = buffer.TryGetBuffer(raw, out var valueBuffer);
-					Debug.Assert(r);
-
-					_builder.AddBuffer(name, valueBuffer);
+					sb.Append(field).Append(key);
+					var cat = sb.ToString();
+					_builder.AddBuffer(cat, valueBuffer);
 				}
 
 				return this;
@@ -66,7 +67,7 @@ namespace Barbados.StorageEngine.Documents
 
 			public Builder AddFieldFrom(BarbadosIdentifier field, BarbadosDocument document)
 			{
-				BarbadosArgumentException.ThrowGroupIdentifierWhenFieldExpected(field, nameof(field));
+				BarbadosArgumentException.ThrowDocumentIdentifierWhenFieldExpected(field, nameof(field));
 				if (document.TryGetDocument(field, out var value))
 				{
 					Add(field, value);
@@ -80,7 +81,7 @@ namespace Barbados.StorageEngine.Documents
 
 				else
 				{
-					if (!document.Buffer.TryGetBuffer(field.BinaryName.AsSpan(), out var valueBuffer))
+					if (!document.Buffer.TryGetBuffer(field.BinaryName.AsBytes(), out var valueBuffer))
 					{
 						throw new ArgumentException(
 							$"Given document did not contain a field '{field}'", nameof(field)
@@ -123,25 +124,61 @@ namespace Barbados.StorageEngine.Documents
 
 			public Builder Add(BarbadosIdentifier field, BarbadosDocument document)
 			{
-				BarbadosArgumentException.ThrowGroupIdentifierWhenFieldExpected(field, nameof(field));
+				BarbadosArgumentException.ThrowDocumentIdentifierWhenFieldExpected(field, nameof(field));
 				if (document.Count() == 0)
 				{
 					throw new ArgumentException("Cannot add an empty document", nameof(document));
 				}
 
-				var sb = new StringBuilder(field);
-				var e = document.Buffer.GetNameEnumerator();
-				while (e.TryGetNext(out var raw, out var name))
+				var sb = new StringBuilder($"{field}{CommonIdentifiers.NestingSeparator}");
+				var e = document.Buffer.GetKeyValueEnumerator();
+				while (e.TryGetNext(out var key, out var valueBuffer))
 				{
-					sb.Append('.');
-					sb.Append(name);
+					sb.Append(key);
 					var f = sb.ToString();
-					sb.Length = field.Identifier.Length;
-
-					var r = document.Buffer.TryGetBuffer(raw, out var valueBuffer);
-					Debug.Assert(r);
+					sb.Length = field.Identifier.Length + 1;
 
 					_builder.AddBuffer(f, valueBuffer);
+				}
+
+				// Underlying radix tree has no concept of nested documents, as it only operates
+				// on prefixes. 'BarbadosDocument' adds document semantincs by enforcing specific
+				// naming conventions. For example, key 'pet' refers to a field, key 'pet.nickname'
+				// refers to a field 'nickname' inside of the 'pet' document and so on.
+				//
+				// For the radix tree, however, both of those strings are just node paths, which
+				// can be traversed by receiving the same string as was used during the creation of
+				// the path.
+				//
+				// Consider this example:
+				// {
+				//   "pet": {
+				//     "nickname": "Fluffy"
+				//   }
+				// }
+				// 
+				// Disregarding specific serialisation details, the radix tree will contain a single
+				// node with prefix 'pet.nickname'. Retrieving 'pet.nickname' works as expected. Now,
+				// if we were to retrieve the whole document, we would try document.GetDocument("pet")
+				// or document.GetDocument("pet.") and both of these would fail, as there is no node
+				// path corresponding to strings "pet" or "pet.", so the root for breadth-first
+				// traversal cannot be established. 
+				// 
+				// In fact, any sequence of keys, where each next key contains the previous, would
+				// make it impossible to extract the whole document, while each individual key would
+				// be accessibile as usual: pet.nickname, pet.nicknamenickname,
+				// pet.nicknamenicknamenickname, pet.nicknamenicknamenicknamenickname, etc
+				// 
+				// To enforce desired behaviour, we explicitly insert a prefix corresponding to the
+				// document key with no value. This will ensure the document key is addressable and
+				// can serve as a root for extract operations.
+				// 
+				// This trick simply exploits the fact that the radix tree keeps any added prefix
+				// addressable, regardless of whether it has a value. Added overhead is currently
+				// 4 bytes for the prefix descriptor, the prefix chain itself remains unchanged
+				if (!_builder.PrefixExists(sb.ToString()))
+				{
+					_builder.AddPrefix(sb.ToString());
 				}
 
 				return this;
@@ -154,7 +191,7 @@ namespace Barbados.StorageEngine.Documents
 					throw new ArgumentException("Cannot add an empty array", nameof(array));
 				}
 
-				var sb = new StringBuilder($"{field}.");
+				var sb = new StringBuilder($"{field}{CommonIdentifiers.NestingSeparator}");
 				for (int i = 0; i < array.Length; ++i)
 				{
 					var document = array[i];
@@ -177,7 +214,7 @@ namespace Barbados.StorageEngine.Documents
 
 			private Builder _add(BarbadosIdentifier field, Action add)
 			{
-				BarbadosArgumentException.ThrowGroupIdentifierWhenFieldExpected(field, nameof(field));
+				BarbadosArgumentException.ThrowDocumentIdentifierWhenFieldExpected(field, nameof(field));
 				add();
 				return this;
 			}

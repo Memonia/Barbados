@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
 
-using Barbados.StorageEngine.Documents.Binary;
+using Barbados.StorageEngine.Documents.Serialisation;
 using Barbados.StorageEngine.Storage.Paging;
 using Barbados.StorageEngine.Storage.Paging.Pages;
 using Barbados.StorageEngine.Transactions;
@@ -34,7 +34,7 @@ namespace Barbados.StorageEngine.Indexing
 			return false;
 		}
 
-		public bool TryReadObjectBuffer(ObjectIdNormalised id, ValueSelector selector, out ObjectBuffer buffer)
+		public bool TryReadObjectBuffer(ObjectIdNormalised id, ValueSelector selector, out RadixTreeBuffer buffer)
 		{
 			if (!TryReadHandle(id, out var handle))
 			{
@@ -50,14 +50,41 @@ namespace Barbados.StorageEngine.Indexing
 
 			return true;
 		}
-	
-		public bool TryReadObjectBuffer(ObjectIdNormalised id, ObjectPage page, ValueSelector selector, out ObjectBuffer buffer)
+
+		public bool TryReadObjectBuffer(ObjectIdNormalised id, ObjectPage page, ValueSelector selector, out RadixTreeBuffer buffer)
 		{
+			static RadixTreeBuffer _selectFromBuffer(ReadOnlySpan<byte> buffer, ValueSelector selector)
+			{
+				Debug.Assert(!selector.All);
+				var builder = new RadixTreeBuffer.Builder();
+				foreach (var identifier in selector)
+				{
+					if (identifier.IsDocument)
+					{
+						var e = new RadixTreeBuffer.KeyValueEnumerator(buffer);
+						while (e.TryGetNext(out var key, out var value))
+						{
+							builder.AddBuffer(key.ToString(), value);
+						}
+					}
+
+					else
+					{
+						if (RadixTreeBuffer.TryGetBuffer(buffer, identifier.BinaryName.AsBytes(), out var valueBuffer))
+						{
+							builder.AddBuffer(identifier, valueBuffer);
+						}
+					}
+				}
+
+				return builder.Build();
+			}
+
 			if (page.TryReadObject(id, out var bytes))
 			{
 				buffer = selector.All
-					? new ObjectBuffer(bytes.ToArray())
-					: ObjectBuffer.Select(bytes, selector);
+					? new RadixTreeBuffer(bytes.ToArray())
+					: _selectFromBuffer(bytes, selector);
 
 				return true;
 			}
@@ -68,7 +95,6 @@ namespace Barbados.StorageEngine.Indexing
 				var read = 0;
 				var bufferArr = new byte[totalLength];
 				var bufferSpan = bufferArr.AsSpan();
-
 				chunk.CopyTo(bufferSpan[read..]);
 				read += chunk.Length;
 				while (!next.IsNull && read < totalLength)
@@ -84,8 +110,8 @@ namespace Barbados.StorageEngine.Indexing
 				}
 
 				buffer = selector.All
-					? new ObjectBuffer(bufferArr)
-					: ObjectBuffer.Select(bufferArr, selector);
+					? new RadixTreeBuffer(bufferArr)
+					: _selectFromBuffer(bufferArr, selector);
 
 				return true;
 			}

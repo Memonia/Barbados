@@ -32,9 +32,9 @@ namespace Barbados.QueryEngine.Evaluation
 				{
 					foreach (var value in _selector)
 					{
-						if (value.IsGroup && document.HasGroup(value))
+						if (value.IsDocument && document.HasDocument(value))
 						{
-							_evaluationResultBuilder.AddGroupFrom(value, document);
+							_evaluationResultBuilder.AddDocumentFrom(value, document);
 						}
 
 						else

@@ -44,17 +44,17 @@ namespace Barbados.StorageEngine
 					throw new ArgumentException("Duplicate identifiers", nameof(identifiers));
 				}
 
-				// Check for a case when a group identifier is given together with one of its members
-				if (identifier.IsGroup)
+				// Check for a case when a document identifier is given together with one of its members
+				if (identifier.IsDocument)
 				{
-					var valueIdentifier = identifier.GetGroupName();
+					var valueIdentifier = identifier.GetDocumentName();
 					_throwContains(valueIdentifiers, valueIdentifier, identifier);
 				}
 
 				else
 				{
-					var groupIdentifier = identifier.GetGroupIdentifier();
-					_throwContains(valueIdentifiers, groupIdentifier, identifier);
+					var docIdentifier = identifier.GetDocumentIdentifier();
+					_throwContains(valueIdentifiers, docIdentifier, identifier);
 				}
 
 				valueIdentifiers.Add(identifier);

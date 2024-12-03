@@ -1,7 +1,5 @@
 ﻿using System.Diagnostics;
-using System.Reflection;
 
-using Barbados.StorageEngine.Documents.Binary;
 using Barbados.StorageEngine.Storage.Paging.Pages;
 
 namespace Barbados.StorageEngine.Helpers
@@ -29,51 +27,6 @@ namespace Barbados.StorageEngine.Helpers
 			Debug.Assert(
 				(Constants.SlottedPagePayloadLength - headerLength - payloadFixedLengthPart * minKeyCount) /
 				Constants.ObjectPageMaxChunkLength >= minKeyCount
-			);
-		}
-
-		[Conditional("DEBUG")]
-		public static void AssertSlottedPageHeaderLength()
-		{
-			var t = typeof(SlottedPage.SlottedPageHeader);
-			var f = t.GetField("_bits", BindingFlags.NonPublic | BindingFlags.Instance);
-			if (f == null)
-			{
-				Debug.Fail($"Outdated {nameof(SlottedPage.SlottedPageHeader)}");
-			}
-
-			Debug.Assert(
-				f.FieldType == typeof(ulong) && SlottedPage.SlottedPageHeader.BinaryLength == sizeof(ulong)
-			);
-		}
-
-		[Conditional("DEBUG")]
-		public static void AssertSlotDescriptorLength()
-		{
-			var t = typeof(SlottedPage.Descriptor);
-			var f = t.GetField("_bits", BindingFlags.NonPublic | BindingFlags.Instance);
-			if (f == null)
-			{
-				Debug.Fail($"Outdated {nameof(SlottedPage.Descriptor)}");
-			}
-
-			Debug.Assert(
-				f.FieldType == typeof(ulong) && SlottedPage.Descriptor.BinaryLength == sizeof(ulong)
-			);
-		}
-
-		[Conditional("DEBUG")]
-		public static void AssertValueDescriptorLength()
-		{
-			var t = typeof(ObjectBuffer.ValueDescriptor);
-			var f = t.GetField("_bits", BindingFlags.NonPublic | BindingFlags.Instance);
-			if (f == null)
-			{
-				Debug.Fail($"Outdated {nameof(ObjectBuffer.ValueDescriptor)}");
-			}
-
-			Debug.Assert(
-				f.FieldType == typeof(ulong) && ObjectBuffer.ValueDescriptor.BinaryLength == sizeof(ulong)
 			);
 		}
 	}

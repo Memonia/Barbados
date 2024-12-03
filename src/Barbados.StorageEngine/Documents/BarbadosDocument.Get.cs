@@ -1,6 +1,6 @@
 ﻿using System;
 
-using Barbados.StorageEngine.Exceptions;
+using Barbados.StorageEngine.Documents.Exceptions;
 
 namespace Barbados.StorageEngine.Documents
 {
@@ -8,198 +8,311 @@ namespace Barbados.StorageEngine.Documents
 	{
 		public sbyte GetInt8(BarbadosIdentifier field)
 		{
-			return BarbadosInvalidOperationException.ThrowFieldOfTypeNotFoundIfResultFalse(
-				TryGetInt8(field, out var value), value, field, typeof(sbyte)
+			return BarbadosDocumentInvalidOperationException.ThrowFieldOfTypeNotFoundOrReturnValue(
+				TryGetInt8(field, out var value), value, field
 			);
 		}
 
 		public short GetInt16(BarbadosIdentifier field)
 		{
-			return BarbadosInvalidOperationException.ThrowFieldOfTypeNotFoundIfResultFalse(
-				TryGetInt16(field, out var value), value, field, typeof(short)
+			return BarbadosDocumentInvalidOperationException.ThrowFieldOfTypeNotFoundOrReturnValue(
+				TryGetInt16(field, out var value), value, field
 			);
 		}
 
 		public int GetInt32(BarbadosIdentifier field)
 		{
-			return BarbadosInvalidOperationException.ThrowFieldOfTypeNotFoundIfResultFalse(
-				TryGetInt32(field, out var value), value, field, typeof(int)
+			return BarbadosDocumentInvalidOperationException.ThrowFieldOfTypeNotFoundOrReturnValue(
+				TryGetInt32(field, out var value), value, field
 			);
 		}
 
 		public long GetInt64(BarbadosIdentifier field)
 		{
-			return BarbadosInvalidOperationException.ThrowFieldOfTypeNotFoundIfResultFalse(
-				TryGetInt64(field, out var value), value, field, typeof(long)
+			return BarbadosDocumentInvalidOperationException.ThrowFieldOfTypeNotFoundOrReturnValue(
+				TryGetInt64(field, out var value), value, field
 			);
 		}
 
 		public byte GetUInt8(BarbadosIdentifier field)
 		{
-			return BarbadosInvalidOperationException.ThrowFieldOfTypeNotFoundIfResultFalse(
-				TryGetUInt8(field, out var value), value, field, typeof(byte)
+			return BarbadosDocumentInvalidOperationException.ThrowFieldOfTypeNotFoundOrReturnValue(
+				TryGetUInt8(field, out var value), value, field
 			);
 		}
 
 		public ushort GetUInt16(BarbadosIdentifier field)
 		{
-			return BarbadosInvalidOperationException.ThrowFieldOfTypeNotFoundIfResultFalse(
-				TryGetUInt16(field, out var value), value, field, typeof(ushort)
+			return BarbadosDocumentInvalidOperationException.ThrowFieldOfTypeNotFoundOrReturnValue(
+				TryGetUInt16(field, out var value), value, field
 			);
 		}
 
 		public uint GetUInt32(BarbadosIdentifier field)
 		{
-			return BarbadosInvalidOperationException.ThrowFieldOfTypeNotFoundIfResultFalse(
-				TryGetUInt32(field, out var value), value, field, typeof(uint)
+			return BarbadosDocumentInvalidOperationException.ThrowFieldOfTypeNotFoundOrReturnValue(
+				TryGetUInt32(field, out var value), value, field
 			);
 		}
 
 		public ulong GetUInt64(BarbadosIdentifier field)
 		{
-			return BarbadosInvalidOperationException.ThrowFieldOfTypeNotFoundIfResultFalse(
-				TryGetUInt64(field, out var value), value, field, typeof(ulong)
+			return BarbadosDocumentInvalidOperationException.ThrowFieldOfTypeNotFoundOrReturnValue(
+				TryGetUInt64(field, out var value), value, field
 			);
 		}
 
 		public float GetFloat32(BarbadosIdentifier field)
 		{
-			return BarbadosInvalidOperationException.ThrowFieldOfTypeNotFoundIfResultFalse(
-				TryGetFloat32(field, out var value), value, field, typeof(float)
+			return BarbadosDocumentInvalidOperationException.ThrowFieldOfTypeNotFoundOrReturnValue(
+				TryGetFloat32(field, out var value), value, field
 			);
 		}
 
 		public double GetFloat64(BarbadosIdentifier field)
 		{
-			return BarbadosInvalidOperationException.ThrowFieldOfTypeNotFoundIfResultFalse(
-				TryGetFloat64(field, out var value), value, field, typeof(double)
+			return BarbadosDocumentInvalidOperationException.ThrowFieldOfTypeNotFoundOrReturnValue(
+				TryGetFloat64(field, out var value), value, field
 			);
 		}
 
 		public DateTime GetDateTime(BarbadosIdentifier field)
 		{
-			return BarbadosInvalidOperationException.ThrowFieldOfTypeNotFoundIfResultFalse(
-				TryGetDateTime(field, out var value), value, field, typeof(DateTime)
+			return BarbadosDocumentInvalidOperationException.ThrowFieldOfTypeNotFoundOrReturnValue(
+				TryGetDateTime(field, out var value), value, field
 			);
 		}
 
 		public bool GetBoolean(BarbadosIdentifier field)
 		{
-			return BarbadosInvalidOperationException.ThrowFieldOfTypeNotFoundIfResultFalse(
-				TryGetBoolean(field, out var value), value, field, typeof(bool)
+			return BarbadosDocumentInvalidOperationException.ThrowFieldOfTypeNotFoundOrReturnValue(
+				TryGetBoolean(field, out var value), value, field
 			);
 		}
 
 		public string GetString(BarbadosIdentifier field)
 		{
-			return BarbadosInvalidOperationException.ThrowFieldOfTypeNotFoundIfResultFalse(
-				TryGetString(field, out var value), value, field, typeof(string)
-			);
-		}
-
-		public sbyte[] GetInt8Array(BarbadosIdentifier field)
-		{
-			return BarbadosInvalidOperationException.ThrowFieldOfTypeNotFoundIfResultFalse(
-				TryGetInt8Array(field, out var value), value, field, typeof(sbyte[])
-			);
-		}
-
-		public short[] GetInt16Array(BarbadosIdentifier field)
-		{
-			return BarbadosInvalidOperationException.ThrowFieldOfTypeNotFoundIfResultFalse(
-				TryGetInt16Array(field, out var value), value, field, typeof(short[])
-			);
-		}
-
-		public int[] GetInt32Array(BarbadosIdentifier field)
-		{
-			return BarbadosInvalidOperationException.ThrowFieldOfTypeNotFoundIfResultFalse(
-				TryGetInt32Array(field, out var value), value, field, typeof(int[])
-			);
-		}
-
-		public long[] GetInt64Array(BarbadosIdentifier field)
-		{
-			return BarbadosInvalidOperationException.ThrowFieldOfTypeNotFoundIfResultFalse(
-				TryGetInt64Array(field, out var value), value, field, typeof(long[])
-			);
-		}
-
-		public byte[] GetUInt8Array(BarbadosIdentifier field)
-		{
-			return BarbadosInvalidOperationException.ThrowFieldOfTypeNotFoundIfResultFalse(
-				TryGetUInt8Array(field, out var value), value, field, typeof(byte[])
-			);
-		}
-
-		public ushort[] GetUInt16Array(BarbadosIdentifier field)
-		{
-			return BarbadosInvalidOperationException.ThrowFieldOfTypeNotFoundIfResultFalse(
-				TryGetUInt16Array(field, out var value), value, field, typeof(ushort[])
-			);
-		}
-
-		public uint[] GetUInt32Array(BarbadosIdentifier field)
-		{
-			return BarbadosInvalidOperationException.ThrowFieldOfTypeNotFoundIfResultFalse(
-				TryGetUInt32Array(field, out var value), value, field, typeof(uint[])
-			);
-		}
-
-		public ulong[] GetUInt64Array(BarbadosIdentifier field)
-		{
-			return BarbadosInvalidOperationException.ThrowFieldOfTypeNotFoundIfResultFalse(
-				TryGetUInt64Array(field, out var value), value, field, typeof(ulong[])
-			);
-		}
-
-		public float[] GetFloat32Array(BarbadosIdentifier field)
-		{
-			return BarbadosInvalidOperationException.ThrowFieldOfTypeNotFoundIfResultFalse(
-				TryGetFloat32Array(field, out var value), value, field, typeof(float[])
-			);
-		}
-
-		public double[] GetFloat64Array(BarbadosIdentifier field)
-		{
-			return BarbadosInvalidOperationException.ThrowFieldOfTypeNotFoundIfResultFalse(
-				TryGetFloat64Array(field, out var value), value, field, typeof(double[])
-			);
-		}
-
-		public DateTime[] GetDateTimeArray(BarbadosIdentifier field)
-		{
-			return BarbadosInvalidOperationException.ThrowFieldOfTypeNotFoundIfResultFalse(
-				TryGetDateTimeArray(field, out var value), value, field, typeof(DateTime[])
-			);
-		}
-
-		public bool[] GetBooleanArray(BarbadosIdentifier field)
-		{
-			return BarbadosInvalidOperationException.ThrowFieldOfTypeNotFoundIfResultFalse(
-				TryGetBooleanArray(field, out var value), value, field, typeof(bool[])
-			);
-		}
-
-		public string[] GetStringArray(BarbadosIdentifier field)
-		{
-			return BarbadosInvalidOperationException.ThrowFieldOfTypeNotFoundIfResultFalse(
-				TryGetStringArray(field, out var value), value, field, typeof(string[])
+			return BarbadosDocumentInvalidOperationException.ThrowFieldOfTypeNotFoundOrReturnValue(
+				TryGetString(field, out var value), value, field
 			);
 		}
 
 		public BarbadosDocument GetDocument(BarbadosIdentifier field)
 		{
-			return BarbadosInvalidOperationException.ThrowFieldOfTypeNotFoundIfResultFalse(
-				TryGetDocument(field, out var value), value, field, typeof(BarbadosDocument)
+			return BarbadosDocumentInvalidOperationException.ThrowFieldOfTypeNotFoundOrReturnValue(
+				TryGetDocument(field, out var value), value, field
+			);
+		}
+
+		public sbyte[] GetInt8Array(BarbadosIdentifier field)
+		{
+			return BarbadosDocumentInvalidOperationException.ThrowFieldOfTypeNotFoundOrReturnValue(
+				TryGetInt8Array(field, out var value), value, field
+			);
+		}
+
+		public short[] GetInt16Array(BarbadosIdentifier field)
+		{
+			return BarbadosDocumentInvalidOperationException.ThrowFieldOfTypeNotFoundOrReturnValue(
+				TryGetInt16Array(field, out var value), value, field
+			);
+		}
+
+		public int[] GetInt32Array(BarbadosIdentifier field)
+		{
+			return BarbadosDocumentInvalidOperationException.ThrowFieldOfTypeNotFoundOrReturnValue(
+				TryGetInt32Array(field, out var value), value, field
+			);
+		}
+
+		public long[] GetInt64Array(BarbadosIdentifier field)
+		{
+			return BarbadosDocumentInvalidOperationException.ThrowFieldOfTypeNotFoundOrReturnValue(
+				TryGetInt64Array(field, out var value), value, field
+			);
+		}
+
+		public byte[] GetUInt8Array(BarbadosIdentifier field)
+		{
+			return BarbadosDocumentInvalidOperationException.ThrowFieldOfTypeNotFoundOrReturnValue(
+				TryGetUInt8Array(field, out var value), value, field
+			);
+		}
+
+		public ushort[] GetUInt16Array(BarbadosIdentifier field)
+		{
+			return BarbadosDocumentInvalidOperationException.ThrowFieldOfTypeNotFoundOrReturnValue(
+				TryGetUInt16Array(field, out var value), value, field
+			);
+		}
+
+		public uint[] GetUInt32Array(BarbadosIdentifier field)
+		{
+			return BarbadosDocumentInvalidOperationException.ThrowFieldOfTypeNotFoundOrReturnValue(
+				TryGetUInt32Array(field, out var value), value, field
+			);
+		}
+
+		public ulong[] GetUInt64Array(BarbadosIdentifier field)
+		{
+			return BarbadosDocumentInvalidOperationException.ThrowFieldOfTypeNotFoundOrReturnValue(
+				TryGetUInt64Array(field, out var value), value, field
+			);
+		}
+
+		public float[] GetFloat32Array(BarbadosIdentifier field)
+		{
+			return BarbadosDocumentInvalidOperationException.ThrowFieldOfTypeNotFoundOrReturnValue(
+				TryGetFloat32Array(field, out var value), value, field
+			);
+		}
+
+		public double[] GetFloat64Array(BarbadosIdentifier field)
+		{
+			return BarbadosDocumentInvalidOperationException.ThrowFieldOfTypeNotFoundOrReturnValue(
+				TryGetFloat64Array(field, out var value), value, field
+			);
+		}
+
+		public DateTime[] GetDateTimeArray(BarbadosIdentifier field)
+		{
+			return BarbadosDocumentInvalidOperationException.ThrowFieldOfTypeNotFoundOrReturnValue(
+				TryGetDateTimeArray(field, out var value), value, field
+			);
+		}
+
+		public bool[] GetBooleanArray(BarbadosIdentifier field)
+		{
+			return BarbadosDocumentInvalidOperationException.ThrowFieldOfTypeNotFoundOrReturnValue(
+				TryGetBooleanArray(field, out var value), value, field
+			);
+		}
+
+		public string[] GetStringArray(BarbadosIdentifier field)
+		{
+			return BarbadosDocumentInvalidOperationException.ThrowFieldOfTypeNotFoundOrReturnValue(
+				TryGetStringArray(field, out var value), value, field
 			);
 		}
 
 		public BarbadosDocument[] GetDocumentArray(BarbadosIdentifier field)
 		{
-			return BarbadosInvalidOperationException.ThrowFieldOfTypeNotFoundIfResultFalse(
-				TryGetDocumentArray(field, out var value), value, field, typeof(BarbadosDocument[])
+			return BarbadosDocumentInvalidOperationException.ThrowFieldOfTypeNotFoundOrReturnValue(
+				TryGetDocumentArray(field, out var value), value, field
 			);
+		}
+
+		public sbyte GetInt8FromArray(BarbadosIdentifier field, int index)
+		{
+			return _throwIndexOutOfBoundsOrFieldOfTypeNotFoundOrReturnValue(
+				TryGetInt8FromArray(field, index, out var value), index, value, field
+			);
+		}
+
+		public short GetInt16FromArray(BarbadosIdentifier field, int index)
+		{
+			return _throwIndexOutOfBoundsOrFieldOfTypeNotFoundOrReturnValue(
+				TryGetInt16FromArray(field, index, out var value), index, value, field
+			);
+		}
+
+		public int GetInt32FromArray(BarbadosIdentifier field, int index)
+		{
+			return _throwIndexOutOfBoundsOrFieldOfTypeNotFoundOrReturnValue(
+				TryGetInt32FromArray(field, index, out var value), index, value, field
+			);
+		}
+
+		public long GetInt64FromArray(BarbadosIdentifier field, int index)
+		{
+			return _throwIndexOutOfBoundsOrFieldOfTypeNotFoundOrReturnValue(
+				TryGetInt64FromArray(field, index, out var value), index, value, field
+			);
+		}
+
+		public byte GetUInt8FromArray(BarbadosIdentifier field, int index)
+		{
+			return _throwIndexOutOfBoundsOrFieldOfTypeNotFoundOrReturnValue(
+				TryGetUInt8FromArray(field, index, out var value), index, value, field
+			);
+		}
+
+		public ushort GetUInt16FromArray(BarbadosIdentifier field, int index)
+		{
+			return _throwIndexOutOfBoundsOrFieldOfTypeNotFoundOrReturnValue(
+				TryGetUInt16FromArray(field, index, out var value), index, value, field
+			);
+		}
+
+		public uint GetUInt32FromArray(BarbadosIdentifier field, int index)
+		{
+			return _throwIndexOutOfBoundsOrFieldOfTypeNotFoundOrReturnValue(
+				TryGetUInt32FromArray(field, index, out var value), index, value, field
+			);
+		}
+
+		public ulong GetUInt64FromArray(BarbadosIdentifier field, int index)
+		{
+			return _throwIndexOutOfBoundsOrFieldOfTypeNotFoundOrReturnValue(
+				TryGetUInt64FromArray(field, index, out var value), index, value, field
+			);
+		}
+
+		public float GetFloat32FromArray(BarbadosIdentifier field, int index)
+		{
+			return _throwIndexOutOfBoundsOrFieldOfTypeNotFoundOrReturnValue(
+				TryGetFloat32FromArray(field, index, out var value), index, value, field
+			);
+		}
+
+		public double GetFloat64FromArray(BarbadosIdentifier field, int index)
+		{
+			return _throwIndexOutOfBoundsOrFieldOfTypeNotFoundOrReturnValue(
+				TryGetFloat64FromArray(field, index, out var value), index, value, field
+			);
+		}
+
+		public DateTime GetDateTimeFromArray(BarbadosIdentifier field, int index)
+		{
+			return _throwIndexOutOfBoundsOrFieldOfTypeNotFoundOrReturnValue(
+				TryGetDateTimeFromArray(field, index, out var value), index, value, field
+			);
+		}
+
+		public bool GetBooleanFromArray(BarbadosIdentifier field, int index)
+		{
+			return _throwIndexOutOfBoundsOrFieldOfTypeNotFoundOrReturnValue(
+				TryGetBooleanFromArray(field, index, out var value), index, value, field
+			);
+		}
+
+		public string GetStringFromArray(BarbadosIdentifier field, int index)
+		{
+			return _throwIndexOutOfBoundsOrFieldOfTypeNotFoundOrReturnValue(
+				TryGetStringFromArray(field, index, out var value), index, value, field
+			);
+		}
+
+		public BarbadosDocument GetDocumentFromArray(BarbadosIdentifier field, int index)
+		{
+			return _throwIndexOutOfBoundsOrFieldOfTypeNotFoundOrReturnValue(
+				TryGetDocumentFromArray(field, index, out var value), index, value, field
+			);
+		}
+
+		private T _throwIndexOutOfBoundsOrFieldOfTypeNotFoundOrReturnValue<T>(bool result, int index, T value, BarbadosIdentifier field)
+		{
+			if (result)
+			{
+				return value;
+			}
+
+			if (TryGetArrayCount(field, out var count) && count <= index)
+			{
+				throw new IndexOutOfRangeException();
+			}
+
+			return BarbadosDocumentInvalidOperationException.ThrowFieldOfTypeNotFoundOrReturnValue(result, value, field);
 		}
 	}
 }

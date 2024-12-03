@@ -1,7 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Diagnostics;
 
-using Barbados.StorageEngine.Documents.Binary;
 using Barbados.StorageEngine.Storage.Paging;
 using Barbados.StorageEngine.Storage.Paging.Pages;
 using Barbados.StorageEngine.Transactions;

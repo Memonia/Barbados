@@ -1,7 +1,5 @@
 ﻿using System;
 
-using Barbados.StorageEngine.Documents.Binary;
-
 namespace Barbados.StorageEngine.Indexing.Search
 {
 	internal abstract class KeyCheckRange(NormalisedValue lowerBound, NormalisedValue upperBound) : IKeyCheck

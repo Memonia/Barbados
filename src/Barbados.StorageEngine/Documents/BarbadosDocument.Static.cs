@@ -2,7 +2,7 @@
 using System.Diagnostics;
 using System.Text;
 
-using Barbados.StorageEngine.Documents.Binary;
+using Barbados.StorageEngine.Documents.Serialisation.Values;
 
 namespace Barbados.StorageEngine.Documents
 {
@@ -17,27 +17,18 @@ namespace Barbados.StorageEngine.Documents
 
 		public static bool TryCompareFields(BarbadosIdentifier field, BarbadosDocument a, BarbadosDocument b, out int result)
 		{
-			if (!a.Buffer.TryGetBufferValueBytesRaw(field.BinaryName.AsSpan(), out var ma, out var rawa))
+			if (a.Buffer.TryGetBufferRaw(field.BinaryName.AsBytes(), out var ma, out var va) &&
+				b.Buffer.TryGetBufferRaw(field.BinaryName.AsBytes(), out var mb, out var vb) &&
+				ma == mb
+			)
 			{
-				result = default!;
-				return false;
+				var comparer = ValueBufferSpanComparerFactory.GetComparer(ma);
+				result = comparer.Compare(va, vb);
+				return true;
 			}
 
-			if (!b.Buffer.TryGetBufferValueBytesRaw(field.BinaryName.AsSpan(), out var mb, out var rawb))
-			{
-				result = default!;
-				return false;
-			}
-
-			if (ma != mb)
-			{
-				result = default!;
-				return false;
-			}
-
-			var comparer = ValueSpanComparerFactory.GetComparer(ma);
-			result = comparer.Compare(rawa, rawb);
-			return true;
+			result = 0;
+			return false;
 		}
 
 		private static void _toString(BarbadosDocument document, StringBuilder builder, int spaces)

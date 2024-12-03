@@ -2,7 +2,7 @@
 using System.Linq;
 
 using Barbados.StorageEngine.Documents;
-using Barbados.StorageEngine.Documents.Binary;
+using Barbados.StorageEngine.Documents.Serialisation.Values;
 using Barbados.StorageEngine.Tests.Integration.Utility;
 
 namespace Barbados.StorageEngine.Tests.Integration.Indexing
