@@ -1,6 +1,5 @@
 ﻿using System.Diagnostics;
 
-using Barbados.StorageEngine.Documents.Binary;
 using Barbados.StorageEngine.Helpers;
 using Barbados.StorageEngine.Indexing;
 

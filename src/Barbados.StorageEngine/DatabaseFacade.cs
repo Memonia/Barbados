@@ -1,5 +1,4 @@
-﻿
-using Barbados.StorageEngine.Collections;
+﻿using Barbados.StorageEngine.Collections;
 using Barbados.StorageEngine.Indexing;
 using Barbados.StorageEngine.Storage.Paging;
 using Barbados.StorageEngine.Storage.Paging.Pages;

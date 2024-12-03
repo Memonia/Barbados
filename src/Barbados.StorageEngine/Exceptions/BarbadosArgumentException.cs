@@ -4,22 +4,22 @@ namespace Barbados.StorageEngine.Exceptions
 {
 	internal static class BarbadosArgumentException
 	{
-		public static void ThrowGroupIdentifierWhenFieldExpected(BarbadosIdentifier identifier, string paramName)
+		public static void ThrowDocumentIdentifierWhenFieldExpected(BarbadosIdentifier identifier, string paramName)
 		{
-			if (identifier.IsGroup)
+			if (identifier.IsDocument)
 			{
 				throw new ArgumentException(
-					$"Expected a field identifier, got a group '{identifier}'", paramName
+					$"Expected a field identifier, got a document '{identifier}'", paramName
 				);
 			}
 		}
 
-		public static void ThrowFieldIdentifierWhenGroupExpected(BarbadosIdentifier identifier, string paramName)
+		public static void ThrowFieldIdentifierWhenDocumentExpected(BarbadosIdentifier identifier, string paramName)
 		{
-			if (!identifier.IsGroup)
+			if (!identifier.IsDocument)
 			{
 				throw new ArgumentException(
-					$"Expected a group identifier, got a field '{identifier}'", paramName
+					$"Expected a document identifier, got a field '{identifier}'", paramName
 				);
 			}
 		}

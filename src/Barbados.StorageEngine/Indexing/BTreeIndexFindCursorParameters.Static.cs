@@ -1,7 +1,7 @@
 ﻿using System;
 
 using Barbados.StorageEngine.Documents;
-using Barbados.StorageEngine.Documents.Binary;
+using Barbados.StorageEngine.Indexing.Extensions;
 using Barbados.StorageEngine.Indexing.Search;
 using Barbados.StorageEngine.Indexing.Search.Checks;
 
@@ -38,7 +38,7 @@ namespace Barbados.StorageEngine.Indexing
 			{
 				if (
 					!condition.Buffer.TryGetNormalisedValue(
-						CommonIdentifiers.Index.SearchValue.BinaryName.AsSpan(), out var value
+						CommonIdentifiers.Index.SearchValue.BinaryName, out var value
 					)
 				)
 				{
@@ -51,13 +51,13 @@ namespace Barbados.StorageEngine.Indexing
 				return value;
 			}
 
-			var doExact = condition.Buffer.TryGetBoolean(CommonIdentifiers.Index.Exact.BinaryName.AsSpan(), out var ex) && ex;
-			var doRange = condition.Buffer.TryGetBoolean(CommonIdentifiers.Index.Range.BinaryName.AsSpan(), out var rg) && rg;
-			var doLess = condition.Buffer.TryGetBoolean(CommonIdentifiers.Index.LessThan.BinaryName.AsSpan(), out var lt) && lt;
-			var doGreater = condition.Buffer.TryGetBoolean(CommonIdentifiers.Index.GreaterThan.BinaryName.AsSpan(), out var gt) && gt;
-			var doInclusive = condition.Buffer.TryGetBoolean(CommonIdentifiers.Index.Inclusive.BinaryName.AsSpan(), out var incl) && incl;
-			var doAsc = condition.Buffer.TryGetBoolean(CommonIdentifiers.Index.Ascending.BinaryName.AsSpan(), out var asc) && asc;
-			var doTake = condition.Buffer.TryGetInt64(CommonIdentifiers.Index.Take.BinaryName.AsSpan(), out var take);
+			var doExact = condition.Buffer.TryGetBoolean(CommonIdentifiers.Index.Exact.BinaryName.AsBytes(), out var ex) && ex;
+			var doRange = condition.Buffer.TryGetBoolean(CommonIdentifiers.Index.Range.BinaryName.AsBytes(), out var rg) && rg;
+			var doLess = condition.Buffer.TryGetBoolean(CommonIdentifiers.Index.LessThan.BinaryName.AsBytes(), out var lt) && lt;
+			var doGreater = condition.Buffer.TryGetBoolean(CommonIdentifiers.Index.GreaterThan.BinaryName.AsBytes(), out var gt) && gt;
+			var doInclusive = condition.Buffer.TryGetBoolean(CommonIdentifiers.Index.Inclusive.BinaryName.AsBytes(), out var incl) && incl;
+			var doAsc = condition.Buffer.TryGetBoolean(CommonIdentifiers.Index.Ascending.BinaryName.AsBytes(), out var asc) && asc;
+			var doTake = condition.Buffer.TryGetInt64(CommonIdentifiers.Index.Take.BinaryName.AsBytes(), out var take);
 
 			if (doTake && take < 0)
 			{
@@ -69,10 +69,10 @@ namespace Barbados.StorageEngine.Indexing
 			{
 				if (
 					!condition.Buffer.TryGetNormalisedValue(
-						CommonIdentifiers.Index.LessThan.BinaryName.AsSpan(), out var end
+						CommonIdentifiers.Index.LessThan.BinaryName, out var end
 					) ||
 					!condition.Buffer.TryGetNormalisedValue(
-						CommonIdentifiers.Index.GreaterThan.BinaryName.AsSpan(), out var start
+						CommonIdentifiers.Index.GreaterThan.BinaryName, out var start
 					)
 				)
 				{

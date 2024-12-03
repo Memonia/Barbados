@@ -13,7 +13,7 @@ namespace Barbados.StorageEngine.Tests
 			}
 
 			[Fact]
-			public void GivenGroupIdentifierAndSameValueIdentifier_Throws()
+			public void GivenDocumentIdentifierAndSameValueIdentifier_Throws()
 			{
 				Assert.Throws<ArgumentException>(
 					() => new ValueSelector("test" + CommonIdentifiers.NestingSeparator, "test")

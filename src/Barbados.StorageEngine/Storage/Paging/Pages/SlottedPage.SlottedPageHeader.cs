@@ -13,7 +13,6 @@ namespace Barbados.StorageEngine.Storage.Paging.Pages
 			static SlottedPageHeader()
 			{
 				Debug.Assert(Constants.PageLength == 4096);
-				DebugHelpers.AssertSlottedPageHeaderLength();
 			}   
 			
 			/* The number of bits taken here depends on the page length. Currently it's 4096 bytes

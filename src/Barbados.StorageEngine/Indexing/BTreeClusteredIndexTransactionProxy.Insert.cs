@@ -1,6 +1,6 @@
 ﻿using System.Diagnostics;
 
-using Barbados.StorageEngine.Documents.Binary;
+using Barbados.StorageEngine.Documents.Serialisation;
 using Barbados.StorageEngine.Storage.Paging;
 using Barbados.StorageEngine.Storage.Paging.Pages;
 
@@ -8,7 +8,7 @@ namespace Barbados.StorageEngine.Indexing
 {
 	internal partial class BTreeClusteredIndexTransactionProxy
 	{
-		public PageHandle Insert(ObjectIdNormalised id, ObjectBuffer buffer)
+		public PageHandle Insert(ObjectIdNormalised id, RadixTreeBuffer buffer)
 		{
 			var ikey = _toBTreeIndexKey(id);
 			if (TryFindWithPreemptiveSplit(ikey, out var traceback))
@@ -23,7 +23,7 @@ namespace Barbados.StorageEngine.Indexing
 				// Avoid splitting objects unnecessarily
 				if (buffer.Length <= Constants.ObjectPageMaxChunkLength)
 				{
-					if (leaf.TryWriteObject(id, buffer.AsReadonlySpan()))
+					if (leaf.TryWriteObject(id, buffer.AsSpan()))
 					{
 						Transaction.Save(leaf);
 						updateParent = true;
@@ -90,7 +90,7 @@ namespace Barbados.StorageEngine.Indexing
 			}
 		}
 
-		private PageHandle _split(ObjectIdNormalised id, ObjectBuffer buffer, BTreeIndexTraceback traceback)
+		private PageHandle _split(ObjectIdNormalised id, RadixTreeBuffer buffer, BTreeIndexTraceback traceback)
 		{
 			var target = Transaction.Load<ObjectPage>(traceback.Current);
 			var lh = Transaction.AllocateHandle();
@@ -106,9 +106,9 @@ namespace Barbados.StorageEngine.Indexing
 			return insertTarget.Header.Handle;
 		}
 
-		private bool _tryInsert(ObjectPage leaf, ObjectIdNormalised id, ObjectBuffer buffer)
+		private bool _tryInsert(ObjectPage leaf, ObjectIdNormalised id, RadixTreeBuffer buffer)
 		{
-			if (leaf.TryWriteObject(id, buffer.AsReadonlySpan()))
+			if (leaf.TryWriteObject(id, buffer.AsSpan()))
 			{
 				return true;
 			}
@@ -116,9 +116,9 @@ namespace Barbados.StorageEngine.Indexing
 			return _tryInsertChunk(leaf, id, buffer);
 		}
 
-		private bool _tryInsertChunk(ObjectPage leaf, ObjectIdNormalised id, ObjectBuffer buffer)
+		private bool _tryInsertChunk(ObjectPage leaf, ObjectIdNormalised id, RadixTreeBuffer buffer)
 		{
-			var span = buffer.AsReadonlySpan();
+			var span = buffer.AsSpan();
 			if (leaf.TryWriteObjectChunk(id, span, out var totalWritten))
 			{
 				var oh = Transaction.AllocateHandle();

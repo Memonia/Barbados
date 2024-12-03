@@ -28,7 +28,7 @@ namespace Barbados.StorageEngine.Tests.Integration.Collections
 			info.AddValue(nameof(Name), Name);
 
 			var json = JsonSerializer.Serialize(
-				Documents.Select(e => (e.Id.Value, e.Buffer.AsReadonlySpan().ToArray())), _options
+				Documents.Select(e => (e.Id.Value, e.Buffer.AsSpan().ToArray())), _options
 			);
 			info.AddValue(nameof(Documents), json);
 		}

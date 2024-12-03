@@ -3,6 +3,7 @@
 using Barbados.StorageEngine.Documents;
 using Barbados.StorageEngine.Exceptions;
 using Barbados.StorageEngine.Indexing;
+using Barbados.StorageEngine.Indexing.Extensions;
 using Barbados.StorageEngine.Storage.Paging.Pages;
 using Barbados.StorageEngine.Transactions;
 
@@ -46,7 +47,7 @@ namespace Barbados.StorageEngine.Collections
 			var proxy = facade.GetProxy(tx);
 			foreach (var document in GetCursor(facade.KeySelector))
 			{
-				if (document.Buffer.TryGetNormalisedValue(facade.IndexField.BinaryName.AsSpan(), out var value))
+				if (document.Buffer.TryGetNormalisedValue(facade.IndexField.BinaryName, out var value))
 				{
 					var ikey = facade.ToBTreeIndexKey(value);
 					proxy.Insert(ikey, document.Id);
@@ -137,7 +138,7 @@ namespace Barbados.StorageEngine.Collections
 			foreach (var indexFacade in EnumerateIndexes())
 			{
 				var iproxy = indexFacade.GetProxy(proxy.Transaction);
-				if (document.Buffer.TryGetNormalisedValue(iproxy.Info.IndexField.BinaryName.AsSpan(), out var value))
+				if (document.Buffer.TryGetNormalisedValue(iproxy.Info.IndexField.BinaryName, out var value))
 				{
 					var ikey = indexFacade.ToBTreeIndexKey(value);
 					iproxy.Insert(ikey, id);
@@ -161,7 +162,7 @@ namespace Barbados.StorageEngine.Collections
 			foreach (var indexFacade in EnumerateIndexes())
 			{
 				var iproxy = indexFacade.GetProxy(proxy.Transaction);
-				if (buffer.TryGetNormalisedValue(iproxy.Info.IndexField.BinaryName.AsSpan(), out var value))
+				if (buffer.TryGetNormalisedValue(iproxy.Info.IndexField.BinaryName, out var value))
 				{
 					var ikey = indexFacade.ToBTreeIndexKey(value);
 					if (!iproxy.TryRemove(ikey, id))

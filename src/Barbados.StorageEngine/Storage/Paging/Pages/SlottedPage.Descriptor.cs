@@ -8,11 +8,6 @@ namespace Barbados.StorageEngine.Storage.Paging.Pages
 		{
 			public const int BinaryLength = sizeof(ulong);
 
-			static Descriptor()
-			{
-				DebugHelpers.AssertSlotDescriptorLength();
-			}
-
 			private const ulong _offsetMask      = 0b0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_1111_1111_1111;
 			private const ulong _lengthMask      = 0b0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_1111_1111_1111_0000_0000_0000;
 			private const ulong _keyLengthMask   = 0b0000_0000_0000_0000_0000_0000_0000_1111_1111_1111_0000_0000_0000_0000_0000_0000;

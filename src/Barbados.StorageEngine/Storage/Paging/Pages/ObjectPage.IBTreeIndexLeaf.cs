@@ -1,6 +1,6 @@
 ﻿using System.Diagnostics;
 
-using Barbados.StorageEngine.Documents.Binary;
+using Barbados.StorageEngine.Indexing;
 
 namespace Barbados.StorageEngine.Storage.Paging.Pages
 {

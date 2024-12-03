@@ -16,7 +16,7 @@ namespace Barbados.StorageEngine.Tests
 			[Fact]
 			public void GivenNestingSeparator_Throws()
 			{
-				var str = CommonIdentifiers.NestingSeparator;
+				var str = new string([CommonIdentifiers.NestingSeparator]);
 				Assert.Throws<ArgumentException>(() => new BarbadosIdentifier(str));
 			}
 
@@ -39,7 +39,7 @@ namespace Barbados.StorageEngine.Tests
 			}
 		}
 
-		public sealed class IsGroup
+		public sealed class IsDocument
 		{
 			[Fact]
 			public void GivenStringWhichEndsWithNestingSeparator_ReturnsTrue()
@@ -47,7 +47,7 @@ namespace Barbados.StorageEngine.Tests
 				var str = "test" + CommonIdentifiers.NestingSeparator;
 				var identifier = new BarbadosIdentifier(str);
 
-				Assert.True(identifier.IsGroup);
+				Assert.True(identifier.IsDocument);
 			}
 
 			[Fact]
@@ -56,7 +56,7 @@ namespace Barbados.StorageEngine.Tests
 				var str = "test";
 				var identifier = new BarbadosIdentifier(str);
 
-				Assert.False(identifier.IsGroup);
+				Assert.False(identifier.IsDocument);
 			}
 		}
 
@@ -81,7 +81,7 @@ namespace Barbados.StorageEngine.Tests
 			}
 		}
 
-		public sealed class GetGroupName
+		public sealed class GetDocumentName
 		{
 			[Fact]
 			public void GivenStringWhichEndsWithNestingSeparator_ReturnsStringWithoutNestingSeparator()
@@ -90,7 +90,7 @@ namespace Barbados.StorageEngine.Tests
 				var str = name + CommonIdentifiers.NestingSeparator;
 				var identifier = new BarbadosIdentifier(str);
 
-				Assert.Equal(name, identifier.GetGroupName());
+				Assert.Equal(name, identifier.GetDocumentName());
 			}
 
 			[Fact]
@@ -100,7 +100,7 @@ namespace Barbados.StorageEngine.Tests
 				var str = name + CommonIdentifiers.NestingSeparator;
 				var identifier = new BarbadosIdentifier(str);
 
-				Assert.Equal(name, identifier.GetGroupName());
+				Assert.Equal(name, identifier.GetDocumentName());
 			}
 
 			[Fact]
@@ -109,11 +109,11 @@ namespace Barbados.StorageEngine.Tests
 				var str = "test";
 				var identifier = new BarbadosIdentifier(str);
 
-				Assert.Throws<InvalidOperationException>(() => identifier.GetGroupName());
+				Assert.Throws<InvalidOperationException>(() => identifier.GetDocumentName());
 			}
 		}
 
-		public sealed class GetGroupIdentifier
+		public sealed class GetDocumentIdentifier
 		{
 			[Fact]
 			public void GivenStringDoesNotEndWithNestingSeparator_ReturnsSameStringWhichEndsWithNestingSeparator()
@@ -122,7 +122,7 @@ namespace Barbados.StorageEngine.Tests
 				var result = str + CommonIdentifiers.NestingSeparator;
 				var identifier = new BarbadosIdentifier(str);
 
-				Assert.Equal(result, identifier.GetGroupIdentifier());
+				Assert.Equal(result, identifier.GetDocumentIdentifier());
 			}
 
 			[Fact]
@@ -132,7 +132,7 @@ namespace Barbados.StorageEngine.Tests
 				var result = str + CommonIdentifiers.NestingSeparator;
 				var identifier = new BarbadosIdentifier(str);
 
-				Assert.Equal(result, identifier.GetGroupIdentifier());
+				Assert.Equal(result, identifier.GetDocumentIdentifier());
 			}
 
 			[Fact]
@@ -141,7 +141,7 @@ namespace Barbados.StorageEngine.Tests
 				var str = "test" + CommonIdentifiers.NestingSeparator;
 				var identifier = new BarbadosIdentifier(str);
 
-				Assert.Throws<InvalidOperationException>(() => identifier.GetGroupIdentifier());
+				Assert.Throws<InvalidOperationException>(() => identifier.GetDocumentIdentifier());
 			}
 		}
 

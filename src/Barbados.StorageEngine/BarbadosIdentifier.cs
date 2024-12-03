@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-using Barbados.StorageEngine.Documents.Binary;
+using Barbados.StorageEngine.Documents.Serialisation;
 
 namespace Barbados.StorageEngine
 {
@@ -13,11 +13,11 @@ namespace Barbados.StorageEngine
 		public static bool operator ==(BarbadosIdentifier a, BarbadosIdentifier b) => a.Identifier == b.Identifier;
 		public static bool operator !=(BarbadosIdentifier a, BarbadosIdentifier b) => a.Identifier != b.Identifier;
 
-		public bool IsGroup { get; }
+		public bool IsDocument { get; }
 		public bool IsReserved { get; }
 		public string Identifier { get; }
 
-		internal ValueName BinaryName { get; }
+		internal RadixTreePrefix BinaryName { get; }
 
 		public BarbadosIdentifier(string identifier)
 		{
@@ -40,7 +40,7 @@ namespace Barbados.StorageEngine
 			foreach (var c in identifier)
 			{
 				consecutiveNesting += 1;
-				if (c != CommonIdentifiers.NestingSeparator[0])
+				if (c != CommonIdentifiers.NestingSeparator)
 				{
 					consecutiveNesting = 0;
 				}
@@ -51,31 +51,31 @@ namespace Barbados.StorageEngine
 				}
 			}
 
-			IsGroup = identifier.EndsWith(CommonIdentifiers.NestingSeparator[0]);
+			IsDocument = identifier.EndsWith(CommonIdentifiers.NestingSeparator);
 			Identifier = identifier;
 			BinaryName = new(identifier);
 		}
 
 		public override string ToString() => Identifier;
 
-		internal string GetGroupName()
+		internal string GetDocumentName()
 		{
-			if (!IsGroup)
+			if (!IsDocument)
 			{
-				throw new InvalidOperationException("This instance is not a group identifier");
+				throw new InvalidOperationException("This instance is not a document identifier");
 			}
 
 			return Identifier[..^1];
 		}
 
-		internal string GetGroupIdentifier()
+		internal string GetDocumentIdentifier()
 		{
-			if (IsGroup)
+			if (IsDocument)
 			{
 				throw new InvalidOperationException("This instance is not a value identifier");
 			}
 
-			return Identifier + CommonIdentifiers.NestingSeparator[0];
+			return Identifier + CommonIdentifiers.NestingSeparator;
 		}
 
 		internal IEnumerator<int> GetSplitIndices()
@@ -83,7 +83,7 @@ namespace Barbados.StorageEngine
 			var i = 0;
 			while (i < Identifier.Length)
 			{
-				var j = Identifier.IndexOf(CommonIdentifiers.NestingSeparator[0], i);
+				var j = Identifier.IndexOf(CommonIdentifiers.NestingSeparator, i);
 				if (j == -1)
 				{
 					j = Identifier.Length;

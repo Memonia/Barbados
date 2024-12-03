@@ -1,8 +1,8 @@
 ﻿using System.Collections.Generic;
 using System.Diagnostics;
 
-using Barbados.StorageEngine.Documents.Binary;
 using Barbados.StorageEngine.Helpers;
+using Barbados.StorageEngine.Indexing.Extensions;
 using Barbados.StorageEngine.Indexing.Search;
 using Barbados.StorageEngine.Storage.Paging.Pages;
 using Barbados.StorageEngine.Transactions;
@@ -101,7 +101,7 @@ namespace Barbados.StorageEngine.Indexing
 				return false;
 			}
 			
-			return buffer.TryGetNormalisedValue(_indexFacade.Info.IndexField.BinaryName.AsSpan(), out key);
+			return buffer.TryGetNormalisedValue(_indexFacade.Info.IndexField.BinaryName, out key);
 		}
 
 		private void _retrieveIds(

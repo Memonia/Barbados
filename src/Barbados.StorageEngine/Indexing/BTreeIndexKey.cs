@@ -1,7 +1,5 @@
 ﻿using System.Diagnostics;
 
-using Barbados.StorageEngine.Documents.Binary;
-
 namespace Barbados.StorageEngine.Indexing
 {
 	internal readonly ref struct BTreeIndexKey

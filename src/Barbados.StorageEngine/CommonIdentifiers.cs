@@ -2,7 +2,7 @@
 {
 	public static class CommonIdentifiers
 	{
-		public static string NestingSeparator { get; } = ".";
+		public static char NestingSeparator { get; } = '.';
 		public static string ReservedNamePrefix { get; } = "?";
 		public static BarbadosIdentifier Id { get; } = "?id";
 
