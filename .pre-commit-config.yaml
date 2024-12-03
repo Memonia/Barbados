@@ -1,0 +1,10 @@
+repos:
+  - repo: local
+    hooks:
+      - id: check-sandbox
+        name: check-sandbox
+        entry: hooks/check-sandbox.sh
+        language: script
+
+        # run once
+        pass_filenames: false
