@@ -85,6 +85,18 @@ namespace Barbados.StorageEngine.Documents
 		{
 			if (!Buffer.ValueExists(field.BinaryName.AsBytes(), out var marker))
 			{
+				if (TryGetDocument(field, out var doc))
+				{
+					value = doc;
+					return true;
+				}
+
+				if (TryGetDocumentArray(field, out var docs))
+				{
+					value = docs;
+					return true;
+				}
+
 				value = default!;
 				return false;
 			}
@@ -281,9 +293,13 @@ namespace Barbados.StorageEngine.Documents
 
 		public bool TryGetDocumentArray(BarbadosIdentifier field, out BarbadosDocument[] documents)
 		{
-			var sb = new StringBuilder(
-				$"{field}{CommonIdentifiers.NestingSeparator}0{CommonIdentifiers.NestingSeparator}"
-			);
+			var sb = new StringBuilder(field);
+			if (!field.IsDocument)
+			{
+				sb.Append(CommonIdentifiers.NestingSeparator);
+			}
+			sb.Append(0);
+			sb.Append(CommonIdentifiers.NestingSeparator);
 
 			BarbadosIdentifier firstItemName = sb.ToString();
 			if (!Buffer.PrefixExists(firstItemName.BinaryName.AsBytes()))
