@@ -1,4 +1,4 @@
-﻿using Barbados.StorageEngine.Documents;
+﻿using Barbados.Documents;
 using Barbados.StorageEngine.Exceptions;
 using Barbados.StorageEngine.Indexing;
 
@@ -6,11 +6,11 @@ namespace Barbados.StorageEngine.Collections
 {
 	internal partial class MetaCollectionFacade
 	{
-		BarbadosIdentifier IReadOnlyBarbadosCollection.Name => CommonIdentifiers.Collections.MetaCollection;
+		BarbadosDbObjectName IReadOnlyBarbadosCollection.Name => BarbadosDbObjects.Collections.MetaCollection;
 
 		bool IReadOnlyBarbadosCollection.TryGetBTreeIndex(string field, out IReadOnlyBTreeIndex index)
 		{
-			if (field == CommonIdentifiers.MetaCollection.AbsCollectionDocumentNameField.Identifier)
+			if (field == BarbadosDocumentKeys.MetaCollection.AbsCollectionDocumentNameField)
 			{
 				index = _nameIndexFacade;
 				return true;
@@ -22,20 +22,20 @@ namespace Barbados.StorageEngine.Collections
 
 		bool IReadOnlyBarbadosCollection.TryRead(ObjectId id, out BarbadosDocument document)
 		{
-			return TryRead(id, ValueSelector.SelectAll, out document);
+			return TryRead(id, BarbadosKeySelector.SelectAll, out document);
 		}
 
-		bool IReadOnlyBarbadosCollection.TryRead(ObjectId id, ValueSelector selector, out BarbadosDocument document)
+		bool IReadOnlyBarbadosCollection.TryRead(ObjectId id, BarbadosKeySelector selector, out BarbadosDocument document)
 		{
 			return TryRead(id, selector, out document);
 		}
 
 		BarbadosDocument IReadOnlyBarbadosCollection.Read(ObjectId id)
 		{
-			return ((IReadOnlyBarbadosCollection)this).Read(id, ValueSelector.SelectAll);
+			return ((IReadOnlyBarbadosCollection)this).Read(id, BarbadosKeySelector.SelectAll);
 		}
 
-		BarbadosDocument IReadOnlyBarbadosCollection.Read(ObjectId id, ValueSelector selector)
+		BarbadosDocument IReadOnlyBarbadosCollection.Read(ObjectId id, BarbadosKeySelector selector)
 		{
 			if (!TryRead(id, selector, out var document))
 			{
@@ -52,7 +52,7 @@ namespace Barbados.StorageEngine.Collections
 			return GetCursor();
 		}
 
-		ICursor<BarbadosDocument> IReadOnlyBarbadosCollection.GetCursor(ValueSelector selector)
+		ICursor<BarbadosDocument> IReadOnlyBarbadosCollection.GetCursor(BarbadosKeySelector selector)
 		{
 			return GetCursor(selector);
 		}

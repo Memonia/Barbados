@@ -2,13 +2,13 @@
 using System.Collections.Generic;
 using System.Linq;
 
+using Barbados.Documents;
 using Barbados.QueryEngine.Build;
 using Barbados.QueryEngine.Build.Expressions;
 using Barbados.QueryEngine.Evaluation;
 using Barbados.QueryEngine.Evaluation.Expressions;
 using Barbados.StorageEngine;
 using Barbados.StorageEngine.Collections;
-using Barbados.StorageEngine.Documents;
 
 namespace Barbados.QueryEngine
 {
@@ -135,7 +135,7 @@ namespace Barbados.QueryEngine
 		private static bool _tryGetMatchingIndexSeekEvaluator(
 			IQueryExpression expression, 
 			IReadOnlyBarbadosCollection collection, 
-			ValueSelector selector,
+			BarbadosKeySelector selector,
 			out IndexSeekEvaluator evaluator
 		)
 		{
@@ -164,27 +164,27 @@ namespace Barbados.QueryEngine
 				switch (ce.Operator)
 				{
 					case BinaryOperator.Equals:
-						conditionBuilder.Add(CommonIdentifiers.Index.Exact, true);
+						conditionBuilder.Add(BarbadosDocumentKeys.IndexQuery.Exact, true);
 						break;
 
 					case BinaryOperator.LessThan:
-						conditionBuilder.Add(CommonIdentifiers.Index.LessThan, true);
+						conditionBuilder.Add(BarbadosDocumentKeys.IndexQuery.LessThan, true);
 						break;
 
 					case BinaryOperator.GreaterThan:
-						conditionBuilder.Add(CommonIdentifiers.Index.GreaterThan, true);
+						conditionBuilder.Add(BarbadosDocumentKeys.IndexQuery.GreaterThan, true);
 						break;
 
 					case BinaryOperator.LessThanOrEqual:
 						conditionBuilder
-							.Add(CommonIdentifiers.Index.Inclusive, true)
-							.Add(CommonIdentifiers.Index.LessThan, true);
+							.Add(BarbadosDocumentKeys.IndexQuery.Inclusive, true)
+							.Add(BarbadosDocumentKeys.IndexQuery.LessThan, true);
 						break;
 
 					case BinaryOperator.GreaterThanOrEqual:
 						conditionBuilder
-							.Add(CommonIdentifiers.Index.Inclusive, true)
-							.Add(CommonIdentifiers.Index.GreaterThan, true);
+							.Add(BarbadosDocumentKeys.IndexQuery.Inclusive, true)
+							.Add(BarbadosDocumentKeys.IndexQuery.GreaterThan, true);
 						break;
 
 					default:
@@ -209,55 +209,55 @@ namespace Barbados.QueryEngine
 			switch (expression)
 			{
 				case ConstantExpression<sbyte> cesb:
-					conditionBuilder.Add(CommonIdentifiers.Index.SearchValue, cesb.Value);
+					conditionBuilder.Add(BarbadosDocumentKeys.IndexQuery.SearchValue, cesb.Value);
 					break;
 
 				case ConstantExpression<int> cei:
-					conditionBuilder.Add(CommonIdentifiers.Index.SearchValue, cei.Value);
+					conditionBuilder.Add(BarbadosDocumentKeys.IndexQuery.SearchValue, cei.Value);
 					break;
 
 				case ConstantExpression<short> ces:
-					conditionBuilder.Add(CommonIdentifiers.Index.SearchValue, ces.Value);
+					conditionBuilder.Add(BarbadosDocumentKeys.IndexQuery.SearchValue, ces.Value);
 					break;
 
 				case ConstantExpression<long> cel:
-					conditionBuilder.Add(CommonIdentifiers.Index.SearchValue, cel.Value);
+					conditionBuilder.Add(BarbadosDocumentKeys.IndexQuery.SearchValue, cel.Value);
 					break;
 
 				case ConstantExpression<byte> ceb:
-					conditionBuilder.Add(CommonIdentifiers.Index.SearchValue, ceb.Value);
+					conditionBuilder.Add(BarbadosDocumentKeys.IndexQuery.SearchValue, ceb.Value);
 					break;
 
 				case ConstantExpression<uint> ceui:
-					conditionBuilder.Add(CommonIdentifiers.Index.SearchValue, ceui.Value);
+					conditionBuilder.Add(BarbadosDocumentKeys.IndexQuery.SearchValue, ceui.Value);
 					break;
 
 				case ConstantExpression<ushort> ceus:
-					conditionBuilder.Add(CommonIdentifiers.Index.SearchValue, ceus.Value);
+					conditionBuilder.Add(BarbadosDocumentKeys.IndexQuery.SearchValue, ceus.Value);
 					break;
 
 				case ConstantExpression<ulong> ceul:
-					conditionBuilder.Add(CommonIdentifiers.Index.SearchValue, ceul.Value);
+					conditionBuilder.Add(BarbadosDocumentKeys.IndexQuery.SearchValue, ceul.Value);
 					break;
 
 				case ConstantExpression<float> cef:
-					conditionBuilder.Add(CommonIdentifiers.Index.SearchValue, cef.Value);
+					conditionBuilder.Add(BarbadosDocumentKeys.IndexQuery.SearchValue, cef.Value);
 					break;
 
 				case ConstantExpression<double> ced:
-					conditionBuilder.Add(CommonIdentifiers.Index.SearchValue, ced.Value);
+					conditionBuilder.Add(BarbadosDocumentKeys.IndexQuery.SearchValue, ced.Value);
 					break;
 
 				case ConstantExpression<DateTime> cedt:
-					conditionBuilder.Add(CommonIdentifiers.Index.SearchValue, cedt.Value);
+					conditionBuilder.Add(BarbadosDocumentKeys.IndexQuery.SearchValue, cedt.Value);
 					break;
 
 				case ConstantExpression<bool> ceb:
-					conditionBuilder.Add(CommonIdentifiers.Index.SearchValue, ceb.Value);
+					conditionBuilder.Add(BarbadosDocumentKeys.IndexQuery.SearchValue, ceb.Value);
 					break;
 
 				case ConstantExpression<string> ces:
-					conditionBuilder.Add(CommonIdentifiers.Index.SearchValue, ces.Value);
+					conditionBuilder.Add(BarbadosDocumentKeys.IndexQuery.SearchValue, ces.Value);
 					break;
 
 				default:

@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-using Barbados.StorageEngine.Documents;
+using Barbados.Documents;
 using Barbados.StorageEngine.Exceptions;
 using Barbados.StorageEngine.Indexing;
 using Barbados.StorageEngine.Indexing.Extensions;
@@ -47,24 +47,23 @@ namespace Barbados.StorageEngine.Collections
 			var proxy = facade.GetProxy(tx);
 			foreach (var document in GetCursor(facade.KeySelector))
 			{
-				if (document.Buffer.TryGetNormalisedValue(facade.IndexField.BinaryName, out var value))
+				if (document.TryGetNormalisedValue(facade.IndexField, out var value))
 				{
 					var ikey = facade.ToBTreeIndexKey(value);
-					proxy.Insert(ikey, document.Id);
+					proxy.Insert(ikey, document.GetObjectId());
 				}
 			}
 
 			TransactionManager.CommitTransaction(tx);
 		}
 
-		public bool TryRead(ObjectId id, ValueSelector selector, out BarbadosDocument document)
+		public bool TryRead(ObjectId id, BarbadosKeySelector selector, out BarbadosDocument document)
 		{
 			using var tx = TransactionManager.GetAutomaticTransaction(Id, TransactionMode.Read);
 			var proxy = ClusteredIndexFacade.GetProxy(tx);
 			var idn = new ObjectIdNormalised(id);
-			if (proxy.TryReadObjectBuffer(idn, selector, out var buffer))
+			if (proxy.TryReadDocument(idn, selector, out document))
 			{
-				document = new(id, buffer);
 				return true;
 			}
 
@@ -123,10 +122,10 @@ namespace Barbados.StorageEngine.Collections
 
 		public CollectionCursor GetCursor()
 		{
-			return GetCursor(ValueSelector.SelectAll);
+			return GetCursor(BarbadosKeySelector.SelectAll);
 		}
 
-		public CollectionCursor GetCursor(ValueSelector selector)
+		public CollectionCursor GetCursor(BarbadosKeySelector selector)
 		{
 			return new CollectionCursor(Id, TransactionManager, selector, ClusteredIndexFacade);
 		}
@@ -134,11 +133,11 @@ namespace Barbados.StorageEngine.Collections
 		private void _insert(BTreeClusteredIndexTransactionProxy proxy, ObjectId id, BarbadosDocument document)
 		{
 			var idn = new ObjectIdNormalised(id);
-			proxy.Insert(idn, document.Buffer);
+			proxy.Insert(idn, document.AsBytes());
 			foreach (var indexFacade in EnumerateIndexes())
 			{
 				var iproxy = indexFacade.GetProxy(proxy.Transaction);
-				if (document.Buffer.TryGetNormalisedValue(iproxy.Info.IndexField.BinaryName, out var value))
+				if (document.TryGetNormalisedValue(iproxy.Info.IndexField, out var value))
 				{
 					var ikey = indexFacade.ToBTreeIndexKey(value);
 					iproxy.Insert(ikey, id);
@@ -149,7 +148,7 @@ namespace Barbados.StorageEngine.Collections
 		private bool _tryRemove(BTreeClusteredIndexTransactionProxy proxy, ObjectId id)
 		{
 			var idn = new ObjectIdNormalised(id);
-			if (!proxy.TryReadObjectBuffer(idn, ValueSelector.SelectAll, out var buffer))
+			if (!proxy.TryReadDocument(idn, BarbadosKeySelector.SelectAll, out var buffer))
 			{
 				return false;
 			}
@@ -162,7 +161,7 @@ namespace Barbados.StorageEngine.Collections
 			foreach (var indexFacade in EnumerateIndexes())
 			{
 				var iproxy = indexFacade.GetProxy(proxy.Transaction);
-				if (buffer.TryGetNormalisedValue(iproxy.Info.IndexField.BinaryName, out var value))
+				if (buffer.TryGetNormalisedValue(iproxy.Info.IndexField, out var value))
 				{
 					var ikey = indexFacade.ToBTreeIndexKey(value);
 					if (!iproxy.TryRemove(ikey, id))

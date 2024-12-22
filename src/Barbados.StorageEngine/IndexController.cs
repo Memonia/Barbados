@@ -1,8 +1,8 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 
+using Barbados.Documents;
 using Barbados.StorageEngine.Collections;
-using Barbados.StorageEngine.Documents;
 using Barbados.StorageEngine.Exceptions;
 using Barbados.StorageEngine.Indexing;
 using Barbados.StorageEngine.Transactions;
@@ -36,7 +36,7 @@ namespace Barbados.StorageEngine
 			foreach (var document in _metaFacade.GetCursor())
 			{
 				indexDocuments.Add(
-					document.Id, MetaCollectionFacade.EnumerateIndexDocuments(document).ToList()
+					document.GetObjectId(), MetaCollectionFacade.EnumerateIndexDocuments(document).ToList()
 				);
 			}
 

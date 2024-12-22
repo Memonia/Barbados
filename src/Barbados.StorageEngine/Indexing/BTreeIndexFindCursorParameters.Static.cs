@@ -1,6 +1,6 @@
 ﻿using System;
 
-using Barbados.StorageEngine.Documents;
+using Barbados.Documents;
 using Barbados.StorageEngine.Indexing.Extensions;
 using Barbados.StorageEngine.Indexing.Search;
 using Barbados.StorageEngine.Indexing.Search.Checks;
@@ -36,14 +36,10 @@ namespace Barbados.StorageEngine.Indexing
 
 			static NormalisedValue _retrieveSearchKey(BarbadosDocument condition)
 			{
-				if (
-					!condition.Buffer.TryGetNormalisedValue(
-						CommonIdentifiers.Index.SearchValue.BinaryName, out var value
-					)
-				)
+				if (!condition.TryGetNormalisedValue(BarbadosDocumentKeys.IndexQuery.SearchValue, out var value))
 				{
 					throw new ArgumentException(
-						$"Expected a {CommonIdentifiers.Index.SearchValue} for a non-range condition",
+						$"Expected a {BarbadosDocumentKeys.IndexQuery.SearchValue} for a non-range condition",
 						nameof(condition)
 					);
 				}
@@ -51,13 +47,13 @@ namespace Barbados.StorageEngine.Indexing
 				return value;
 			}
 
-			var doExact = condition.Buffer.TryGetBoolean(CommonIdentifiers.Index.Exact.BinaryName.AsBytes(), out var ex) && ex;
-			var doRange = condition.Buffer.TryGetBoolean(CommonIdentifiers.Index.Range.BinaryName.AsBytes(), out var rg) && rg;
-			var doLess = condition.Buffer.TryGetBoolean(CommonIdentifiers.Index.LessThan.BinaryName.AsBytes(), out var lt) && lt;
-			var doGreater = condition.Buffer.TryGetBoolean(CommonIdentifiers.Index.GreaterThan.BinaryName.AsBytes(), out var gt) && gt;
-			var doInclusive = condition.Buffer.TryGetBoolean(CommonIdentifiers.Index.Inclusive.BinaryName.AsBytes(), out var incl) && incl;
-			var doAsc = condition.Buffer.TryGetBoolean(CommonIdentifiers.Index.Ascending.BinaryName.AsBytes(), out var asc) && asc;
-			var doTake = condition.Buffer.TryGetInt64(CommonIdentifiers.Index.Take.BinaryName.AsBytes(), out var take);
+			var doExact = condition.TryGetBoolean(BarbadosDocumentKeys.IndexQuery.Exact, out var ex) && ex;
+			var doRange = condition.TryGetBoolean(BarbadosDocumentKeys.IndexQuery.Range, out var rg) && rg;
+			var doLess = condition.TryGetBoolean(BarbadosDocumentKeys.IndexQuery.LessThan, out var lt) && lt;
+			var doGreater = condition.TryGetBoolean(BarbadosDocumentKeys.IndexQuery.GreaterThan, out var gt) && gt;
+			var doInclusive = condition.TryGetBoolean(BarbadosDocumentKeys.IndexQuery.Inclusive, out var incl) && incl;
+			var doAsc = condition.TryGetBoolean(BarbadosDocumentKeys.IndexQuery.Ascending, out var asc) && asc;
+			var doTake = condition.TryGetInt64(BarbadosDocumentKeys.IndexQuery.Take, out var take);
 
 			if (doTake && take < 0)
 			{
@@ -68,17 +64,13 @@ namespace Barbados.StorageEngine.Indexing
 			if (doRange)
 			{
 				if (
-					!condition.Buffer.TryGetNormalisedValue(
-						CommonIdentifiers.Index.LessThan.BinaryName, out var end
-					) ||
-					!condition.Buffer.TryGetNormalisedValue(
-						CommonIdentifiers.Index.GreaterThan.BinaryName, out var start
-					)
+					!condition.TryGetNormalisedValue(BarbadosDocumentKeys.IndexQuery.LessThan, out var end) ||
+					!condition.TryGetNormalisedValue(BarbadosDocumentKeys.IndexQuery.GreaterThan, out var start)
 				)
 				{
 					throw new ArgumentException(
-						$"Could not find range bounds in '{CommonIdentifiers.Index.LessThan}' " +
-						$"and '{CommonIdentifiers.Index.GreaterThan}' fields",
+						$"Could not find range bounds in '{BarbadosDocumentKeys.IndexQuery.LessThan}' " +
+						$"and '{BarbadosDocumentKeys.IndexQuery.GreaterThan}' fields",
 						nameof(condition)
 					);
 				}
@@ -121,8 +113,7 @@ namespace Barbados.StorageEngine.Indexing
 				throw new ArgumentException("Unexpected condition", nameof(condition));
 			}
 
-			return new(take, !doTake, asc, check);
+			return new(take, !doTake, doAsc, check);
 		}
-
 	}
 }

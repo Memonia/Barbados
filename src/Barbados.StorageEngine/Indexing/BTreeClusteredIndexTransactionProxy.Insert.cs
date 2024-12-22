@@ -1,6 +1,6 @@
-﻿using System.Diagnostics;
+﻿using System;
+using System.Diagnostics;
 
-using Barbados.StorageEngine.Documents.Serialisation;
 using Barbados.StorageEngine.Storage.Paging;
 using Barbados.StorageEngine.Storage.Paging.Pages;
 
@@ -8,7 +8,7 @@ namespace Barbados.StorageEngine.Indexing
 {
 	internal partial class BTreeClusteredIndexTransactionProxy
 	{
-		public PageHandle Insert(ObjectIdNormalised id, RadixTreeBuffer buffer)
+		public PageHandle Insert(ObjectIdNormalised id, ReadOnlySpan<byte> buffer)
 		{
 			var ikey = _toBTreeIndexKey(id);
 			if (TryFindWithPreemptiveSplit(ikey, out var traceback))
@@ -23,7 +23,7 @@ namespace Barbados.StorageEngine.Indexing
 				// Avoid splitting objects unnecessarily
 				if (buffer.Length <= Constants.ObjectPageMaxChunkLength)
 				{
-					if (leaf.TryWriteObject(id, buffer.AsSpan()))
+					if (leaf.TryWriteObject(id, buffer))
 					{
 						Transaction.Save(leaf);
 						updateParent = true;
@@ -90,7 +90,7 @@ namespace Barbados.StorageEngine.Indexing
 			}
 		}
 
-		private PageHandle _split(ObjectIdNormalised id, RadixTreeBuffer buffer, BTreeIndexTraceback traceback)
+		private PageHandle _split(ObjectIdNormalised id, ReadOnlySpan<byte> buffer, BTreeIndexTraceback traceback)
 		{
 			var target = Transaction.Load<ObjectPage>(traceback.Current);
 			var lh = Transaction.AllocateHandle();
@@ -106,9 +106,9 @@ namespace Barbados.StorageEngine.Indexing
 			return insertTarget.Header.Handle;
 		}
 
-		private bool _tryInsert(ObjectPage leaf, ObjectIdNormalised id, RadixTreeBuffer buffer)
+		private bool _tryInsert(ObjectPage leaf, ObjectIdNormalised id, ReadOnlySpan<byte> buffer)
 		{
-			if (leaf.TryWriteObject(id, buffer.AsSpan()))
+			if (leaf.TryWriteObject(id, buffer))
 			{
 				return true;
 			}
@@ -116,10 +116,9 @@ namespace Barbados.StorageEngine.Indexing
 			return _tryInsertChunk(leaf, id, buffer);
 		}
 
-		private bool _tryInsertChunk(ObjectPage leaf, ObjectIdNormalised id, RadixTreeBuffer buffer)
+		private bool _tryInsertChunk(ObjectPage leaf, ObjectIdNormalised id, ReadOnlySpan<byte> buffer)
 		{
-			var span = buffer.AsSpan();
-			if (leaf.TryWriteObjectChunk(id, span, out var totalWritten))
+			if (leaf.TryWriteObjectChunk(id, buffer, out var totalWritten))
 			{
 				var oh = Transaction.AllocateHandle();
 				var overflow = new ObjectPageOverflow(oh);
@@ -129,16 +128,16 @@ namespace Barbados.StorageEngine.Indexing
 				Debug.Assert(r);
 
 				var next = oh;
-				while (totalWritten < span.Length)
+				while (totalWritten < buffer.Length)
 				{
 					overflow = Transaction.Load<ObjectPageOverflow>(next);
-					r = overflow.TryWriteObjectChunk(id, span[totalWritten..], out var written);
+					r = overflow.TryWriteObjectChunk(id, buffer[totalWritten..], out var written);
 					Debug.Assert(r);
 
 					totalWritten += written;
-					Debug.Assert(totalWritten <= span.Length);
+					Debug.Assert(totalWritten <= buffer.Length);
 
-					if (overflow.Next.IsNull && totalWritten < span.Length)
+					if (overflow.Next.IsNull && totalWritten < buffer.Length)
 					{
 						var noh = Transaction.AllocateHandle();
 						var nopage = new ObjectPageOverflow(noh);
@@ -150,7 +149,7 @@ namespace Barbados.StorageEngine.Indexing
 					Transaction.Save(overflow);
 				}
 
-				Debug.Assert(totalWritten == span.Length);
+				Debug.Assert(totalWritten == buffer.Length);
 				return true;
 			}
 

@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 
-using Barbados.StorageEngine.Documents;
+using Barbados.Documents;
 using Barbados.StorageEngine.Tests.Integration.Utility;
 
 namespace Barbados.StorageEngine.Tests.Integration.Collections
@@ -13,14 +13,14 @@ namespace Barbados.StorageEngine.Tests.Integration.Collections
 		 * store and retrieve documents of different lengths
 		 */
 
-		public sealed partial class Insert : IClassFixture<BarbadosContextFixture<Insert>>
+		public sealed class Insert : SetupTeardownBarbadosContextTestClass<Insert>
 		{
-			[Theory]
-			[ClassData(typeof(BarbadosCollectionFacadeTestSequenceProvider))]
+			[Test]
+			[TestCaseSource(typeof(BarbadosCollectionFacadeTestSequenceProvider))]
 			public void InsertSequence_ReadEverythingBackSuccess(BarbadosCollectionFacadeTestSequence sequence)
 			{
 				var name = $"{nameof(InsertSequence_ReadEverythingBackSuccess)}-{sequence.Name}";
-				var collection = _fixture.CreateTestBarbadosCollectionFacade(name);
+				var collection = Context.CreateTestBarbadosCollectionFacade(name);
 
 				var inserted = new List<(ObjectId id, BarbadosDocument doc)>();
 				foreach (var doc in sequence.Documents)
@@ -32,21 +32,24 @@ namespace Barbados.StorageEngine.Tests.Integration.Collections
 				foreach (var (id, doc) in inserted)
 				{
 					var read = collection.TryRead(id, out var storedDocument);
-					Assert.True(read);
-					Assert.Equal(id, storedDocument.Id);
-					Assert.Equal(doc.Buffer.Count(), storedDocument.Buffer.Count());
+					Assert.Multiple(() =>
+					{
+						Assert.That(read, Is.True);
+						Assert.That(storedDocument.GetObjectId(), Is.EqualTo(id));
+						Assert.That(storedDocument.Count(), Is.EqualTo(doc.Count()));
+					});
 				}
 			}
 		}
 
-		public sealed partial class TryRemove : IClassFixture<BarbadosContextFixture<TryRemove>>
+		public sealed class TryRemove : SetupTeardownBarbadosContextTestClass<TryRemove>
 		{
-			[Theory]
-			[ClassData(typeof(BarbadosCollectionFacadeTestSequenceProvider))]
+			[Test]
+			[TestCaseSource(typeof(BarbadosCollectionFacadeTestSequenceProvider))]
 			public void InsertSequenceThenRemoveEverything_EverythingRemovedSuccess(BarbadosCollectionFacadeTestSequence sequence)
 			{
 				var name = $"{nameof(InsertSequenceThenRemoveEverything_EverythingRemovedSuccess)}-{sequence.Name}";
-				var collection = _fixture.CreateTestBarbadosCollectionFacade(name);
+				var collection = Context.CreateTestBarbadosCollectionFacade(name);
 
 				var inserted = new List<(ObjectId id, BarbadosDocument doc)>();
 				foreach (var doc in sequence.Documents)
@@ -57,26 +60,26 @@ namespace Barbados.StorageEngine.Tests.Integration.Collections
 				foreach (var (id, doc) in inserted)
 				{
 					var r = collection.TryRemove(id);
-					Assert.True(r);
+					Assert.That(r, Is.True);
 				}
 
 				foreach (var (id, doc) in inserted)
 				{
 					var r = collection.TryRead(id, out _);
-					Assert.True(r);
+					Assert.That(r, Is.True);
 				}
 			}
 		}
 
-		public sealed partial class TryUpdate : IClassFixture<BarbadosContextFixture<TryUpdate>>
+		public sealed class TryUpdate : SetupTeardownBarbadosContextTestClass<TryUpdate>
 		{
-			[Theory]
-			[ClassData(typeof(BarbadosCollectionFacadeTestSequenceProvider))]
+			[Test]
+			[TestCaseSource(typeof(BarbadosCollectionFacadeTestSequenceProvider))]
 			public void InsertSequenceThenShuffleUpdate_ReadEverythingBackSuccess(BarbadosCollectionFacadeTestSequence sequence)
 			{
 				var rand = new XorShiftStar32(12345);
 				var name = $"{nameof(InsertSequenceThenShuffleUpdate_ReadEverythingBackSuccess)}-{sequence.Name}";
-				var collection = _fixture.CreateTestBarbadosCollectionFacade(name);
+				var collection = Context.CreateTestBarbadosCollectionFacade(name);
 
 				var inserted = new List<(ObjectId id, BarbadosDocument doc)>();
 				foreach (var doc in sequence.Documents)
@@ -96,16 +99,19 @@ namespace Barbados.StorageEngine.Tests.Integration.Collections
 				{
 					var randIndex = shuffledIndices[i];
 					var r = collection.TryUpdate(inserted[randIndex].id, inserted[i].doc);
-					Assert.True(r);
+					Assert.That(r, Is.True);
 				}
 
 				for (var i = 0; i < shuffledIndices.Length; ++i)
 				{
 					var randIndex = shuffledIndices[i];
 					var r = collection.TryRead(inserted[randIndex].id, out var storedDocument);
-					Assert.True(r);
-					Assert.Equal(inserted[randIndex].id, storedDocument.Id);
-					Assert.Equal(inserted[i].doc.Count(), storedDocument.Count());
+					Assert.Multiple(() =>
+					{
+						Assert.That(r, Is.True);
+						Assert.That(inserted[randIndex].id, Is.EqualTo(storedDocument.GetObjectId()));
+						Assert.That(inserted[i].doc.Count(), Is.EqualTo(storedDocument.Count()));
+					});
 				}
 			}
 		}

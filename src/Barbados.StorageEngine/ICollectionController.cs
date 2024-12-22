@@ -6,21 +6,21 @@ namespace Barbados.StorageEngine
 {
 	public interface ICollectionController
 	{
-		void EnsureCreated(BarbadosIdentifier collectionName);
-		void EnsureDeleted(BarbadosIdentifier collectionName);
+		void EnsureCreated(BarbadosDbObjectName collectionName);
+		void EnsureDeleted(BarbadosDbObjectName collectionName);
 
 		IEnumerable<string> List();
 
 		bool Exists(ObjectId collectionId);
-		bool Exists(BarbadosIdentifier collectionName);
+		bool Exists(BarbadosDbObjectName collectionName);
 
 		IBarbadosCollection Get(ObjectId collectionId);
-		IBarbadosCollection Get(BarbadosIdentifier collectionName);
+		IBarbadosCollection Get(BarbadosDbObjectName collectionName);
 
-		void Rename(ObjectId collectionId, BarbadosIdentifier replacement);
+		void Rename(ObjectId collectionId, BarbadosDbObjectName replacement);
 		void Delete(ObjectId collectionId);
-		void Create(BarbadosIdentifier collectionName);
-		void Rename(BarbadosIdentifier collectionName, BarbadosIdentifier replacement);
-		void Delete(BarbadosIdentifier collectionName);
+		void Create(BarbadosDbObjectName collectionName);
+		void Rename(BarbadosDbObjectName collectionName, BarbadosDbObjectName replacement);
+		void Delete(BarbadosDbObjectName collectionName);
 	}
 }

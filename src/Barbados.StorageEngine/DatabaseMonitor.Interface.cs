@@ -5,9 +5,9 @@ namespace Barbados.StorageEngine
 {
 	internal partial class DatabaseMonitor
 	{
-		public IReadOnlyBarbadosCollection GetInternalCollection(BarbadosIdentifier collectionName)
+		public IReadOnlyBarbadosCollection GetInternalCollection(BarbadosDbObjectName collectionName)
 		{
-			if (collectionName.Identifier == CommonIdentifiers.Collections.MetaCollection.Identifier)
+			if (collectionName == BarbadosDbObjects.Collections.MetaCollection)
 			{
 				return _meta;
 			}

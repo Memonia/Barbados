@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
 
-using Barbados.StorageEngine.Documents.Serialisation;
+using Barbados.Documents;
 using Barbados.StorageEngine.Storage.Paging;
 using Barbados.StorageEngine.Storage.Paging.Pages;
 using Barbados.StorageEngine.Transactions;
@@ -34,16 +34,16 @@ namespace Barbados.StorageEngine.Indexing
 			return false;
 		}
 
-		public bool TryReadObjectBuffer(ObjectIdNormalised id, ValueSelector selector, out RadixTreeBuffer buffer)
+		public bool TryReadDocument(ObjectIdNormalised id, BarbadosKeySelector selector, out BarbadosDocument document)
 		{
 			if (!TryReadHandle(id, out var handle))
 			{
-				buffer = default!;
+				document = default!;
 				return false;
 			}
 
 			var page = Transaction.Load<ObjectPage>(handle);
-			if (!TryReadObjectBuffer(id, page, selector, out buffer))
+			if (!TryReadDocument(id, page, selector, out document))
 			{
 				return false;
 			}
@@ -51,40 +51,13 @@ namespace Barbados.StorageEngine.Indexing
 			return true;
 		}
 
-		public bool TryReadObjectBuffer(ObjectIdNormalised id, ObjectPage page, ValueSelector selector, out RadixTreeBuffer buffer)
+		public bool TryReadDocument(ObjectIdNormalised id, ObjectPage page, BarbadosKeySelector selector, out BarbadosDocument document)
 		{
-			static RadixTreeBuffer _selectFromBuffer(ReadOnlySpan<byte> buffer, ValueSelector selector)
-			{
-				Debug.Assert(!selector.All);
-				var builder = new RadixTreeBuffer.Builder();
-				foreach (var identifier in selector)
-				{
-					if (identifier.IsDocument)
-					{
-						var e = new RadixTreeBuffer.KeyValueEnumerator(buffer);
-						while (e.TryGetNext(out var key, out var value))
-						{
-							builder.AddBuffer(key.ToString(), value);
-						}
-					}
-
-					else
-					{
-						if (RadixTreeBuffer.TryGetBuffer(buffer, identifier.BinaryName.AsBytes(), out var valueBuffer))
-						{
-							builder.AddBuffer(identifier, valueBuffer);
-						}
-					}
-				}
-
-				return builder.Build();
-			}
-
 			if (page.TryReadObject(id, out var bytes))
 			{
-				buffer = selector.All
-					? new RadixTreeBuffer(bytes.ToArray())
-					: _selectFromBuffer(bytes, selector);
+				document = selector.All
+					? BarbadosDocument.Builder.FromBytes(bytes)
+					: BarbadosDocument.Builder.FromBytes(bytes, selector);
 
 				return true;
 			}
@@ -109,14 +82,14 @@ namespace Barbados.StorageEngine.Indexing
 					next = opage.Next;
 				}
 
-				buffer = selector.All
-					? new RadixTreeBuffer(bufferArr)
-					: _selectFromBuffer(bufferArr, selector);
+				document = selector.All
+					? BarbadosDocument.Builder.FromBytes(bufferArr)
+					: BarbadosDocument.Builder.FromBytes(bufferArr, selector);
 
 				return true;
 			}
 
-			buffer = default!;
+			document = default!;
 			return false;
 		}
 

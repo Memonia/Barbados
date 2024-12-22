@@ -1,6 +1,6 @@
 ﻿using System.Text;
 
-using Barbados.StorageEngine;
+using Barbados.Documents;
 
 namespace Barbados.QueryEngine.Helpers
 {
@@ -50,7 +50,7 @@ namespace Barbados.QueryEngine.Helpers
 			return sb.ToString();
 		}
 
-		public static string FormatValueSelector(string name, ValueSelector selector)
+		public static string FormatValueSelector(string name, BarbadosKeySelector selector)
 		{
 			if (selector.All)
 			{

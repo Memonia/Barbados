@@ -6,379 +6,399 @@ using Barbados.StorageEngine.Tests.Integration.Utility;
 
 namespace Barbados.StorageEngine.Tests.Integration
 {
-	public sealed partial class CollectionControllerTest
+	public sealed class CollectionControllerTest
 	{
-		public partial class EnsureCreated : IClassFixture<BarbadosContextFixture<EnsureCreated>>
+		public sealed class EnsureCreated : SetupTeardownBarbadosContextTestClass<EnsureCreated>
 		{
-			[Fact]
+			[Test]
 			public void CollectionDoesNotExist_CollectionCreated()
 			{
 				var name = nameof(CollectionDoesNotExist_CollectionCreated);
-				var before = _fixture.Context.Database.Collections.Exists(name);
-				_fixture.Context.Database.Collections.EnsureCreated(name);
-				var after = _fixture.Context.Database.Collections.Exists(name);
+				var before = Context.Database.Collections.Exists(name);
+				Context.Database.Collections.EnsureCreated(name);
+				var after = Context.Database.Collections.Exists(name);
 
-				Assert.False(before);
-				Assert.True(after);
+				Assert.Multiple(() =>
+				{
+					Assert.That(before, Is.False);
+					Assert.That(after, Is.True);
+				});
 			}
 
-			[Fact]
+			[Test]
 			public void CollectionExists_CollectionNotCreated()
 			{
 				var name = nameof(CollectionExists_CollectionNotCreated);
-				_fixture.Context.Database.Collections.Create(name);
-				var before = _fixture.Context.Database.Collections.List().Count();
-				_fixture.Context.Database.Collections.EnsureCreated(name);
-				var after = _fixture.Context.Database.Collections.List().Count();
+				Context.Database.Collections.Create(name);
+				var before = Context.Database.Collections.List().Count();
+				Context.Database.Collections.EnsureCreated(name);
+				var after = Context.Database.Collections.List().Count();
 
-				Assert.Equal(before, after);
+				Assert.That(before, Is.EqualTo(after));
 			}
 
-			[Fact]
+			[Test]
 			public void ReservedCollectionName_Throws()
 			{
 				Assert.Throws<ArgumentException>(
-					() => _fixture.Context.Database.Collections.EnsureCreated(
-						CommonIdentifiers.Collections.MetaCollection
-					)
+					() => Context.Database.Collections.EnsureCreated(BarbadosDbObjects.Collections.MetaCollection)
 				);
 			}
 		}
 
-		public partial class EnsureDeleted : IClassFixture<BarbadosContextFixture<EnsureDeleted>>
+		public sealed class EnsureDeleted : SetupTeardownBarbadosContextTestClass<EnsureDeleted>
 		{
-			[Fact]
+			[Test]
 			public void CollectionExists_CollectionDeleted()
 			{
 				var name = nameof(CollectionExists_CollectionDeleted);
-				_fixture.Context.Database.Collections.Create(name);
-				var before = _fixture.Context.Database.Collections.Exists(name);
-				_fixture.Context.Database.Collections.EnsureDeleted(name);
-				var after = _fixture.Context.Database.Collections.Exists(name);
+				Context.Database.Collections.Create(name);
+				var before = Context.Database.Collections.Exists(name);
+				Context.Database.Collections.EnsureDeleted(name);
+				var after = Context.Database.Collections.Exists(name);
 
-				Assert.True(before);
-				Assert.False(after);
+				Assert.Multiple(() =>
+				{
+					Assert.That(before, Is.True);
+					Assert.That(after, Is.False);
+				});
 			}
 
-			[Fact]
+			[Test]
 			public void CollectionDoesNotExist_CollectionNotDeleted()
 			{
 				var name = nameof(CollectionDoesNotExist_CollectionNotDeleted);
-				var before = _fixture.Context.Database.Collections.Exists(name);
-				_fixture.Context.Database.Collections.EnsureDeleted(name);
-				var after = _fixture.Context.Database.Collections.Exists(name);
+				var before = Context.Database.Collections.Exists(name);
+				Context.Database.Collections.EnsureDeleted(name);
+				var after = Context.Database.Collections.Exists(name);
 
-				Assert.False(before);
-				Assert.False(after);
+				Assert.Multiple(() =>
+				{
+					Assert.That(before, Is.False);
+					Assert.That(after, Is.False);
+				});
 			}
 
-			[Fact]
+			[Test]
 			public void ReservedCollectionName_Throws()
 			{
 				Assert.Throws<ArgumentException>(
-					() => _fixture.Context.Database.Collections.EnsureDeleted(
-						CommonIdentifiers.Collections.MetaCollection
-					)
+					() => Context.Database.Collections.EnsureDeleted(BarbadosDbObjects.Collections.MetaCollection)
 				);
 			}
 		}
 
-		public sealed partial class Exists : IClassFixture<BarbadosContextFixture<Exists>>
+		public sealed class Exists : SetupTeardownBarbadosContextTestClass<Exists>
 		{
-			[Fact]
+			[Test]
 			public void ById_CollectionExists_ReturnsTrue()
 			{
 				var name = nameof(ById_CollectionExists_ReturnsTrue);
-				_fixture.Context.Database.Collections.Create(name);
-				var collection = _fixture.Context.Database.Collections.Get(name);
-				var exists = _fixture.Context.Database.Collections.Exists(collection.Id);
+				Context.Database.Collections.Create(name);
+				var collection = Context.Database.Collections.Get(name);
+				var exists = Context.Database.Collections.Exists(collection.Id);
 
-				Assert.True(exists);
+				Assert.That(exists, Is.True);
 			}
 
-			[Fact]
+			[Test]
 			public void ById_CollectionDoesNotExist_ReturnsFalse()
 			{
-				var exists = _fixture.Context.Database.Collections.Exists(ObjectId.Invalid);
+				var exists = Context.Database.Collections.Exists(ObjectId.Invalid);
 
-				Assert.False(exists);
+				Assert.That(exists, Is.False);
 			}
 
-			[Fact]
+			[Test]
 			public void ByName_CollectionExists_ReturnsTrue()
 			{
 				var name = nameof(ByName_CollectionExists_ReturnsTrue);
-				_fixture.Context.Database.Collections.Create(name);
-				var exists = _fixture.Context.Database.Collections.Exists(name);
+				Context.Database.Collections.Create(name);
+				var exists = Context.Database.Collections.Exists(name);
 
-				Assert.True(exists);
+				Assert.That(exists, Is.True);
 			}
 
-			[Fact]
+			[Test]
 			public void ByName_CollectionDoesNotExist_ReturnsFalse()
 			{
 				var name = nameof(ByName_CollectionDoesNotExist_ReturnsFalse);
-				var exists = _fixture.Context.Database.Collections.Exists(name);
+				var exists = Context.Database.Collections.Exists(name);
 
-				Assert.False(exists);
+				Assert.That(exists, Is.False);
 			}
 		}
 
-		public sealed partial class Get : IClassFixture<BarbadosContextFixture<Get>>
+		public sealed class Get : SetupTeardownBarbadosContextTestClass<Get>
 		{
-			[Fact]
+			[Test]
 			public void ById_CollectionExists_ReturnsCollection()
 			{
 				var name = nameof(ById_CollectionExists_ReturnsCollection);
-				_fixture.Context.Database.Collections.Create(name);
-				var collection = _fixture.Context.Database.Collections.Get(name);
-				var result = _fixture.Context.Database.Collections.Get(collection.Id);
+				Context.Database.Collections.Create(name);
+				var collection = Context.Database.Collections.Get(name);
+				var result = Context.Database.Collections.Get(collection.Id);
 
-				Assert.Equal(collection.Id, result.Id);
+				Assert.That(collection.Id, Is.EqualTo(result.Id));
 			}
 
-			[Fact]
+			[Test]
 			public void ById_CollectionDoesNotExist_Throws()
 			{
 				Assert.Throws<BarbadosException>(
-					() => _fixture.Context.Database.Collections.Get(ObjectId.Invalid)
+					() => Context.Database.Collections.Get(ObjectId.Invalid)
 				);
 			}
 
-			[Fact]
+			[Test]
 			public void ById_ReservedCollectionId_Throws()
 			{
 				Assert.Throws<ArgumentException>(
-					() => _fixture.Context.Database.Collections.Get(new ObjectId(-1))
+					() => Context.Database.Collections.Get(new ObjectId(-1))
 				);
 			}
 
-			[Fact]
+			[Test]
 			public void ByName_CollectionExists_ReturnsCollection()
 			{
 				var name = nameof(ByName_CollectionExists_ReturnsCollection);
-				_fixture.Context.Database.Collections.Create(name);
-				var result = _fixture.Context.Database.Collections.Get(name);
+				Context.Database.Collections.Create(name);
+				var result = Context.Database.Collections.Get(name);
 
-				Assert.Equal(name, result.Name);
+				Assert.That(name, Is.EqualTo(result.Name.Name));
 			}
 
-			[Fact]
+			[Test]
 			public void ByName_CollectionDoesNotExist_Throws()
 			{
 				var name = nameof(ByName_CollectionDoesNotExist_Throws);
 				Assert.Throws<BarbadosException>(
-					() => _fixture.Context.Database.Collections.Get(name)
+					() => Context.Database.Collections.Get(name)
 				);
 			}
 
-			[Fact]
+			[Test]
 			public void ByName_ReservedCollectionName_Throws()
 			{
 				Assert.Throws<ArgumentException>(
-					() => _fixture.Context.Database.Collections.Get(CommonIdentifiers.Collections.MetaCollection)
+					() => Context.Database.Collections.Get(BarbadosDbObjects.Collections.MetaCollection)
 				);
 			}
 		}
 
-		public sealed partial class Create : IClassFixture<BarbadosContextFixture<Create>>
+		public sealed class Create : SetupTeardownBarbadosContextTestClass<Create>
 		{
-			[Fact]
+			[Test]
 			public void CollectionDoesNotExist_CollectionCreated()
 			{
 				var name = nameof(CollectionDoesNotExist_CollectionCreated);
-				var before = _fixture.Context.Database.Collections.List().Count();
-				_fixture.Context.Database.Collections.Create(name);
-				var after = _fixture.Context.Database.Collections.List().Count();
-				var collection = _fixture.Context.Database.Collections.Get(name);
+				var before = Context.Database.Collections.List().Count();
+				Context.Database.Collections.Create(name);
+				var after = Context.Database.Collections.List().Count();
+				var collection = Context.Database.Collections.Get(name);
 
-				Assert.Equal(before + 1, after);
-				Assert.Equal(name, collection.Name);
+				Assert.Multiple(() =>
+				{
+					Assert.That(before, Is.EqualTo(after - 1));
+					Assert.That(name, Is.EqualTo(collection.Name.Name));
+				});
 			}
 
-			[Fact]
+			[Test]
 			public void CollectionExists_Throws()
 			{
 				var name = nameof(CollectionExists_Throws);
-				_fixture.Context.Database.Collections.Create(name);
+				Context.Database.Collections.Create(name);
 				Assert.Throws<BarbadosException>(
-					() => _fixture.Context.Database.Collections.Create(name)
+					() => Context.Database.Collections.Create(name)
 				);
 			}
 
-			[Fact]
+			[Test]
 			public void ReservedCollectionName_Throws()
 			{
 				Assert.Throws<ArgumentException>(
-					() => _fixture.Context.Database.Collections.Create(CommonIdentifiers.Collections.MetaCollection)
+					() => Context.Database.Collections.Create(BarbadosDbObjects.Collections.MetaCollection)
 				);
 			}
 		}
 
-		public sealed partial class Rename : IClassFixture<BarbadosContextFixture<Rename>>
+		public sealed class Rename : SetupTeardownBarbadosContextTestClass<Rename>
 		{
-			[Fact]
+			[Test]
 			public void ById_CollectionExists_CollectionRenamed()
 			{
 				var name = nameof(ById_CollectionExists_CollectionRenamed);
-				var replacement = new BarbadosIdentifier(name + "-new");
-				_fixture.Context.Database.Collections.Create(name);
-				var collection = _fixture.Context.Database.Collections.Get(name);
+				var replacement = new BarbadosDbObjectName(name + "-new");
+				Context.Database.Collections.Create(name);
+				var collection = Context.Database.Collections.Get(name);
 				var collectionId = collection.Id;
-				var countBefore = _fixture.Context.Database.Collections.List().Count();
-				_fixture.Context.Database.Collections.Rename(collectionId, replacement);
-				var countAfter = _fixture.Context.Database.Collections.List().Count();
-				var renamedCollection = _fixture.Context.Database.Collections.Get(replacement);
+				var countBefore = Context.Database.Collections.List().Count();
+				Context.Database.Collections.Rename(collectionId, replacement);
+				var countAfter = Context.Database.Collections.List().Count();
+				var renamedCollection = Context.Database.Collections.Get(replacement);
 
-				Assert.Equal(countBefore, countAfter);
-				Assert.Equal(collectionId, renamedCollection.Id);
-				Assert.Equal(replacement.Identifier, renamedCollection.Name.Identifier);
+				Assert.Multiple(() =>
+				{
+					Assert.That(countBefore, Is.EqualTo(countAfter));
+					Assert.That(collectionId, Is.EqualTo(renamedCollection.Id));
+					Assert.That(replacement, Is.EqualTo(renamedCollection.Name));
+				});
 			}
 
-			[Fact]
+			[Test]
 			public void ById_CollectionDoesNotExist_Throws()
 			{
-				var replacement = new BarbadosIdentifier(nameof(ById_CollectionDoesNotExist_Throws));
+				var replacement = new BarbadosDbObjectName(nameof(ById_CollectionDoesNotExist_Throws));
 				Assert.Throws<BarbadosException>(
-					() => _fixture.Context.Database.Collections.Rename(ObjectId.Invalid, replacement)
+					() => Context.Database.Collections.Rename(ObjectId.Invalid, replacement)
 				);
 			}
 
-			[Fact]
+			[Test]
 			public void ById_CollectionWithTheSameNameExists_Throws()
 			{
 				var name = nameof(ById_CollectionWithTheSameNameExists_Throws);
-				var replacement = new BarbadosIdentifier(name);
-				_fixture.Context.Database.Collections.Create(name);
-				_fixture.Context.Database.Collections.Create(name + "-new");
-				var collection = _fixture.Context.Database.Collections.Get(name);
+				var replacement = new BarbadosDbObjectName(name);
+				Context.Database.Collections.Create(name);
+				Context.Database.Collections.Create(name + "-new");
+				var collection = Context.Database.Collections.Get(name);
 				var collectionId = collection.Id;
 
 				Assert.Throws<BarbadosException>(
-					() => _fixture.Context.Database.Collections.Rename(collectionId, replacement)
+					() => Context.Database.Collections.Rename(collectionId, replacement)
 				);
 			}
 
-			[Fact]
+			[Test]
 			public void ById_ReservedCollectionId_Throws()
 			{
-				var replacement = new BarbadosIdentifier(nameof(ById_ReservedCollectionId_Throws));
+				var replacement = new BarbadosDbObjectName(nameof(ById_ReservedCollectionId_Throws));
 				Assert.Throws<ArgumentException>(
-					() => _fixture.Context.Database.Collections.Rename(new ObjectId(-1), replacement)
+					() => Context.Database.Collections.Rename(new ObjectId(-1), replacement)
 				);
 			}
 
-			[Fact]
+			[Test]
 			public void ByName_CollectionExists_CollectionRenamed()
 			{
 				var name = nameof(ByName_CollectionExists_CollectionRenamed);
-				var replacement = new BarbadosIdentifier(name + "-new");
-				_fixture.Context.Database.Collections.Create(name);
-				var collection = _fixture.Context.Database.Collections.Get(name);
+				var replacement = new BarbadosDbObjectName(name + "-new");
+				Context.Database.Collections.Create(name);
+				var collection = Context.Database.Collections.Get(name);
 				var collectionId = collection.Id;
-				var countBefore = _fixture.Context.Database.Collections.List().Count();
-				_fixture.Context.Database.Collections.Rename(name, replacement);
-				var countAfter = _fixture.Context.Database.Collections.List().Count();
-				var renamedCollection = _fixture.Context.Database.Collections.Get(replacement);
+				var countBefore = Context.Database.Collections.List().Count();
+				Context.Database.Collections.Rename(name, replacement);
+				var countAfter = Context.Database.Collections.List().Count();
+				var renamedCollection = Context.Database.Collections.Get(replacement);
 
-				Assert.Equal(countBefore, countAfter);
-				Assert.Equal(collectionId, renamedCollection.Id);
-				Assert.Equal(replacement.Identifier, renamedCollection.Name.Identifier);
+				Assert.Multiple(() =>
+				{
+					Assert.That(countBefore, Is.EqualTo(countAfter));
+					Assert.That(collectionId, Is.EqualTo(renamedCollection.Id));
+					Assert.That(replacement, Is.EqualTo(renamedCollection.Name));
+				});
 			}
 
-			[Fact]
+			[Test]
 			public void ByName_CollectionDoesNotExist_Throws()
 			{
 				var name = nameof(ByName_CollectionExists_CollectionRenamed);
-				var replacement = new BarbadosIdentifier(name + "-new");
+				var replacement = new BarbadosDbObjectName(name + "-new");
 				Assert.Throws<BarbadosException>(
-					() => _fixture.Context.Database.Collections.Rename(name, replacement)
+					() => Context.Database.Collections.Rename(name, replacement)
 				);
 			}
 
-			[Fact]
+			[Test]
 			public void ByName_CollectionWithTheSameNameExists_Throws()
 			{
 				var name = nameof(ByName_CollectionWithTheSameNameExists_Throws);
-				var replacement = new BarbadosIdentifier(name);
-				_fixture.Context.Database.Collections.Create(name);
-				_fixture.Context.Database.Collections.Create(name + "-new");
+				var replacement = new BarbadosDbObjectName(name);
+				Context.Database.Collections.Create(name);
+				Context.Database.Collections.Create(name + "-new");
 
 				Assert.Throws<BarbadosException>(
-					() => _fixture.Context.Database.Collections.Rename(name, replacement)
+					() => Context.Database.Collections.Rename(name, replacement)
 				);
 			}
 
-			[Fact]
+			[Test]
 			public void ByName_ReservedCollectionName_Throws()
 			{
-				var replacement = new BarbadosIdentifier(nameof(ByName_ReservedCollectionName_Throws));
+				var replacement = new BarbadosDbObjectName(nameof(ByName_ReservedCollectionName_Throws));
 				Assert.Throws<ArgumentException>(
-					() => _fixture.Context.Database.Collections.Rename(CommonIdentifiers.Collections.MetaCollection, replacement)
+					() => Context.Database.Collections.Rename(BarbadosDbObjects.Collections.MetaCollection, replacement)
 				);
 			}
 		}
 
-		public sealed partial class Delete : IClassFixture<BarbadosContextFixture<Delete>>
+		public sealed class Delete : SetupTeardownBarbadosContextTestClass<Delete>
 		{
-			[Fact]
+			[Test]
 			public void ById_CollectionExists_CollectionDeleted()
 			{
 				var name = nameof(ById_CollectionExists_CollectionDeleted);
-				_fixture.Context.Database.Collections.Create(name);
-				var collection = _fixture.Context.Database.Collections.Get(name);
+				Context.Database.Collections.Create(name);
+				var collection = Context.Database.Collections.Get(name);
 				var collectionId = collection.Id;
-				var before = _fixture.Context.Database.Collections.Exists(collectionId);
-				_fixture.Context.Database.Collections.Delete(collectionId);
-				var after = _fixture.Context.Database.Collections.Exists(collectionId);
+				var before = Context.Database.Collections.Exists(collectionId);
+				Context.Database.Collections.Delete(collectionId);
+				var after = Context.Database.Collections.Exists(collectionId);
 
-				Assert.True(before);
-				Assert.False(after);
+				Assert.Multiple(() =>
+				{
+					Assert.That(before, Is.True);
+					Assert.That(after, Is.False);
+				});
 			}
 
-			[Fact]
+			[Test]
 			public void ById_CollectionDoesNotExist_Throws()
 			{
 				Assert.Throws<BarbadosException>(
-					() => _fixture.Context.Database.Collections.Delete(ObjectId.Invalid)
+					() => Context.Database.Collections.Delete(ObjectId.Invalid)
 				);
 			}
 
-			[Fact]
+			[Test]
 			public void ById_ReservedCollectionId_Throws()
 			{
 				Assert.Throws<ArgumentException>(
-					() => _fixture.Context.Database.Collections.Delete(new ObjectId(-1))
+					() => Context.Database.Collections.Delete(new ObjectId(-1))
 				);
 			}
 
-			[Fact]
+			[Test]
 			public void ByName_CollectionExists_CollectionDeleted()
 			{
 				var name = nameof(ByName_CollectionExists_CollectionDeleted);
-				_fixture.Context.Database.Collections.Create(name);
-				var before = _fixture.Context.Database.Collections.Exists(name);
-				_fixture.Context.Database.Collections.Delete(name);
-				var after = _fixture.Context.Database.Collections.Exists(name);
-			
-				Assert.True(before);
-				Assert.False(after);
+				Context.Database.Collections.Create(name);
+				var before = Context.Database.Collections.Exists(name);
+				Context.Database.Collections.Delete(name);
+				var after = Context.Database.Collections.Exists(name);
+
+				Assert.Multiple(() =>
+				{
+					Assert.That(before, Is.True);
+					Assert.That(after, Is.False);
+				});
 			}
 
-			[Fact]
+			[Test]
 			public void ByName_CollectionDoesNotExist_Throws()
 			{
 				var name = nameof(ByName_CollectionDoesNotExist_Throws);
 				Assert.Throws<BarbadosException>(
-					() => _fixture.Context.Database.Collections.Delete(name)
+					() => Context.Database.Collections.Delete(name)
 				);
 			}
 
-			[Fact]
+			[Test]
 			public void ByName_ReservedCollectionName_Throws()
 			{
 				Assert.Throws<ArgumentException>(
-					() => _fixture.Context.Database.Collections.Delete(CommonIdentifiers.Collections.MetaCollection)
+					() => Context.Database.Collections.Delete(BarbadosDbObjects.Collections.MetaCollection)
 				);
 			}
 		}

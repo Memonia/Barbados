@@ -4,8 +4,7 @@ namespace Barbados.StorageEngine.Tests.Caching
 {
 	public sealed class LeastRecentlyUsedEvictionCacheTest
 	{
-
-		[Fact]
+		[Test]
 		public void CacheExactCount_ReadBackSuccess()
 		{
 			var cache = new LeastRecentlyUsedEvictionCache<int, string>(3);
@@ -21,18 +20,21 @@ namespace Barbados.StorageEngine.Tests.Caching
 			var tg2 = cache.TryGet(k2, out var g2);
 			var tg3 = cache.TryGet(k3, out var g3);
 
-			Assert.True(tc1);
-			Assert.True(tc2);
-			Assert.True(tc3);
-			Assert.True(tg1);
-			Assert.True(tg2);
-			Assert.True(tg3);
-			Assert.Equal(v1, g1);
-			Assert.Equal(v2, g2);
-			Assert.Equal(v3, g3);
+			Assert.Multiple(() =>
+			{
+				Assert.That(tc1, Is.True);
+				Assert.That(tc2, Is.True);
+				Assert.That(tc3, Is.True);
+				Assert.That(tg1, Is.True);
+				Assert.That(tg2, Is.True);
+				Assert.That(tg3, Is.True);
+				Assert.That(g1, Is.EqualTo(v1));
+				Assert.That(g2, Is.EqualTo(v2));
+				Assert.That(g3, Is.EqualTo(v3));
+			});
 		}
 
-		[Fact]
+		[Test]
 		public void CacheOverCount_FirstCachedEvicted()
 		{
 			var cache = new LeastRecentlyUsedEvictionCache<int, string>(3);
@@ -51,20 +53,23 @@ namespace Barbados.StorageEngine.Tests.Caching
 			var tg3 = cache.TryGet(k3, out var g3);
 			var tg4 = cache.TryGet(k4, out var g4);
 
-			Assert.True(tc1);
-			Assert.True(tc2);
-			Assert.True(tc3);
-			Assert.True(tc4);
-			Assert.False(tg1);
-			Assert.True(tg2);
-			Assert.True(tg3);
-			Assert.True(tg4);
-			Assert.Equal(v2, g2);
-			Assert.Equal(v3, g3);
-			Assert.Equal(v4, g4);
+			Assert.Multiple(() =>
+			{
+				Assert.That(tc1, Is.True);
+				Assert.That(tc2, Is.True);
+				Assert.That(tc3, Is.True);
+				Assert.That(tc4, Is.True);
+				Assert.That(tg1, Is.False);
+				Assert.That(tg2, Is.True);
+				Assert.That(tg3, Is.True);
+				Assert.That(tg4, Is.True);
+				Assert.That(g2, Is.EqualTo(v2));
+				Assert.That(g3, Is.EqualTo(v3));
+				Assert.That(g4, Is.EqualTo(v4));
+			});
 		}
 
-		[Fact]
+		[Test]
 		public void CacheOverCount_AccessFirstCached_EvictedSecondCached()
 		{
 			var cache = new LeastRecentlyUsedEvictionCache<int, string>(3);
@@ -86,19 +91,22 @@ namespace Barbados.StorageEngine.Tests.Caching
 			var tg3 = cache.TryGet(k3, out var g3);
 			var tg4 = cache.TryGet(k4, out var g4);
 
-			Assert.True(tc1);
-			Assert.True(tc2);
-			Assert.True(tc3);
-			Assert.True(tc4);
-			Assert.True(tg1_1);
-			Assert.True(tg1_2);
-			Assert.False(tg2);
-			Assert.True(tg3);
-			Assert.True(tg4);
-			Assert.Equal(v1, g1_1);
-			Assert.Equal(v1, g1_2);
-			Assert.Equal(v3, g3);
-			Assert.Equal(v4, g4);
+			Assert.Multiple(() =>
+			{
+				Assert.That(tc1, Is.True);
+				Assert.That(tc2, Is.True);
+				Assert.That(tc3, Is.True);
+				Assert.That(tc4, Is.True);
+				Assert.That(tg1_1, Is.True);
+				Assert.That(tg1_2, Is.True);
+				Assert.That(tg2, Is.False);
+				Assert.That(tg3, Is.True);
+				Assert.That(tg4, Is.True);
+				Assert.That(g1_1, Is.EqualTo(v1));
+				Assert.That(g1_2, Is.EqualTo(v1));
+				Assert.That(g3, Is.EqualTo(v3));
+				Assert.That(g4, Is.EqualTo(v4));
+			});
 		}
 	}
 }

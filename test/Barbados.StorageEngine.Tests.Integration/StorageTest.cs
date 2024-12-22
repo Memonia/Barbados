@@ -2,8 +2,8 @@
 using System.IO;
 using System.Linq;
 
+using Barbados.Documents;
 using Barbados.StorageEngine.Configuration;
-using Barbados.StorageEngine.Documents;
 using Barbados.StorageEngine.Exceptions;
 using Barbados.StorageEngine.Storage;
 using Barbados.StorageEngine.Storage.Paging;
@@ -12,7 +12,7 @@ namespace Barbados.StorageEngine.Tests.Integration
 {
 	public sealed partial class StorageTest
 	{
-		[Fact]
+		[Test]
 		public void CreateDatabase_CorruptDbRoot_CorruptionDetected()
 		{
 			var dbName = $"{nameof(CreateDatabase_CorruptDbRoot_CorruptionDetected)}.test-db";
@@ -56,7 +56,7 @@ namespace Barbados.StorageEngine.Tests.Integration
 			}
 		}
 
-		[Fact]
+		[Test]
 		public void CreateDatabase_MakeChanges_CloseConnection_OpenBack_ChangesPersisted()
 		{
 			var name = nameof(CreateDatabase_MakeChanges_CloseConnection_OpenBack_ChangesPersisted);
@@ -124,21 +124,22 @@ namespace Barbados.StorageEngine.Tests.Integration
 				var c2Docs = c2Instance.GetCursor().ToList();
 				var c3Docs = c3Instance.GetCursor().ToList();
 
-				Assert.Equal(c1Ids.Count, c1Docs.Count);
-				Assert.Equal(c2Ids.Count, c2Docs.Count);
-				Assert.Equal(c3Ids.Count, c3Docs.Count);
-
-				c1Ids.ForEach(e => Assert.Contains(e, c1Docs.Select(e => e.Id)));
-				c2Ids.ForEach(e => Assert.Contains(e, c2Docs.Select(e => e.Id)));
-				c3Ids.ForEach(e => Assert.Contains(e, c3Docs.Select(e => e.Id)));
-
 				var c1i1Found = c1i1Instance.FindExact(c1i1v).ToList();
 				var c1i2Found = c1i2Instance.FindExact(c1i2v).ToList();
 				var c2i1Found = c2i1Instance.FindExact(c2i1v).ToList();
 
-				Assert.Single(c1i1Found);
-				Assert.Single(c1i2Found);
-				Assert.Equal(c2Ids.Count, c2i1Found.Count);
+				Assert.Multiple(() =>
+				{
+					Assert.That(c1Ids, Has.Count.EqualTo(c1Docs.Count));
+					Assert.That(c2Ids, Has.Count.EqualTo(c2Docs.Count));
+					Assert.That(c3Ids, Has.Count.EqualTo(c3Docs.Count));
+					Assert.That(c1Ids, Is.EquivalentTo(c1Docs.Select(e => e.GetObjectId())));
+					Assert.That(c2Ids, Is.EquivalentTo(c2Docs.Select(e => e.GetObjectId())));
+					Assert.That(c3Ids, Is.EquivalentTo(c3Docs.Select(e => e.GetObjectId())));
+					Assert.That(c1i1Found, Has.Exactly(1).Count);
+					Assert.That(c1i2Found, Has.Exactly(1).Count);
+					Assert.That(c2i1Found, Has.Exactly(c2Ids.Count).Count);
+				});
 			}
 
 			File.Delete(stgs.DatabaseFilePath);

@@ -1,4 +1,6 @@
-﻿using Barbados.StorageEngine;
+﻿using System.Linq;
+
+using Barbados.Documents;
 using Barbados.StorageEngine.Collections;
 
 namespace Barbados.QueryEngine.Query.Extensions
@@ -7,15 +9,15 @@ namespace Barbados.QueryEngine.Query.Extensions
 	{
 		public static IQuery Load(this IReadOnlyBarbadosCollection collection)
 		{
-			return Load(collection, ValueSelector.SelectAll);
+			return Load(collection, BarbadosKeySelector.SelectAll);
 		}
 
-		public static IQuery Load(this IReadOnlyBarbadosCollection collection, params BarbadosIdentifier[] selection)
+		public static IQuery Load(this IReadOnlyBarbadosCollection collection, params string[] selection)
 		{
-			return Load(collection, new ValueSelector(selection));
+			return Load(collection, new BarbadosKeySelector(selection.Select(e => new BarbadosKey(e))));
 		}
 
-		public static IQuery Load(this IReadOnlyBarbadosCollection collection, ValueSelector selector)
+		public static IQuery Load(this IReadOnlyBarbadosCollection collection, BarbadosKeySelector selector)
 		{
 			return new Query(collection, new QueryPlanBuilder(selector));
 		}

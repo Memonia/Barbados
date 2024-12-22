@@ -1,12 +1,13 @@
-﻿using Barbados.StorageEngine.Collections;
+﻿using Barbados.Documents;
+using Barbados.StorageEngine.Collections;
 using Barbados.StorageEngine.Exceptions;
 
 namespace Barbados.StorageEngine
 {
 	internal sealed class CollectionControllerService
 	{
-		private static readonly ValueSelector _collectionNameSelector =
-			new(CommonIdentifiers.MetaCollection.AbsCollectionDocumentNameField);
+		private static readonly BarbadosKeySelector _collectionNameSelector =
+			new(BarbadosDocumentKeys.MetaCollection.AbsCollectionDocumentNameField);
 
 		private readonly MetaCollectionFacade _metaFacade;
 

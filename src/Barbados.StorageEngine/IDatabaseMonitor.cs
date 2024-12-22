@@ -4,6 +4,6 @@ namespace Barbados.StorageEngine
 {
 	public interface IDatabaseMonitor
 	{
-		IReadOnlyBarbadosCollection GetInternalCollection(BarbadosIdentifier collectionName);
+		IReadOnlyBarbadosCollection GetInternalCollection(BarbadosDbObjectName collectionName);
 	}
 }

@@ -1,5 +1,5 @@
-﻿using Barbados.StorageEngine.Collections;
-using Barbados.StorageEngine.Documents;
+﻿using Barbados.Documents;
+using Barbados.StorageEngine.Collections;
 using Barbados.StorageEngine.Exceptions;
 using Barbados.StorageEngine.Transactions;
 using Barbados.StorageEngine.Transactions.Locks;
@@ -40,7 +40,7 @@ namespace Barbados.StorageEngine
 				.IncludeLock(_metaFacade.Id, LockMode.Read)
 				.BeginTransaction();
 
-			if (!_metaFacade.TryRead(collectionId, ValueSelector.SelectAll, out document))
+			if (!_metaFacade.TryRead(collectionId, BarbadosKeySelector.SelectAll, out document))
 			{
 				facade = default!;
 				return false;
@@ -64,7 +64,7 @@ namespace Barbados.StorageEngine
 				BarbadosCollectionException.ThrowCollectionAlreadyExists(replacement);
 			}
 
-			if (!_metaFacade.TryRead(collectionId, ValueSelector.SelectAll, out var document))
+			if (!_metaFacade.TryRead(collectionId, BarbadosKeySelector.SelectAll, out var document))
 			{
 				return false;
 			}

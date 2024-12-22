@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-using Barbados.StorageEngine.Documents;
+using Barbados.Documents;
 
 namespace Barbados.QueryEngine
 {

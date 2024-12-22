@@ -1,6 +1,5 @@
-﻿using Barbados.QueryEngine.Build.Expressions;
-using Barbados.StorageEngine;
-using Barbados.StorageEngine.Documents;
+﻿using Barbados.Documents;
+using Barbados.QueryEngine.Build.Expressions;
 
 namespace Barbados.QueryEngine.Evaluation.Expressions
 {
@@ -8,11 +7,11 @@ namespace Barbados.QueryEngine.Evaluation.Expressions
 		ComparisonExpression expression,
 		IQueryExpressionEvaluator left,
 		IQueryExpressionEvaluator right,
-		BarbadosIdentifier comparedField,
+		BarbadosKey comparedField,
 		BarbadosDocument.Builder resultBuilder
 		) : BinaryExpressionEvaluator(expression, left, right)
 	{
-		private readonly BarbadosIdentifier _comparedField = comparedField;
+		private readonly BarbadosKey _comparedField = comparedField;
 		private readonly BarbadosDocument.Builder _resultBuilder = resultBuilder;
 
 		protected override BarbadosDocument Evaluate(BarbadosDocument left, BarbadosDocument right)

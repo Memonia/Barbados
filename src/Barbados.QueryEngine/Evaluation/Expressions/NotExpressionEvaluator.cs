@@ -1,5 +1,5 @@
-﻿using Barbados.QueryEngine.Build.Expressions;
-using Barbados.StorageEngine.Documents;
+﻿using Barbados.Documents;
+using Barbados.QueryEngine.Build.Expressions;
 
 namespace Barbados.QueryEngine.Evaluation.Expressions
 {

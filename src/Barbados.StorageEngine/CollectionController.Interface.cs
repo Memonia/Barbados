@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 
+using Barbados.Documents;
 using Barbados.StorageEngine.Collections;
 using Barbados.StorageEngine.Exceptions;
 
@@ -7,13 +8,13 @@ namespace Barbados.StorageEngine
 {
 	internal partial class CollectionController
 	{
-		void ICollectionController.EnsureCreated(BarbadosIdentifier collectionName)
+		void ICollectionController.EnsureCreated(BarbadosDbObjectName collectionName)
 		{
 			BarbadosArgumentException.ThrowReservedCollectionName(collectionName, nameof(collectionName));
 			TryCreate(collectionName);
 		}
 
-		void ICollectionController.EnsureDeleted(BarbadosIdentifier collectionName)
+		void ICollectionController.EnsureDeleted(BarbadosDbObjectName collectionName)
 		{
 			BarbadosArgumentException.ThrowReservedCollectionName(collectionName, nameof(collectionName));
 			TryDelete(collectionName);
@@ -21,11 +22,11 @@ namespace Barbados.StorageEngine
 
 		IEnumerable<string> ICollectionController.List()
 		{
-			yield return CommonIdentifiers.Collections.MetaCollection;
+			yield return BarbadosDbObjects.Collections.MetaCollection;
 			foreach (var document in _metaFacade.GetCursor())
 			{
 				yield return document.GetString(
-					CommonIdentifiers.MetaCollection.AbsCollectionDocumentNameField
+					BarbadosDocumentKeys.MetaCollection.AbsCollectionDocumentNameField
 				);
 			}
 		}
@@ -37,12 +38,12 @@ namespace Barbados.StorageEngine
 				return true;
 			}
 
-			return _metaFacade.TryRead(collectionId, ValueSelector.SelectNone, out _);
+			return _metaFacade.TryRead(collectionId, BarbadosKeySelector.SelectNone, out _);
 		}
 
-		bool ICollectionController.Exists(BarbadosIdentifier collectionName)
+		bool ICollectionController.Exists(BarbadosDbObjectName collectionName)
 		{
-			if (collectionName.Identifier == CommonIdentifiers.Collections.MetaCollection.Identifier)
+			if (collectionName == BarbadosDbObjects.Collections.MetaCollection)
 			{
 				return true;
 			}
@@ -61,7 +62,7 @@ namespace Barbados.StorageEngine
 			return facade;
 		}
 
-		IBarbadosCollection ICollectionController.Get(BarbadosIdentifier collectionName)
+		IBarbadosCollection ICollectionController.Get(BarbadosDbObjectName collectionName)
 		{
 			BarbadosArgumentException.ThrowReservedCollectionName(collectionName, nameof(collectionName));
 			if (!TryGet(collectionName, out var facade))
@@ -72,7 +73,7 @@ namespace Barbados.StorageEngine
 			return facade;
 		}
 
-		void ICollectionController.Rename(ObjectId collectionId, BarbadosIdentifier replacement)
+		void ICollectionController.Rename(ObjectId collectionId, BarbadosDbObjectName replacement)
 		{
 			BarbadosArgumentException.ThrowReservedCollectionId(collectionId, nameof(collectionId));
 			BarbadosArgumentException.ThrowReservedCollectionName(replacement, nameof(replacement));
@@ -91,7 +92,7 @@ namespace Barbados.StorageEngine
 			}
 		}
 
-		void ICollectionController.Create(BarbadosIdentifier collectionName)
+		void ICollectionController.Create(BarbadosDbObjectName collectionName)
 		{
 			BarbadosArgumentException.ThrowReservedCollectionName(collectionName, nameof(collectionName));
 			if (!TryCreate(collectionName))
@@ -100,7 +101,7 @@ namespace Barbados.StorageEngine
 			}
 		}
 
-		void ICollectionController.Rename(BarbadosIdentifier collectionName, BarbadosIdentifier replacement)
+		void ICollectionController.Rename(BarbadosDbObjectName collectionName, BarbadosDbObjectName replacement)
 		{
 			BarbadosArgumentException.ThrowReservedCollectionName(replacement, nameof(replacement));
 			BarbadosArgumentException.ThrowReservedCollectionName(collectionName, nameof(collectionName));
@@ -110,7 +111,7 @@ namespace Barbados.StorageEngine
 			}
 		}
 
-		void ICollectionController.Delete(BarbadosIdentifier collectionName)
+		void ICollectionController.Delete(BarbadosDbObjectName collectionName)
 		{
 			BarbadosArgumentException.ThrowReservedCollectionName(collectionName, nameof(collectionName));
 			if (!TryDelete(collectionName))

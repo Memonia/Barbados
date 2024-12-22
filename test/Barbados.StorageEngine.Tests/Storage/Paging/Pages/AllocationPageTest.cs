@@ -7,7 +7,7 @@ namespace Barbados.StorageEngine.Tests.Storage.Paging.Pages
 	{
 		public sealed class On
 		{
-			[Fact]
+			[Test]
 			public void WasOffSetOn_IsActiveTrue()
 			{
 				var page = new AllocationPage(new PageHandle(0));
@@ -15,10 +15,10 @@ namespace Barbados.StorageEngine.Tests.Storage.Paging.Pages
 
 				page.On(handle);
 
-				Assert.True(page.IsActive(handle));
+				Assert.That(page.IsActive(handle), Is.True);
 			}
 
-			[Fact]
+			[Test]
 			public void WasOnSetOn_IsActiveTrue()
 			{
 				var page = new AllocationPage(new PageHandle(0));
@@ -27,13 +27,13 @@ namespace Barbados.StorageEngine.Tests.Storage.Paging.Pages
 				page.On(handle);
 				page.On(handle);
 
-				Assert.True(page.IsActive(handle));
+				Assert.That(page.IsActive(handle), Is.True);
 			}
 		}
 
 		public sealed class Off
 		{
-			[Fact]
+			[Test]
 			public void SetOff_IsActiveFalse()
 			{
 				var page = new AllocationPage(new PageHandle(0));
@@ -41,10 +41,10 @@ namespace Barbados.StorageEngine.Tests.Storage.Paging.Pages
 
 				page.Off(handle);
 
-				Assert.False(page.IsActive(handle));
+				Assert.That(page.IsActive(handle), Is.False);
 			}
 
-			[Fact]
+			[Test]
 			public void WasOnSetOff_IsActiveFalse()
 			{
 				var page = new AllocationPage(new PageHandle(0));
@@ -53,10 +53,10 @@ namespace Barbados.StorageEngine.Tests.Storage.Paging.Pages
 				page.On(handle);
 				page.Off(handle);
 
-				Assert.False(page.IsActive(handle));
+				Assert.That(page.IsActive(handle), Is.False);
 			}
 
-			[Fact]
+			[Test]
 			public void WasOffSetOff_IsActiveFalse()
 			{
 				var page = new AllocationPage(new PageHandle(0));
@@ -65,24 +65,24 @@ namespace Barbados.StorageEngine.Tests.Storage.Paging.Pages
 				page.Off(handle);
 				page.Off(handle);
 
-				Assert.False(page.IsActive(handle));
+				Assert.That(page.IsActive(handle), Is.False);
 			}
 		}
 
 		public sealed class TryAcquireFreeHandle
 		{
-			[Theory]
+			[Test]
 			// First page of the bitmap
-			[InlineData(0, 0)]
-			[InlineData(1, Constants.AllocationBitmapPageCount)]
+			[TestCase(0, 0)]
+			[TestCase(1, Constants.AllocationBitmapPageCount)]
 			// Last page of the bitmap
-			[InlineData(0, Constants.AllocationBitmapPageCount - 1)]
-			[InlineData(1, Constants.AllocationBitmapPageCount * 2 - 1)]
+			[TestCase(0, Constants.AllocationBitmapPageCount - 1)]
+			[TestCase(1, Constants.AllocationBitmapPageCount * 2 - 1)]
 			// Something in the middle
-			[InlineData(0, Constants.AllocationBitmapPageCount / 4)]
-			[InlineData(0, Constants.AllocationBitmapPageCount / 8)]
-			[InlineData(1, Constants.AllocationBitmapPageCount / 4 + Constants.AllocationBitmapPageCount)]
-			[InlineData(1, Constants.AllocationBitmapPageCount / 8 + Constants.AllocationBitmapPageCount)]
+			[TestCase(0, Constants.AllocationBitmapPageCount / 4)]
+			[TestCase(0, Constants.AllocationBitmapPageCount / 8)]
+			[TestCase(1, Constants.AllocationBitmapPageCount / 4 + Constants.AllocationBitmapPageCount)]
+			[TestCase(1, Constants.AllocationBitmapPageCount / 8 + Constants.AllocationBitmapPageCount)]
 			public void FreeHandleAvailable_Success(long bitmapIndex, long pageHandleIndex)
 			{
 				var page = new AllocationPage(new PageHandle(0));
@@ -100,11 +100,14 @@ namespace Barbados.StorageEngine.Tests.Storage.Paging.Pages
 					new(Constants.AllocationBitmapPageCount * (bitmapIndex + 1)), bitmapIndex, out var handle
 				);
 
-				Assert.True(r);
-				Assert.Equal(pageHandleIndex, handle.Handle);
+				Assert.Multiple(() =>
+				{
+					Assert.That(r, Is.True);
+					Assert.That(handle.Handle, Is.EqualTo(pageHandleIndex));
+				});
 			}
 
-			[Fact]
+			[Test]
 			public void FreeHandleUnavailable_Failure()
 			{
 				var nextHandle = new PageHandle(Constants.AllocationBitmapPageCount);
@@ -119,7 +122,7 @@ namespace Barbados.StorageEngine.Tests.Storage.Paging.Pages
 
 				var r = page.TryAcquireFreeHandle(nextHandle, index, out _);
 
-				Assert.False(r);
+				Assert.That(r, Is.False);
 			}
 		}
 	}

@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 
+using Barbados.Documents;
 using Barbados.StorageEngine.Collections;
 using Barbados.StorageEngine.Exceptions;
 using Barbados.StorageEngine.Indexing;
@@ -35,7 +36,7 @@ namespace Barbados.StorageEngine
 			}
 		}
 
-		void IIndexController.EnsureCreated(BarbadosIdentifier collectionName, string field)
+		void IIndexController.EnsureCreated(BarbadosDbObjectName collectionName, string field)
 		{
 			BarbadosArgumentException.ThrowReservedCollectionName(collectionName, nameof(collectionName));
 			if (!((IIndexController)this).Exists(collectionName, field))
@@ -44,7 +45,7 @@ namespace Barbados.StorageEngine
 			}
 		}
 
-		void IIndexController.EnsureCreated(BarbadosIdentifier collectionName, string field, int maxKeyLength)
+		void IIndexController.EnsureCreated(BarbadosDbObjectName collectionName, string field, int maxKeyLength)
 		{
 			BarbadosArgumentException.ThrowReservedCollectionName(collectionName, nameof(collectionName));
 			if (!((IIndexController)this).Exists(collectionName, field))
@@ -53,7 +54,7 @@ namespace Barbados.StorageEngine
 			}
 		}
 
-		void IIndexController.EnsureDeleted(BarbadosIdentifier collectionName, string field)
+		void IIndexController.EnsureDeleted(BarbadosDbObjectName collectionName, string field)
 		{
 			BarbadosArgumentException.ThrowReservedCollectionName(collectionName, nameof(collectionName));
 			if (((IIndexController)this).Exists(collectionName, field))
@@ -66,7 +67,7 @@ namespace Barbados.StorageEngine
 		{
 			if (collectionId.Value == MetaCollectionFacade.MetaCollectionId.Value)
 			{
-				return field == CommonIdentifiers.MetaCollection.AbsCollectionDocumentNameField;
+				return field == BarbadosDocumentKeys.MetaCollection.AbsCollectionDocumentNameField;
 			}
 
 			foreach (var f in ((IIndexController)this).ListIndexed(collectionId))
@@ -80,11 +81,11 @@ namespace Barbados.StorageEngine
 			return false;
 		}
 
-		bool IIndexController.Exists(BarbadosIdentifier collectionName, string field)
+		bool IIndexController.Exists(BarbadosDbObjectName collectionName, string field)
 		{
-			if (collectionName.Identifier == CommonIdentifiers.Collections.MetaCollection.Identifier)
+			if (collectionName == BarbadosDbObjects.Collections.MetaCollection)
 			{
-				return field == CommonIdentifiers.MetaCollection.AbsCollectionDocumentNameField;
+				return field == BarbadosDocumentKeys.MetaCollection.AbsCollectionDocumentNameField;
 			}
 
 			foreach (var f in ((IIndexController)this).ListIndexed(collectionName))
@@ -101,11 +102,11 @@ namespace Barbados.StorageEngine
 		{
 			if (collectionId.Value == _metaFacade.Id.Value)
 			{
-				yield return CommonIdentifiers.MetaCollection.AbsCollectionDocumentNameField;
+				yield return BarbadosDocumentKeys.MetaCollection.AbsCollectionDocumentNameField.ToString();
 				yield break;
 			}
 
-			if (!_metaFacade.TryRead(collectionId, ValueSelector.SelectAll, out var document))
+			if (!_metaFacade.TryRead(collectionId, BarbadosKeySelector.SelectAll, out var document))
 			{
 				BarbadosCollectionException.ThrowCollectionDoesNotExist(collectionId);
 			}
@@ -113,16 +114,16 @@ namespace Barbados.StorageEngine
 			foreach (var indexDocument in MetaCollectionFacade.EnumerateIndexDocuments(document))
 			{
 				yield return indexDocument.GetString(
-					CommonIdentifiers.MetaCollection.IndexDocumentIndexedFieldField
+					BarbadosDocumentKeys.MetaCollection.IndexDocumentIndexedFieldField
 				);
 			}
 		}
 
-		IEnumerable<string> IIndexController.ListIndexed(BarbadosIdentifier collectionName)
+		IEnumerable<string> IIndexController.ListIndexed(BarbadosDbObjectName collectionName)
 		{
-			if (collectionName.Identifier == CommonIdentifiers.Collections.MetaCollection.Identifier)
+			if (collectionName == BarbadosDbObjects.Collections.MetaCollection)
 			{
-				yield return CommonIdentifiers.MetaCollection.AbsCollectionDocumentNameField;
+				yield return BarbadosDocumentKeys.MetaCollection.AbsCollectionDocumentNameField.ToString();
 				yield break;
 			}
 
@@ -142,7 +143,7 @@ namespace Barbados.StorageEngine
 			BarbadosArgumentException.ThrowReservedCollectionId(collectionId, nameof(collectionId));
 			if (!TryGet(collectionId, field, out var facade))
 			{
-				if (!_metaFacade.TryRead(collectionId, ValueSelector.SelectNone, out _))
+				if (!_metaFacade.TryRead(collectionId, BarbadosKeySelector.SelectNone, out _))
 				{
 					BarbadosCollectionException.ThrowCollectionDoesNotExist(collectionId);
 				}
@@ -153,7 +154,7 @@ namespace Barbados.StorageEngine
 			return facade;
 		}
 
-		IReadOnlyBTreeIndex IIndexController.Get(BarbadosIdentifier collectionName, string field)
+		IReadOnlyBTreeIndex IIndexController.Get(BarbadosDbObjectName collectionName, string field)
 		{
 			BarbadosArgumentException.ThrowReservedCollectionName(collectionName, nameof(collectionName));
 			if (!TryGet(collectionName, field, out var facade))
@@ -196,7 +197,7 @@ namespace Barbados.StorageEngine
 			}
 		}
 
-		void IIndexController.Create(BarbadosIdentifier collectionName, string field)
+		void IIndexController.Create(BarbadosDbObjectName collectionName, string field)
 		{
 			BarbadosArgumentException.ThrowReservedCollectionName(collectionName, nameof(collectionName));
 			if (!TryCreate(collectionName, field, maxKeyLength: -1, useDefault: true))
@@ -205,7 +206,7 @@ namespace Barbados.StorageEngine
 			}
 		}
 
-		void IIndexController.Create(BarbadosIdentifier collectionName, string field, int maxKeyLength)
+		void IIndexController.Create(BarbadosDbObjectName collectionName, string field, int maxKeyLength)
 		{
 			BarbadosArgumentException.ThrowReservedCollectionName(collectionName, nameof(collectionName));
 			if (!TryCreate(collectionName, field, maxKeyLength, useDefault: false))
@@ -214,7 +215,7 @@ namespace Barbados.StorageEngine
 			}
 		}
 
-		void IIndexController.Delete(BarbadosIdentifier collectionName, string field)
+		void IIndexController.Delete(BarbadosDbObjectName collectionName, string field)
 		{
 			BarbadosArgumentException.ThrowReservedCollectionName(collectionName, nameof(collectionName));
 			if (!TryDelete(collectionName, field))

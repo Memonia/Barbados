@@ -1,5 +1,6 @@
 ﻿using System;
 
+using Barbados.Documents;
 using Barbados.StorageEngine.Storage.Paging;
 
 namespace Barbados.StorageEngine.Indexing
@@ -8,7 +9,7 @@ namespace Barbados.StorageEngine.Indexing
 	{
 		public required ObjectId CollectionId { get; init; }
 		public required PageHandle RootHandle { get; init; }
-		public required BarbadosIdentifier IndexField { get; init; }
+		public required BarbadosKey IndexField { get; init; }
 
 		public required int KeyMaxLength
 		{

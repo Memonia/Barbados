@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-using Barbados.StorageEngine.Documents;
+using Barbados.Documents;
 using Barbados.StorageEngine.Indexing;
 using Barbados.StorageEngine.Transactions;
 
@@ -13,7 +13,7 @@ namespace Barbados.StorageEngine.Collections
 
 		public static IEnumerable<BarbadosDocument> EnumerateIndexDocuments(BarbadosDocument document)
 		{
-			if (document.TryGetDocumentArray(CommonIdentifiers.MetaCollection.IndexArrayField, out var indexesArray))
+			if (document.TryGetDocumentArray(BarbadosDocumentKeys.MetaCollection.IndexArrayField, out var indexesArray))
 			{
 				return indexesArray;
 			}
@@ -28,13 +28,13 @@ namespace Barbados.StorageEngine.Collections
 		)
 		{
 			var rawHandle = document.GetInt64(
-				CommonIdentifiers.MetaCollection.IndexDocumentPageHandleField
+				BarbadosDocumentKeys.MetaCollection.IndexDocumentPageHandleField
 			);
 			var indexField = document.GetString(
-				CommonIdentifiers.MetaCollection.IndexDocumentIndexedFieldField
+				BarbadosDocumentKeys.MetaCollection.IndexDocumentIndexedFieldField
 			); 
 			var keyMaxLength = document.GetInt32(
-				CommonIdentifiers.MetaCollection.IndexDocumentKeyMaxLengthField
+				BarbadosDocumentKeys.MetaCollection.IndexDocumentKeyMaxLengthField
 			);
 
 			var info = new BTreeIndexInfo()
@@ -56,13 +56,13 @@ namespace Barbados.StorageEngine.Collections
 		)
 		{
 			var collectionPageHandleRaw = document.GetInt64(
-				CommonIdentifiers.MetaCollection.AbsCollectionDocumentPageHandleField
+				BarbadosDocumentKeys.MetaCollection.AbsCollectionDocumentPageHandleField
 			);
 
 			return new BarbadosCollectionFacade(
-				document.Id,
+				document.GetObjectId(),
 				transactionManager,
-				new BTreeClusteredIndexFacade(document.Id, new(collectionPageHandleRaw)),
+				new BTreeClusteredIndexFacade(document.GetObjectId(), new(collectionPageHandleRaw)),
 				indexControllerService,
 				collectionControllerService
 			);

@@ -1,6 +1,6 @@
 ﻿using System.Threading;
 
-using Barbados.StorageEngine.Documents;
+using Barbados.Documents;
 using Barbados.StorageEngine.Exceptions;
 using Barbados.StorageEngine.Transactions;
 
@@ -9,9 +9,9 @@ namespace Barbados.StorageEngine.Indexing
 	internal sealed partial class BTreeIndexFacade : AbstractBTreeIndexFacade, IReadOnlyBTreeIndex
 	{
 		public ObjectId CollectionId => Info.CollectionId;
-		public BarbadosIdentifier IndexField => Info.IndexField;
+		public BarbadosKey IndexField => Info.IndexField;
 
-		public ValueSelector KeySelector { get; }
+		public BarbadosKeySelector KeySelector { get; }
 		public bool IsDeleted
 		{
 			get

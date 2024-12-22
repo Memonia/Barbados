@@ -15,4 +15,9 @@
 		<InternalsVisibleTo Include="Barbados.StorageEngine.Tests" />
 		<InternalsVisibleTo Include="Barbados.StorageEngine.Tests.Integration" />
 	</ItemGroup>
+
+	<ItemGroup>
+	  <ProjectReference Include="..\Barbados.CommonUtils\Barbados.CommonUtils.csproj" />
+	  <ProjectReference Include="..\Barbados.Documents\Barbados.Documents.csproj" />
+	</ItemGroup>
 </Project>

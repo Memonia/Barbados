@@ -9,14 +9,14 @@
 			);
 		}
 
-		public static void ThrowCollectionDoesNotExist(BarbadosIdentifier collectionName)
+		public static void ThrowCollectionDoesNotExist(BarbadosDbObjectName collectionName)
 		{
 			throw new BarbadosException(
 				BarbadosExceptionCode.CollectionDoesNotExist, $"Collection '{collectionName}' does not exist"
 			);
 		}
 
-		public static void ThrowCollectionAlreadyExists(BarbadosIdentifier collectionName)
+		public static void ThrowCollectionAlreadyExists(BarbadosDbObjectName collectionName)
 		{
 			throw new BarbadosException(
 				BarbadosExceptionCode.CollectionAlreadyExists, $"Collection '{collectionName}' already exists"
@@ -30,7 +30,7 @@
 			);
 		}
 
-		public static void ThrowIndexDoesNotExist(BarbadosIdentifier collectionName, string field)
+		public static void ThrowIndexDoesNotExist(BarbadosDbObjectName collectionName, string field)
 		{
 			throw new BarbadosException(
 				BarbadosExceptionCode.IndexDoesNotExist, $"Index for field '{field}' in collection '{collectionName}' does not exist"
@@ -44,7 +44,7 @@
 			);
 		}
 
-		public static void ThrowIndexAlreadyExists(BarbadosIdentifier collectionName, string field)
+		public static void ThrowIndexAlreadyExists(BarbadosDbObjectName collectionName, string field)
 		{
 			throw new BarbadosException(
 				BarbadosExceptionCode.IndexAlreadyExists, $"Index for field '{field}' in collection '{collectionName}' already exists"

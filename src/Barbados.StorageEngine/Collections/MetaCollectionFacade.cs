@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 
-using Barbados.StorageEngine.Documents;
+using Barbados.Documents;
 using Barbados.StorageEngine.Exceptions;
 using Barbados.StorageEngine.Indexing;
 using Barbados.StorageEngine.Storage.Paging.Pages;
@@ -53,12 +53,12 @@ namespace Barbados.StorageEngine.Collections
 
 			tx.Save(page);
 			var collectionDocument = _documentBuilder
-				.Add(CommonIdentifiers.MetaCollection.CollectionDocumentNameField, collection)
-				.Add(CommonIdentifiers.MetaCollection.CollectionDocumentPageHandleField, h.Handle)
+				.Add(BarbadosDocumentKeys.MetaCollection.CollectionDocumentNameField, collection)
+				.Add(BarbadosDocumentKeys.MetaCollection.CollectionDocumentPageHandleField, h.Handle)
 				.Build();
 
 			var document = _documentBuilder
-				.Add(CommonIdentifiers.MetaCollection.CollectionDocumentField, collectionDocument)
+				.Add(BarbadosDocumentKeys.MetaCollection.CollectionDocumentField, collectionDocument)
 				.Build();
 
 			var id = Insert(document);
@@ -83,15 +83,15 @@ namespace Barbados.StorageEngine.Collections
 				);
 			}
 
-			var collection = document.GetString(CommonIdentifiers.MetaCollection.AbsCollectionDocumentNameField);
-			if (!document.TryGetDocumentArray(CommonIdentifiers.MetaCollection.IndexArrayField, out var indexArray))
+			var collection = document.GetString(BarbadosDocumentKeys.MetaCollection.AbsCollectionDocumentNameField);
+			if (!document.TryGetDocumentArray(BarbadosDocumentKeys.MetaCollection.IndexArrayField, out var indexArray))
 			{
 				indexArray = [];
 			}
 
 			foreach (var index in indexArray)
 			{
-				var storedIndexedFieldName = index.GetString(CommonIdentifiers.MetaCollection.IndexDocumentIndexedFieldField);
+				var storedIndexedFieldName = index.GetString(BarbadosDocumentKeys.MetaCollection.IndexDocumentIndexedFieldField);
 				if (field == storedIndexedFieldName)
 				{
 					throw new BarbadosException(
@@ -108,9 +108,9 @@ namespace Barbados.StorageEngine.Collections
 			tx.Save(ipage);
 
 			var indexDocument = _documentBuilder
-				.Add(CommonIdentifiers.MetaCollection.IndexDocumentIndexedFieldField, field)
-				.Add(CommonIdentifiers.MetaCollection.IndexDocumentPageHandleField, ih.Handle)
-				.Add(CommonIdentifiers.MetaCollection.IndexDocumentKeyMaxLengthField, keyMaxLength)
+				.Add(BarbadosDocumentKeys.MetaCollection.IndexDocumentIndexedFieldField, field)
+				.Add(BarbadosDocumentKeys.MetaCollection.IndexDocumentPageHandleField, ih.Handle)
+				.Add(BarbadosDocumentKeys.MetaCollection.IndexDocumentKeyMaxLengthField, keyMaxLength)
 				.Build();
 
 			var updatedIndexesArray = new BarbadosDocument[indexArray.Length + 1];
@@ -118,11 +118,11 @@ namespace Barbados.StorageEngine.Collections
 			updatedIndexesArray[^1] = indexDocument;
 
 			var updated = _documentBuilder
-				.AddFieldFrom(CommonIdentifiers.MetaCollection.CollectionDocumentField, document)
-				.Add(CommonIdentifiers.MetaCollection.IndexArrayField, updatedIndexesArray)
+				.AddFrom(BarbadosDocumentKeys.MetaCollection.CollectionDocumentField, document)
+				.Add(BarbadosDocumentKeys.MetaCollection.IndexArrayField, updatedIndexesArray)
 				.Build();
 
-			if (!TryUpdate(document.Id, updated))
+			if (!TryUpdate(document.GetObjectId(), updated))
 			{
 				throw new BarbadosInternalErrorException();
 			}
@@ -134,16 +134,16 @@ namespace Barbados.StorageEngine.Collections
 		public void Rename(BarbadosDocument document, string name)
 		{
 			_documentBuilder
-				.Add(CommonIdentifiers.MetaCollection.AbsCollectionDocumentNameField, name)
-				.AddFieldFrom(CommonIdentifiers.MetaCollection.AbsCollectionDocumentPageHandleField, document);
+				.Add(BarbadosDocumentKeys.MetaCollection.AbsCollectionDocumentNameField, name)
+				.AddFrom(BarbadosDocumentKeys.MetaCollection.AbsCollectionDocumentPageHandleField, document);
 
-			if (document.TryGetDocumentArray(CommonIdentifiers.MetaCollection.IndexArrayField, out var indexesArray))
+			if (document.TryGetDocumentArray(BarbadosDocumentKeys.MetaCollection.IndexArrayField, out var indexesArray))
 			{
-				_documentBuilder.Add(CommonIdentifiers.MetaCollection.IndexArrayField, indexesArray);
+				_documentBuilder.Add(BarbadosDocumentKeys.MetaCollection.IndexArrayField, indexesArray);
 			}
 
 			var updated = _documentBuilder.Build();
-			if (!TryUpdate(document.Id, updated))
+			if (!TryUpdate(document.GetObjectId(), updated))
 			{
 				throw new BarbadosInternalErrorException();
 			}
@@ -151,14 +151,14 @@ namespace Barbados.StorageEngine.Collections
 
 		public void RemoveIndex(BarbadosDocument document, string field)
 		{
-			var indexArray = document.GetDocumentArray(CommonIdentifiers.MetaCollection.IndexArrayField);
+			var indexArray = document.GetDocumentArray(BarbadosDocumentKeys.MetaCollection.IndexArrayField);
 			Debug.Assert(indexArray.Length > 0);
 
 			var updatedIndexesArray = new BarbadosDocument[indexArray.Length - 1];
 			for (int i = 0; i < updatedIndexesArray.Length;)
 			{
 				var indexDocument = indexArray[i];
-				var indexField = indexDocument.GetString(CommonIdentifiers.MetaCollection.IndexDocumentIndexedFieldField);
+				var indexField = indexDocument.GetString(BarbadosDocumentKeys.MetaCollection.IndexDocumentIndexedFieldField);
 				if (indexField != field)
 				{
 					updatedIndexesArray[i] = indexDocument;
@@ -168,14 +168,14 @@ namespace Barbados.StorageEngine.Collections
 
 			if (updatedIndexesArray.Length > 0)
 			{
-				_documentBuilder.Add(CommonIdentifiers.MetaCollection.IndexArrayField, updatedIndexesArray);
+				_documentBuilder.Add(BarbadosDocumentKeys.MetaCollection.IndexArrayField, updatedIndexesArray);
 			}
 
 			var updated = _documentBuilder
-				.AddFieldFrom(CommonIdentifiers.MetaCollection.CollectionDocumentField, document)
+				.AddFrom(BarbadosDocumentKeys.MetaCollection.CollectionDocumentField, document)
 				.Build();
 
-			if (!TryUpdate(document.Id, updated))
+			if (!TryUpdate(document.GetObjectId(), updated))
 			{
 				throw new BarbadosInternalErrorException();
 			}

@@ -1,9 +1,8 @@
 ﻿using System.Collections.Generic;
 
+using Barbados.Documents;
 using Barbados.QueryEngine.Helpers;
-using Barbados.StorageEngine;
 using Barbados.StorageEngine.Collections;
-using Barbados.StorageEngine.Documents;
 using Barbados.StorageEngine.Exceptions;
 using Barbados.StorageEngine.Indexing;
 
@@ -13,13 +12,13 @@ namespace Barbados.QueryEngine.Evaluation
 	{
 		public IReadOnlyCollection<IQueryPlanEvaluator> Children => [];
 
-		private readonly ValueSelector _selector;
+		private readonly BarbadosKeySelector _selector;
 		private readonly BarbadosDocument _condition;
 		private readonly IReadOnlyBTreeIndex _index;
 		private readonly IReadOnlyBarbadosCollection _collection;
 
 		public IndexSeekEvaluator(
-			ValueSelector selector,
+			BarbadosKeySelector selector,
 			BarbadosDocument condition,
 			IReadOnlyBTreeIndex index,
 			IReadOnlyBarbadosCollection collection

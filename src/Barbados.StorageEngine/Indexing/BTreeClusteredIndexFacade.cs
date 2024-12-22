@@ -11,7 +11,7 @@ namespace Barbados.StorageEngine.Indexing
 				{
 					CollectionId = collectionId,
 					RootHandle = handle,
-					IndexField = CommonIdentifiers.Id,
+					IndexField = BarbadosDocumentKeys.DocumentId,
 					KeyMaxLength = Constants.ObjectIdLength
 				}
 			)

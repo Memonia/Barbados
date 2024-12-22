@@ -95,13 +95,13 @@ namespace Barbados.StorageEngine.Indexing
 		)
 		{
 			var idn = new ObjectIdNormalised(id);
-			if (!proxy.TryReadObjectBuffer(idn, _indexFacade.KeySelector, out var buffer))
+			if (!proxy.TryReadDocument(idn, _indexFacade.KeySelector, out var buffer))
 			{
 				key = default!;
 				return false;
 			}
 			
-			return buffer.TryGetNormalisedValue(_indexFacade.Info.IndexField.BinaryName, out key);
+			return buffer.TryGetNormalisedValue(_indexFacade.Info.IndexField, out key);
 		}
 
 		private void _retrieveIds(

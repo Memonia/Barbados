@@ -1,5 +1,17 @@
-﻿namespace Barbados.StorageEngine
+﻿using Barbados.Documents;
+
+namespace Barbados.StorageEngine
 {
+	// TODO: temporary extension. Needs to be removed when indexes no longer depend on the primary
+	// key having a specific type
+	public static class BarbadosDocumentExtensions
+	{
+		public static ObjectId GetObjectId(this BarbadosDocument document)
+		{
+			return new(document.GetInt64(BarbadosDocumentKeys.DocumentId));
+		}
+	}
+
 	public readonly struct ObjectId(long id)
 	{
 		public static ObjectId Invalid { get; } = new(0);

@@ -1,9 +1,7 @@
-﻿using Barbados.StorageEngine;
-
-namespace Barbados.QueryEngine.Build.Expressions
+﻿namespace Barbados.QueryEngine.Build.Expressions
 {
 	internal class ComparisonExpression(
-		BarbadosIdentifier comparedField,
+		string comparedField,
 		BinaryOperator op,
 		string name,
 		string symbol,
@@ -11,6 +9,6 @@ namespace Barbados.QueryEngine.Build.Expressions
 		IQueryExpression right
 	) : BinaryExpression(op, name, symbol, left, right)
 	{
-		public BarbadosIdentifier ComparedField { get; } = comparedField;
+		public string ComparedField { get; } = comparedField;
 	}
 }

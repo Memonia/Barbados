@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-using Barbados.StorageEngine.Documents;
+using Barbados.Documents;
 using Barbados.StorageEngine.Exceptions;
 using Barbados.StorageEngine.Indexing;
 using Barbados.StorageEngine.Storage.Paging.Pages;
@@ -10,13 +10,13 @@ namespace Barbados.StorageEngine.Collections
 {
 	internal sealed class CollectionCursor : Cursor<BarbadosDocument>
 	{
-		private readonly ValueSelector _selector;
+		private readonly BarbadosKeySelector _selector;
 		private readonly BTreeClusteredIndexFacade _clusteredIndexFacade;
 
 		public CollectionCursor(
 			ObjectId collectionId,
 			TransactionManager transactionManager,
-			ValueSelector selector,
+			BarbadosKeySelector selector,
 			BTreeClusteredIndexFacade clusteredIndexFacade
 		) : base(collectionId, transactionManager)
 		{
@@ -40,12 +40,12 @@ namespace Barbados.StorageEngine.Collections
 				while (e.TryGetNext(out var id))
 				{
 					var idn = new ObjectIdNormalised(id);
-					if (!proxy.TryReadObjectBuffer(idn, page, _selector, out var buffer))
+					if (!proxy.TryReadDocument(idn, page, _selector, out var document))
 					{
 						throw new BarbadosInternalErrorException();
 					}
 
-					docs.Add(new BarbadosDocument(id, buffer));
+					docs.Add(document);
 				}
 
 				foreach (var doc in docs)

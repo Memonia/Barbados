@@ -1,6 +1,5 @@
 ﻿
 using Barbados.QueryEngine.Build.Expressions;
-using Barbados.StorageEngine;
 
 namespace Barbados.QueryEngine.Query
 {
@@ -37,7 +36,7 @@ namespace Barbados.QueryEngine.Query
 				);
 			}
 
-			public static IFilter Eq<T>(BarbadosIdentifier field, T value)
+			public static IFilter Eq<T>(string field, T value)
 			{
 				return new Filter(
 					ComparisonExpressionFactory.Create(
@@ -49,7 +48,7 @@ namespace Barbados.QueryEngine.Query
 				);
 			}
 
-			public static IFilter Neq<T>(BarbadosIdentifier field, T value)
+			public static IFilter Neq<T>(string field, T value)
 			{
 				return new Filter(
 					ComparisonExpressionFactory.Create(
@@ -61,7 +60,7 @@ namespace Barbados.QueryEngine.Query
 				);
 			}
 
-			public static IFilter Lt<T>(BarbadosIdentifier field, T value)
+			public static IFilter Lt<T>(string field, T value)
 			{
 				return new Filter(
 					ComparisonExpressionFactory.Create(
@@ -73,7 +72,7 @@ namespace Barbados.QueryEngine.Query
 				);
 			}
 
-			public static IFilter LtEq<T>(BarbadosIdentifier field, T value)
+			public static IFilter LtEq<T>(string field, T value)
 			{
 				return new Filter(
 					ComparisonExpressionFactory.Create(
@@ -85,7 +84,7 @@ namespace Barbados.QueryEngine.Query
 				);
 			}
 
-			public static IFilter Gt<T>(BarbadosIdentifier field, T value)
+			public static IFilter Gt<T>(string field, T value)
 			{
 				return new Filter(
 					ComparisonExpressionFactory.Create(
@@ -97,7 +96,7 @@ namespace Barbados.QueryEngine.Query
 				);
 			}
 
-			public static IFilter GtEq<T>(BarbadosIdentifier field, T value)
+			public static IFilter GtEq<T>(string field, T value)
 			{
 				return new Filter(
 					ComparisonExpressionFactory.Create(

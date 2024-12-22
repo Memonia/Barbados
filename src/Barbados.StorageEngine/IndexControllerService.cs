@@ -1,6 +1,7 @@
 ﻿using System.Collections.Concurrent;
 using System.Collections.Generic;
 
+using Barbados.Documents;
 using Barbados.StorageEngine.Exceptions;
 
 using Barbados.StorageEngine.Indexing;
@@ -9,7 +10,7 @@ namespace Barbados.StorageEngine
 {
 	internal sealed class IndexControllerService
 	{
-		private readonly ConcurrentDictionary<ObjectId, ConcurrentDictionary<string, BTreeIndexFacade>> _facades;
+		private readonly ConcurrentDictionary<ObjectId, ConcurrentDictionary<BarbadosKey, BTreeIndexFacade>> _facades;
 
 		public IndexControllerService()
 		{

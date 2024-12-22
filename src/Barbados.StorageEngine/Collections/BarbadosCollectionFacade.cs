@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-using Barbados.StorageEngine.Documents;
+using Barbados.Documents;
 using Barbados.StorageEngine.Exceptions;
 using Barbados.StorageEngine.Indexing;
 using Barbados.StorageEngine.Transactions;
@@ -9,7 +9,7 @@ namespace Barbados.StorageEngine.Collections
 {
 	internal sealed class BarbadosCollectionFacade : AbstractCollectionFacade, IBarbadosCollection
 	{
-		public BarbadosIdentifier Name => _collectionControllerService.GetCollectionName(Id);
+		public BarbadosDbObjectName Name => _collectionControllerService.GetCollectionName(Id);
 
 		private readonly IndexControllerService _indexControllerService;
 		private readonly CollectionControllerService _collectionControllerService;
@@ -40,15 +40,15 @@ namespace Barbados.StorageEngine.Collections
 
 		public bool TryRead(ObjectId id, out BarbadosDocument document)
 		{
-			return TryRead(id, ValueSelector.SelectAll, out document);
+			return TryRead(id, BarbadosKeySelector.SelectAll, out document);
 		}
 
 		public BarbadosDocument Read(ObjectId id)
 		{
-			return Read(id, ValueSelector.SelectAll);
+			return Read(id, BarbadosKeySelector.SelectAll);
 		}
 
-		public BarbadosDocument Read(ObjectId id, ValueSelector selector)
+		public BarbadosDocument Read(ObjectId id, BarbadosKeySelector selector)
 		{
 			if (!TryRead(id, selector, out var document))
 			{
@@ -85,7 +85,7 @@ namespace Barbados.StorageEngine.Collections
 			return GetCursor();
 		}
 
-		ICursor<BarbadosDocument> IReadOnlyBarbadosCollection.GetCursor(ValueSelector selector)
+		ICursor<BarbadosDocument> IReadOnlyBarbadosCollection.GetCursor(BarbadosKeySelector selector)
 		{
 			return GetCursor(selector);
 		}

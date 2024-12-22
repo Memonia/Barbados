@@ -1,21 +1,21 @@
 ﻿using System.Collections.Generic;
 
-using Barbados.StorageEngine;
+using Barbados.Documents;
 
 namespace Barbados.QueryEngine.Query
 {
 	internal sealed class Projection : IProjection
 	{
-		private readonly List<BarbadosIdentifier> _identifiers = [];
+		private readonly List<BarbadosKey> _keys = [];
 
-		public ValueSelector GetSelector()
+		public BarbadosKeySelector GetSelector()
 		{
-			return new(_identifiers);
+			return new(_keys);
 		}
 
-		public IProjection Include(BarbadosIdentifier field)
+		public IProjection Include(string field)
 		{
-			_identifiers.Add(field);
+			_keys.Add(field);
 			return this;
 		}
 	}

@@ -1,10 +1,8 @@
-﻿using Barbados.StorageEngine;
-
-namespace Barbados.QueryEngine.Build.Expressions
+﻿namespace Barbados.QueryEngine.Build.Expressions
 {
-	internal sealed class FieldExpression(BarbadosIdentifier name) : IQueryExpression
+	internal sealed class FieldExpression(string name) : IQueryExpression
 	{
-		public BarbadosIdentifier Name { get; } = name;
+		public string Name { get; } = name;
 
 		public override string ToString()
 		{

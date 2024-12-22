@@ -1,4 +1,5 @@
-﻿using Barbados.StorageEngine.Collections;
+﻿using Barbados.Documents;
+using Barbados.StorageEngine.Collections;
 using Barbados.StorageEngine.Indexing;
 using Barbados.StorageEngine.Storage.Paging;
 using Barbados.StorageEngine.Storage.Paging.Pages;
@@ -32,9 +33,9 @@ namespace Barbados.StorageEngine
 			var meta = _createMetaFacade();
 
 			// Create locks for existing collections
-			foreach (var document in meta.GetCursor(ValueSelector.SelectNone))
+			foreach (var document in meta.GetCursor(BarbadosKeySelector.SelectNone))
 			{
-				_lockManager.CreateLock(document.Id);
+				_lockManager.CreateLock(document.GetObjectId());
 			}
 
 			var ics = new IndexControllerService();
@@ -78,7 +79,7 @@ namespace Barbados.StorageEngine
 				{
 					CollectionId = MetaCollectionFacade.MetaCollectionId,
 					RootHandle = root.MetaCollectionNameIndexRootPageHandle,
-					IndexField = CommonIdentifiers.MetaCollection.AbsCollectionDocumentNameField,
+					IndexField = BarbadosDocumentKeys.MetaCollection.AbsCollectionDocumentNameField,
 					KeyMaxLength = MetaCollectionFacade.NameIndexKeyMaxLength
 				}
 			);

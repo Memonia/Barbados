@@ -1,4 +1,4 @@
-﻿using Barbados.StorageEngine.Helpers;
+﻿using Barbados.CommonUtils.BitManipulation;
 
 namespace Barbados.StorageEngine.Storage.Paging.Pages
 {

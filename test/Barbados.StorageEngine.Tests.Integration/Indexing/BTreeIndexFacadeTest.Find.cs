@@ -1,31 +1,31 @@
 ﻿using System.Diagnostics;
 using System.Linq;
 
-using Barbados.StorageEngine.Documents;
-using Barbados.StorageEngine.Documents.Serialisation.Values;
+using Barbados.Documents;
+using Barbados.StorageEngine.Indexing;
 using Barbados.StorageEngine.Tests.Integration.Utility;
 
 namespace Barbados.StorageEngine.Tests.Integration.Indexing
 {
-	public partial class BTreeIndexFacadeTest
+	public sealed partial class BTreeIndexFacadeTest
 	{
-		public sealed partial class Find : IClassFixture<BarbadosContextFixture<Find>>
+		public sealed class Find : SetupTeardownBarbadosContextTestClass<Find>
 		{
 			private static readonly string _field = "test";
 
 			static Find()
 			{
 				// 'MixedKeys' tests depend on that
-				Debug.Assert(ValueTypeMarker.Int16 < ValueTypeMarker.Int32);
-				Debug.Assert(ValueTypeMarker.Int32 < ValueTypeMarker.Int64);
+				Debug.Assert(NormalisedValueType.Int16 < NormalisedValueType.Int32);
+				Debug.Assert(NormalisedValueType.Int32 < NormalisedValueType.Int64);
 			}
 
-			[Fact]
+			[Test]
 			public void Exact_FoundNone()
 			{
 				var name = nameof(Exact_FoundNone);
-				var index = _fixture.CreateTestBTreeIndexFacade(name);
-				var collection = _fixture.GetTestBarbadosCollectionFacade(name);
+				var index = Context.CreateTestBTreeIndexFacade(name);
+				var collection = Context.GetTestBarbadosCollectionFacade(name);
 				var builder = new BarbadosDocument.Builder();
 
 				var v1 = builder.Add(_field, 1).Build();
@@ -37,21 +37,21 @@ namespace Barbados.StorageEngine.Tests.Integration.Indexing
 
 				var (key, keyId) = (4, new ObjectId(4));
 				var condition = new BarbadosDocument.Builder()
-					.Add(CommonIdentifiers.Index.SearchValue, key)
-					.Add(CommonIdentifiers.Index.Exact, true)
+					.Add(BarbadosDocumentKeys.IndexQuery.SearchValue, key)
+					.Add(BarbadosDocumentKeys.IndexQuery.Exact, true)
 					.Build();
 
 				var result = index.Find(condition).ToList();
 
-				Assert.Empty(result);
+				Assert.That(result, Is.Empty);
 			}
 
-			[Fact]
+			[Test]
 			public void Exact_FoundExact()
 			{
 				var name = nameof(Exact_FoundExact);
-				var index = _fixture.CreateTestBTreeIndexFacade(name);
-				var collection = _fixture.GetTestBarbadosCollectionFacade(name);
+				var index = Context.CreateTestBTreeIndexFacade(name);
+				var collection = Context.GetTestBarbadosCollectionFacade(name);
 				var builder = new BarbadosDocument.Builder();
 
 				var v1 = builder.Add(_field, 1).Build();
@@ -63,22 +63,25 @@ namespace Barbados.StorageEngine.Tests.Integration.Indexing
 
 				var (key, keyId) = (2, id2);
 				var condition = new BarbadosDocument.Builder()
-					.Add(CommonIdentifiers.Index.SearchValue, key)
-					.Add(CommonIdentifiers.Index.Exact, true)
+					.Add(BarbadosDocumentKeys.IndexQuery.SearchValue, key)
+					.Add(BarbadosDocumentKeys.IndexQuery.Exact, true)
 					.Build();
 
 				var result = index.Find(condition).ToList();
 
-				Assert.Single(result);
-				Assert.Equal(keyId, result[0]);
+				Assert.Multiple(() =>
+				{
+					Assert.That(result, Has.Count.EqualTo(1));
+					Assert.That(keyId, Is.EqualTo(result[0]));
+				});
 			}
 
-			[Fact]
+			[Test]
 			public void Exact_FoundExactSeveral()
 			{
 				var name = nameof(Exact_FoundExactSeveral);
-				var index = _fixture.CreateTestBTreeIndexFacade(name);
-				var collection = _fixture.GetTestBarbadosCollectionFacade(name);
+				var index = Context.CreateTestBTreeIndexFacade(name);
+				var collection = Context.GetTestBarbadosCollectionFacade(name);
 				var builder = new BarbadosDocument.Builder();
 
 				var v1 = builder.Add(_field, 1).Build();
@@ -94,22 +97,21 @@ namespace Barbados.StorageEngine.Tests.Integration.Indexing
 
 				var (key, keyIds) = (2, new ObjectId[] { id2, id3, id4 });
 				var condition = new BarbadosDocument.Builder()
-					.Add(CommonIdentifiers.Index.SearchValue, key)
-					.Add(CommonIdentifiers.Index.Exact, true)
+					.Add(BarbadosDocumentKeys.IndexQuery.SearchValue, key)
+					.Add(BarbadosDocumentKeys.IndexQuery.Exact, true)
 					.Build();
 
 				var result = index.Find(condition).ToList();
 
-				Assert.All(keyIds, id => Assert.Contains(id, result));
-				Assert.Equal(keyIds.Length, result.Count);
+				Assert.That(result, Is.EquivalentTo(keyIds));
 			}
 
-			[Fact]
+			[Test]
 			public void LessThan_FoundLess()
 			{
 				var name = nameof(LessThan_FoundLess);
-				var index = _fixture.CreateTestBTreeIndexFacade(name);
-				var collection = _fixture.GetTestBarbadosCollectionFacade(name);
+				var index = Context.CreateTestBTreeIndexFacade(name);
+				var collection = Context.GetTestBarbadosCollectionFacade(name);
 				var builder = new BarbadosDocument.Builder();
 
 				var v1 = builder.Add(_field, 1).Build();
@@ -125,22 +127,21 @@ namespace Barbados.StorageEngine.Tests.Integration.Indexing
 
 				var (key, keyIds) = (3, new ObjectId[] { id1, id2 });
 				var condition = new BarbadosDocument.Builder()
-					.Add(CommonIdentifiers.Index.SearchValue, key)
-					.Add(CommonIdentifiers.Index.LessThan, true)
+					.Add(BarbadosDocumentKeys.IndexQuery.SearchValue, key)
+					.Add(BarbadosDocumentKeys.IndexQuery.LessThan, true)
 					.Build();
 
 				var result = index.Find(condition).ToList();
 
-				Assert.All(keyIds, id => Assert.Contains(id, result));
-				Assert.Equal(keyIds.Length, result.Count);
+				Assert.That(result, Is.EquivalentTo(keyIds));
 			}
 
-			[Fact]
+			[Test]
 			public void GreaterThan_FoundGreater()
 			{
 				var name = nameof(GreaterThan_FoundGreater);
-				var index = _fixture.CreateTestBTreeIndexFacade(name);
-				var collection = _fixture.GetTestBarbadosCollectionFacade(name);
+				var index = Context.CreateTestBTreeIndexFacade(name);
+				var collection = Context.GetTestBarbadosCollectionFacade(name);
 				var builder = new BarbadosDocument.Builder();
 
 				var v1 = builder.Add(_field, 1).Build();
@@ -156,22 +157,21 @@ namespace Barbados.StorageEngine.Tests.Integration.Indexing
 
 				var (key, keyIds) = (3, new ObjectId[] { id4, id5 });
 				var condition = new BarbadosDocument.Builder()
-					.Add(CommonIdentifiers.Index.SearchValue, key)
-					.Add(CommonIdentifiers.Index.GreaterThan, true)
+					.Add(BarbadosDocumentKeys.IndexQuery.SearchValue, key)
+					.Add(BarbadosDocumentKeys.IndexQuery.GreaterThan, true)
 					.Build();
 
 				var result = index.Find(condition).ToList();
 
-				Assert.All(keyIds, id => Assert.Contains(id, result));
-				Assert.Equal(keyIds.Length, result.Count);
+				Assert.That(result, Is.EquivalentTo(keyIds));
 			}
 
-			[Fact]
+			[Test]
 			public void Between_FoundBetween()
 			{
 				var name = nameof(Between_FoundBetween);
-				var index = _fixture.CreateTestBTreeIndexFacade(name);
-				var collection = _fixture.GetTestBarbadosCollectionFacade(name);
+				var index = Context.CreateTestBTreeIndexFacade(name);
+				var collection = Context.GetTestBarbadosCollectionFacade(name);
 				var builder = new BarbadosDocument.Builder();
 
 				var v1 = builder.Add(_field, 1).Build();
@@ -187,23 +187,22 @@ namespace Barbados.StorageEngine.Tests.Integration.Indexing
 
 				var (start, end, keyIds) = (1, 5, new ObjectId[] { id2, id3, id4 });
 				var condition = new BarbadosDocument.Builder()
-					.Add(CommonIdentifiers.Index.GreaterThan, start)
-					.Add(CommonIdentifiers.Index.LessThan, end)
-					.Add(CommonIdentifiers.Index.Range, true)
+					.Add(BarbadosDocumentKeys.IndexQuery.GreaterThan, start)
+					.Add(BarbadosDocumentKeys.IndexQuery.LessThan, end)
+					.Add(BarbadosDocumentKeys.IndexQuery.Range, true)
 					.Build();
 
 				var result = index.Find(condition).ToList();
 
-				Assert.All(keyIds, id => Assert.Contains(id, result));
-				Assert.Equal(keyIds.Length, result.Count);
+				Assert.That(result, Is.EquivalentTo(keyIds));
 			}
 
-			[Fact]
+			[Test]
 			public void LessThanInclusive_FoundLessOrEqual()
 			{
 				var name = nameof(LessThanInclusive_FoundLessOrEqual);
-				var index = _fixture.CreateTestBTreeIndexFacade(name);
-				var collection = _fixture.GetTestBarbadosCollectionFacade(name);
+				var index = Context.CreateTestBTreeIndexFacade(name);
+				var collection = Context.GetTestBarbadosCollectionFacade(name);
 				var builder = new BarbadosDocument.Builder();
 
 				var v1 = builder.Add(_field, 1).Build();
@@ -219,23 +218,22 @@ namespace Barbados.StorageEngine.Tests.Integration.Indexing
 
 				var (key, keyIds) = (3, new ObjectId[] { id1, id2, id3 });
 				var condition = new BarbadosDocument.Builder()
-					.Add(CommonIdentifiers.Index.SearchValue, key)
-					.Add(CommonIdentifiers.Index.LessThan, true)
-					.Add(CommonIdentifiers.Index.Inclusive, true)
+					.Add(BarbadosDocumentKeys.IndexQuery.SearchValue, key)
+					.Add(BarbadosDocumentKeys.IndexQuery.LessThan, true)
+					.Add(BarbadosDocumentKeys.IndexQuery.Inclusive, true)
 					.Build();
 
 				var result = index.Find(condition).ToList();
 
-				Assert.All(keyIds, id => Assert.Contains(id, result));
-				Assert.Equal(keyIds.Length, result.Count);
+				Assert.That(result, Is.EquivalentTo(keyIds));
 			}
 
-			[Fact]
+			[Test]
 			public void GreaterThanInclusive_FoundGreaterOrEqual()
 			{
 				var name = nameof(GreaterThanInclusive_FoundGreaterOrEqual);
-				var index = _fixture.CreateTestBTreeIndexFacade(name);
-				var collection = _fixture.GetTestBarbadosCollectionFacade(name);
+				var index = Context.CreateTestBTreeIndexFacade(name);
+				var collection = Context.GetTestBarbadosCollectionFacade(name);
 				var builder = new BarbadosDocument.Builder();
 
 				var v1 = builder.Add(_field, 1).Build();
@@ -251,23 +249,22 @@ namespace Barbados.StorageEngine.Tests.Integration.Indexing
 
 				var (key, keyIds) = (3, new ObjectId[] { id3, id4, id5 });
 				var condition = new BarbadosDocument.Builder()
-					.Add(CommonIdentifiers.Index.SearchValue, key)
-					.Add(CommonIdentifiers.Index.GreaterThan, true)
-					.Add(CommonIdentifiers.Index.Inclusive, true)
+					.Add(BarbadosDocumentKeys.IndexQuery.SearchValue, key)
+					.Add(BarbadosDocumentKeys.IndexQuery.GreaterThan, true)
+					.Add(BarbadosDocumentKeys.IndexQuery.Inclusive, true)
 					.Build();
 
 				var result = index.Find(condition).ToList();
 
-				Assert.All(keyIds, id => Assert.Contains(id, result));
-				Assert.Equal(keyIds.Length, result.Count);
+				Assert.That(result, Is.EquivalentTo(keyIds));
 			}
 
-			[Fact]
+			[Test]
 			public void BetweenInclusive_FoundBetweenOrEqual()
 			{
 				var name = nameof(BetweenInclusive_FoundBetweenOrEqual);
-				var index = _fixture.CreateTestBTreeIndexFacade(name);
-				var collection = _fixture.GetTestBarbadosCollectionFacade(name);
+				var index = Context.CreateTestBTreeIndexFacade(name);
+				var collection = Context.GetTestBarbadosCollectionFacade(name);
 				var builder = new BarbadosDocument.Builder();
 
 				var v1 = builder.Add(_field, 1).Build();
@@ -283,24 +280,23 @@ namespace Barbados.StorageEngine.Tests.Integration.Indexing
 
 				var (start, end, keyIds) = (2, 4, new ObjectId[] { id2, id3, id4 });
 				var condition = new BarbadosDocument.Builder()
-					.Add(CommonIdentifiers.Index.GreaterThan, start)
-					.Add(CommonIdentifiers.Index.LessThan, end)
-					.Add(CommonIdentifiers.Index.Range, true)
-					.Add(CommonIdentifiers.Index.Inclusive, true)
+					.Add(BarbadosDocumentKeys.IndexQuery.GreaterThan, start)
+					.Add(BarbadosDocumentKeys.IndexQuery.LessThan, end)
+					.Add(BarbadosDocumentKeys.IndexQuery.Range, true)
+					.Add(BarbadosDocumentKeys.IndexQuery.Inclusive, true)
 					.Build();
 
 				var result = index.Find(condition).ToList();
 
-				Assert.All(keyIds, id => Assert.Contains(id, result));
-				Assert.Equal(keyIds.Length, result.Count);
+				Assert.That(result, Is.EquivalentTo(keyIds));
 			}
 
-			[Fact]
+			[Test]
 			public void DifferentTypes_LessThan_FoundLessCorrectType()
 			{
 				var name = nameof(DifferentTypes_LessThan_FoundLessCorrectType);
-				var index = _fixture.CreateTestBTreeIndexFacade(name);
-				var collection = _fixture.GetTestBarbadosCollectionFacade(name);
+				var index = Context.CreateTestBTreeIndexFacade(name);
+				var collection = Context.GetTestBarbadosCollectionFacade(name);
 				var builder = new BarbadosDocument.Builder();
 
 				var v1 = builder.Add(_field, (int)1).Build();
@@ -316,22 +312,21 @@ namespace Barbados.StorageEngine.Tests.Integration.Indexing
 
 				var (key, keyIds) = (5, new ObjectId[] { id1, id3 });
 				var condition = new BarbadosDocument.Builder()
-					.Add(CommonIdentifiers.Index.SearchValue, key)
-					.Add(CommonIdentifiers.Index.LessThan, true)
+					.Add(BarbadosDocumentKeys.IndexQuery.SearchValue, key)
+					.Add(BarbadosDocumentKeys.IndexQuery.LessThan, true)
 					.Build();
 
 				var result = index.Find(condition).ToList();
 
-				Assert.All(keyIds, id => Assert.Contains(id, result));
-				Assert.Equal(keyIds.Length, result.Count);
+				Assert.That(result, Is.EquivalentTo(keyIds));
 			}
 
-			[Fact]
+			[Test]
 			public void DifferentTypes_GreaterThan_FoundGreaterCorrectType()
 			{
 				var name = nameof(DifferentTypes_GreaterThan_FoundGreaterCorrectType);
-				var index = _fixture.CreateTestBTreeIndexFacade(name);
-				var collection = _fixture.GetTestBarbadosCollectionFacade(name);
+				var index = Context.CreateTestBTreeIndexFacade(name);
+				var collection = Context.GetTestBarbadosCollectionFacade(name);
 				var builder = new BarbadosDocument.Builder();
 
 				var v1 = builder.Add(_field, (int)1).Build();
@@ -347,22 +342,21 @@ namespace Barbados.StorageEngine.Tests.Integration.Indexing
 
 				var (key, keyIds) = (1, new ObjectId[] { id3, id5 });
 				var condition = new BarbadosDocument.Builder()
-					.Add(CommonIdentifiers.Index.SearchValue, key)
-					.Add(CommonIdentifiers.Index.GreaterThan, true)
+					.Add(BarbadosDocumentKeys.IndexQuery.SearchValue, key)
+					.Add(BarbadosDocumentKeys.IndexQuery.GreaterThan, true)
 					.Build();
 
 				var result = index.Find(condition).ToList();
 
-				Assert.All(keyIds, id => Assert.Contains(id, result));
-				Assert.Equal(keyIds.Length, result.Count);
+				Assert.That(result, Is.EquivalentTo(keyIds));
 			}
 
-			[Fact]
+			[Test]
 			public void DifferentTypes_LessThanInclusive_FoundLessOrEqualCorrectType()
 			{
 				var name = nameof(DifferentTypes_LessThanInclusive_FoundLessOrEqualCorrectType);
-				var index = _fixture.CreateTestBTreeIndexFacade(name);
-				var collection = _fixture.GetTestBarbadosCollectionFacade(name);
+				var index = Context.CreateTestBTreeIndexFacade(name);
+				var collection = Context.GetTestBarbadosCollectionFacade(name);
 				var builder = new BarbadosDocument.Builder();
 
 				var v1 = builder.Add(_field, (int)1).Build();
@@ -378,23 +372,22 @@ namespace Barbados.StorageEngine.Tests.Integration.Indexing
 
 				var (key, keyIds) = (4, new ObjectId[] { id1, id3 });
 				var condition = new BarbadosDocument.Builder()
-					.Add(CommonIdentifiers.Index.SearchValue, key)
-					.Add(CommonIdentifiers.Index.LessThan, true)
-					.Add(CommonIdentifiers.Index.Inclusive, true)
+					.Add(BarbadosDocumentKeys.IndexQuery.SearchValue, key)
+					.Add(BarbadosDocumentKeys.IndexQuery.LessThan, true)
+					.Add(BarbadosDocumentKeys.IndexQuery.Inclusive, true)
 					.Build();
 
 				var result = index.Find(condition).ToList();
 
-				Assert.All(keyIds, id => Assert.Contains(id, result));
-				Assert.Equal(keyIds.Length, result.Count);
+				Assert.That(result, Is.EquivalentTo(keyIds));
 			}
 
-			[Fact]
+			[Test]
 			public void DifferentTypes_GreaterThanInclusive_FoundGreaterOrEqualCorrectType()
 			{
 				var name = nameof(DifferentTypes_GreaterThanInclusive_FoundGreaterOrEqualCorrectType);
-				var index = _fixture.CreateTestBTreeIndexFacade(name);
-				var collection = _fixture.GetTestBarbadosCollectionFacade(name);
+				var index = Context.CreateTestBTreeIndexFacade(name);
+				var collection = Context.GetTestBarbadosCollectionFacade(name);
 				var builder = new BarbadosDocument.Builder();
 
 				var v1 = builder.Add(_field, (int)1).Build();
@@ -410,23 +403,22 @@ namespace Barbados.StorageEngine.Tests.Integration.Indexing
 
 				var (key, keyIds) = (2, new ObjectId[] { id3, id5 });
 				var condition = new BarbadosDocument.Builder()
-					.Add(CommonIdentifiers.Index.SearchValue, key)
-					.Add(CommonIdentifiers.Index.GreaterThan, true)
-					.Add(CommonIdentifiers.Index.Inclusive, true)
+					.Add(BarbadosDocumentKeys.IndexQuery.SearchValue, key)
+					.Add(BarbadosDocumentKeys.IndexQuery.GreaterThan, true)
+					.Add(BarbadosDocumentKeys.IndexQuery.Inclusive, true)
 					.Build();
 
 				var result = index.Find(condition).ToList();
 
-				Assert.All(keyIds, id => Assert.Contains(id, result));
-				Assert.Equal(keyIds.Length, result.Count);
+				Assert.That(result, Is.EquivalentTo(keyIds));
 			}
 
-			[Fact]
+			[Test]
 			public void Take_LessThan_FoundLessThanLimited()
 			{
 				var name = nameof(Take_LessThan_FoundLessThanLimited);
-				var index = _fixture.CreateTestBTreeIndexFacade(name);
-				var collection = _fixture.GetTestBarbadosCollectionFacade(name);
+				var index = Context.CreateTestBTreeIndexFacade(name);
+				var collection = Context.GetTestBarbadosCollectionFacade(name);
 				var builder = new BarbadosDocument.Builder();
 
 				var v1 = builder.Add(_field, 1).Build();
@@ -442,23 +434,22 @@ namespace Barbados.StorageEngine.Tests.Integration.Indexing
 
 				var (key, keyIds) = (3, new ObjectId[] { id1, id2 });
 				var condition = new BarbadosDocument.Builder()
-					.Add(CommonIdentifiers.Index.SearchValue, key)
-					.Add(CommonIdentifiers.Index.LessThan, true)
-					.Add(CommonIdentifiers.Index.Take, (long)2)
+					.Add(BarbadosDocumentKeys.IndexQuery.SearchValue, key)
+					.Add(BarbadosDocumentKeys.IndexQuery.LessThan, true)
+					.Add(BarbadosDocumentKeys.IndexQuery.Take, (long)2)
 					.Build();
 
 				var result = index.Find(condition).ToList();
 
-				Assert.All(keyIds, id => Assert.Contains(id, result));
-				Assert.Equal(keyIds.Length, result.Count);
+				Assert.That(result, Is.EquivalentTo(keyIds));
 			}
 
-			[Fact]
+			[Test]
 			public void Take_GreaterThan_FoundGreaterThanLimited()
 			{
 				var name = nameof(Take_GreaterThan_FoundGreaterThanLimited);
-				var index = _fixture.CreateTestBTreeIndexFacade(name);
-				var collection = _fixture.GetTestBarbadosCollectionFacade(name);
+				var index = Context.CreateTestBTreeIndexFacade(name);
+				var collection = Context.GetTestBarbadosCollectionFacade(name);
 				var builder = new BarbadosDocument.Builder();
 
 				var v1 = builder.Add(_field, 1).Build();
@@ -474,23 +465,22 @@ namespace Barbados.StorageEngine.Tests.Integration.Indexing
 
 				var (key, keyIds) = (3, new ObjectId[] { id4, id5 });
 				var condition = new BarbadosDocument.Builder()
-					.Add(CommonIdentifiers.Index.SearchValue, key)
-					.Add(CommonIdentifiers.Index.GreaterThan, true)
-					.Add(CommonIdentifiers.Index.Take, (long)2)
+					.Add(BarbadosDocumentKeys.IndexQuery.SearchValue, key)
+					.Add(BarbadosDocumentKeys.IndexQuery.GreaterThan, true)
+					.Add(BarbadosDocumentKeys.IndexQuery.Take, (long)2)
 					.Build();
 
 				var result = index.Find(condition).ToList();
 
-				Assert.All(keyIds, id => Assert.Contains(id, result));
-				Assert.Equal(keyIds.Length, result.Count);
+				Assert.That(result, Is.EquivalentTo(keyIds));
 			}
 
-			[Fact]
+			[Test]
 			public void Take_Between_FoundBetweenLimited()
 			{
 				var name = nameof(Take_Between_FoundBetweenLimited);
-				var index = _fixture.CreateTestBTreeIndexFacade(name);
-				var collection = _fixture.GetTestBarbadosCollectionFacade(name);
+				var index = Context.CreateTestBTreeIndexFacade(name);
+				var collection = Context.GetTestBarbadosCollectionFacade(name);
 				var builder = new BarbadosDocument.Builder();
 
 				var v1 = builder.Add(_field, 1).Build();
@@ -506,24 +496,23 @@ namespace Barbados.StorageEngine.Tests.Integration.Indexing
 
 				var (start, end, keyIds) = (1, 5, new ObjectId[] { id2, id3 });
 				var condition = new BarbadosDocument.Builder()
-					.Add(CommonIdentifiers.Index.GreaterThan, start)
-					.Add(CommonIdentifiers.Index.LessThan, end)
-					.Add(CommonIdentifiers.Index.Range, true)
-					.Add(CommonIdentifiers.Index.Take, (long)2)
+					.Add(BarbadosDocumentKeys.IndexQuery.GreaterThan, start)
+					.Add(BarbadosDocumentKeys.IndexQuery.LessThan, end)
+					.Add(BarbadosDocumentKeys.IndexQuery.Range, true)
+					.Add(BarbadosDocumentKeys.IndexQuery.Take, (long)2)
 					.Build();
 
 				var result = index.Find(condition).ToList();
 
-				Assert.All(keyIds, id => Assert.Contains(id, result));
-				Assert.Equal(keyIds.Length, result.Count);
+				Assert.That(result, Is.EquivalentTo(keyIds));
 			}
 
-			[Fact]
+			[Test]
 			public void Ascending_Between_FoundBetweenInAscendingOrder()
 			{
 				var name = nameof(Ascending_Between_FoundBetweenInAscendingOrder);
-				var index = _fixture.CreateTestBTreeIndexFacade(name);
-				var collection = _fixture.GetTestBarbadosCollectionFacade(name);
+				var index = Context.CreateTestBTreeIndexFacade(name);
+				var collection = Context.GetTestBarbadosCollectionFacade(name);
 				var builder = new BarbadosDocument.Builder();
 
 				var v1 = builder.Add(_field, 1).Build();
@@ -539,26 +528,23 @@ namespace Barbados.StorageEngine.Tests.Integration.Indexing
 
 				var (start, end, keyIds) = (1, 5, new ObjectId[] { id2, id3, id4 });
 				var condition = new BarbadosDocument.Builder()
-					.Add(CommonIdentifiers.Index.GreaterThan, start)
-					.Add(CommonIdentifiers.Index.LessThan, end)
-					.Add(CommonIdentifiers.Index.Range, true)
-					.Add(CommonIdentifiers.Index.Ascending, true)
+					.Add(BarbadosDocumentKeys.IndexQuery.GreaterThan, start)
+					.Add(BarbadosDocumentKeys.IndexQuery.LessThan, end)
+					.Add(BarbadosDocumentKeys.IndexQuery.Range, true)
+					.Add(BarbadosDocumentKeys.IndexQuery.Ascending, true)
 					.Build();
 
 				var result = index.Find(condition).ToList();
 
-				Assert.Equal(keyIds.Length, result.Count);
-				Assert.Equal(keyIds[0], result[0]);
-				Assert.Equal(keyIds[1], result[1]);
-				Assert.Equal(keyIds[2], result[2]);
+				Assert.That(result, Is.EqualTo(keyIds));
 			}
 
-			[Fact]
+			[Test]
 			public void Descending_Between_FoundBetweenInDescendingOrder()
 			{
 				var name = nameof(Descending_Between_FoundBetweenInDescendingOrder);
-				var index = _fixture.CreateTestBTreeIndexFacade(name);
-				var collection = _fixture.GetTestBarbadosCollectionFacade(name);
+				var index = Context.CreateTestBTreeIndexFacade(name);
+				var collection = Context.GetTestBarbadosCollectionFacade(name);
 				var builder = new BarbadosDocument.Builder();
 
 				var v1 = builder.Add(_field, 1).Build();
@@ -574,18 +560,15 @@ namespace Barbados.StorageEngine.Tests.Integration.Indexing
 
 				var (start, end, keyIds) = (1, 5, new ObjectId[] { id4, id3, id2 });
 				var condition = new BarbadosDocument.Builder()
-					.Add(CommonIdentifiers.Index.GreaterThan, start)
-					.Add(CommonIdentifiers.Index.LessThan, end)
-					.Add(CommonIdentifiers.Index.Range, true)
-					.Add(CommonIdentifiers.Index.Ascending, false)
+					.Add(BarbadosDocumentKeys.IndexQuery.GreaterThan, start)
+					.Add(BarbadosDocumentKeys.IndexQuery.LessThan, end)
+					.Add(BarbadosDocumentKeys.IndexQuery.Range, true)
+					.Add(BarbadosDocumentKeys.IndexQuery.Ascending, false)
 					.Build();
 
 				var result = index.Find(condition).ToList();
 
-				Assert.Equal(keyIds.Length, result.Count);
-				Assert.Equal(keyIds[0], result[2]);
-				Assert.Equal(keyIds[1], result[1]);
-				Assert.Equal(keyIds[2], result[0]);
+				Assert.That(result, Is.EqualTo(keyIds.Reverse()));
 			}
 		}
 	}

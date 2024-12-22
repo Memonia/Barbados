@@ -1,11 +1,11 @@
-﻿using Barbados.StorageEngine;
+﻿using Barbados.Documents;
 
 namespace Barbados.QueryEngine.Query
 {
 	public interface IProjection
 	{
-		IProjection Include(BarbadosIdentifier field);
+		IProjection Include(string field);
 
-		internal ValueSelector GetSelector();
+		internal BarbadosKeySelector GetSelector();
 	}
 }

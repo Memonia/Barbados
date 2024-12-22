@@ -1,8 +1,7 @@
 ﻿using System.Collections.Generic;
 
+using Barbados.Documents;
 using Barbados.QueryEngine.Helpers;
-using Barbados.StorageEngine;
-using Barbados.StorageEngine.Documents;
 
 namespace Barbados.QueryEngine.Evaluation
 {
@@ -10,12 +9,12 @@ namespace Barbados.QueryEngine.Evaluation
 	{
 		public IReadOnlyCollection<IQueryPlanEvaluator> Children { get; }
 
-		private readonly ValueSelector _selector;
+		private readonly BarbadosKeySelector _selector;
 		private readonly BarbadosDocument.Builder _evaluationResultBuilder;
 
 		public ProjectionEvaluator(
 			IReadOnlyCollection<IQueryPlanEvaluator> input,
-			ValueSelector selector,
+			BarbadosKeySelector selector,
 			BarbadosDocument.Builder evaluationResultBuilder
 		)
 		{
@@ -30,18 +29,9 @@ namespace Barbados.QueryEngine.Evaluation
 			{
 				foreach (var document in child.Evaluate())
 				{
-					foreach (var value in _selector)
+					foreach (var key in _selector)
 					{
-						if (value.IsDocument && document.HasDocument(value))
-						{
-							_evaluationResultBuilder.AddDocumentFrom(value, document);
-						}
-
-						else
-						if (document.HasField(value))
-						{
-							_evaluationResultBuilder.AddFieldFrom(value, document);
-						}
+						_evaluationResultBuilder.AddFrom(key, document);
 					}
 
 					yield return _evaluationResultBuilder.Build(reset: true);
