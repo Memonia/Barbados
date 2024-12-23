@@ -29,12 +29,12 @@ namespace Barbados.StorageEngine
 			_collectionControllerService = collectionControllerService;
 		}
 
-		public bool TryGet(ObjectId collectionId, out BarbadosCollectionFacade facade)
+		public bool TryGet(ObjectId collectionId, out ManagedCollectionFacade facade)
 		{
 			return TryGet(collectionId, out facade, out _);
 		}
 	
-		public bool TryGet(ObjectId collectionId, out BarbadosCollectionFacade facade, out BarbadosDocument document)
+		public bool TryGet(ObjectId collectionId, out ManagedCollectionFacade facade, out BarbadosDocument document)
 		{
 			using var tx = _txManager.CreateTransaction(TransactionMode.Read)
 				.IncludeLock(_metaFacade.Id, LockMode.Read)
@@ -98,7 +98,7 @@ namespace Barbados.StorageEngine
 			return true;
 		}
 	
-		public bool TryGet(string collection, out BarbadosCollectionFacade facade)
+		public bool TryGet(string collection, out ManagedCollectionFacade facade)
 		{
 			if (!_metaFacade.Find(collection, out var id))
 			{

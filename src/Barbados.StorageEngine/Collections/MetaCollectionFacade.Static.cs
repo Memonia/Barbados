@@ -48,7 +48,7 @@ namespace Barbados.StorageEngine.Collections
 			return new BTreeIndexFacade(transactionManager, clusteredIndexFacade, info);
 		}
 
-		public static BarbadosCollectionFacade CreateBarbadosCollectionFacade(
+		public static ManagedCollectionFacade CreateBarbadosCollectionFacade(
 			BarbadosDocument document,
 			TransactionManager transactionManager,
 			IndexControllerService indexControllerService,
@@ -59,7 +59,7 @@ namespace Barbados.StorageEngine.Collections
 				BarbadosDocumentKeys.MetaCollection.AbsCollectionDocumentPageHandleField
 			);
 
-			return new BarbadosCollectionFacade(
+			return new ManagedCollectionFacade(
 				document.GetObjectId(),
 				transactionManager,
 				new BTreeClusteredIndexFacade(document.GetObjectId(), new(collectionPageHandleRaw)),

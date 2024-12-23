@@ -9,14 +9,16 @@ using Barbados.StorageEngine.Transactions;
 
 namespace Barbados.StorageEngine.Collections
 {
-	internal abstract class AbstractCollectionFacade
+	internal abstract partial class BaseBarbadosCollectionFacade : IBarbadosCollection
 	{
+		public abstract BarbadosDbObjectName Name { get; }
+
 		public ObjectId Id { get; }
 		public BTreeClusteredIndexFacade ClusteredIndexFacade { get; }
 
 		protected TransactionManager TransactionManager { get; }
 
-		public AbstractCollectionFacade(
+		public BaseBarbadosCollectionFacade(
 			ObjectId id,
 			TransactionManager transactionManager,
 			BTreeClusteredIndexFacade clusteredIndexFacade
@@ -26,6 +28,8 @@ namespace Barbados.StorageEngine.Collections
 			TransactionManager = transactionManager;
 			ClusteredIndexFacade = clusteredIndexFacade;
 		}
+
+		public abstract bool TryGetBTreeIndex(string field, out IReadOnlyBTreeIndex index);
 
 		protected abstract IEnumerable<BTreeIndexFacade> EnumerateIndexes();
 
@@ -55,6 +59,11 @@ namespace Barbados.StorageEngine.Collections
 			}
 
 			TransactionManager.CommitTransaction(tx);
+		}
+
+		public bool TryRead(ObjectId id, out BarbadosDocument document)
+		{
+			return TryRead(id, BarbadosKeySelector.SelectAll, out document);
 		}
 
 		public bool TryRead(ObjectId id, BarbadosKeySelector selector, out BarbadosDocument document)
@@ -117,6 +126,43 @@ namespace Barbados.StorageEngine.Collections
 			else
 			{
 				throw new BarbadosException(BarbadosExceptionCode.MaxDocumentCountReached);
+			}
+		}
+
+		public BarbadosDocument Read(ObjectId id)
+		{
+			return Read(id, BarbadosKeySelector.SelectAll);
+		}
+
+		public BarbadosDocument Read(ObjectId id, BarbadosKeySelector selector)
+		{
+			if (!TryRead(id, selector, out var document))
+			{
+				throw new BarbadosException(
+					BarbadosExceptionCode.DocumentNotFound, $"Document with id {id} not found"
+				);
+			}
+
+			return document;
+		}
+
+		public void Update(ObjectId id, BarbadosDocument document)
+		{
+			if (!TryUpdate(id, document))
+			{
+				throw new BarbadosException(
+					BarbadosExceptionCode.DocumentNotFound, $"Document with id {id} not found"
+				);
+			}
+		}
+
+		public void Remove(ObjectId id)
+		{
+			if (!TryRemove(id))
+			{
+				throw new BarbadosException(
+					BarbadosExceptionCode.DocumentNotFound, $"Document with id {id} not found"
+				);
 			}
 		}
 

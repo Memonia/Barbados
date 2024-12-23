@@ -11,8 +11,10 @@ using Barbados.StorageEngine.Transactions;
 
 namespace Barbados.StorageEngine.Collections
 {
-	internal sealed partial class MetaCollectionFacade : AbstractCollectionFacade, IReadOnlyBarbadosCollection
+	internal sealed partial class MetaCollectionFacade : BaseBarbadosCollectionFacade
 	{
+		public override BarbadosDbObjectName Name => BarbadosDbObjects.Collections.MetaCollection;
+
 		private readonly BTreeIndexFacade _nameIndexFacade;
 		private readonly BarbadosDocument.Builder _documentBuilder;
 
@@ -179,6 +181,18 @@ namespace Barbados.StorageEngine.Collections
 			{
 				throw new BarbadosInternalErrorException();
 			}
+		}
+
+		public override bool TryGetBTreeIndex(string field, out IReadOnlyBTreeIndex index)
+		{
+			if (field == BarbadosDocumentKeys.MetaCollection.AbsCollectionDocumentNameField)
+			{
+				index = _nameIndexFacade;
+				return true;
+			}
+
+			index = default!;
+			return false;
 		}
 
 		protected override IEnumerable<BTreeIndexFacade> EnumerateIndexes()

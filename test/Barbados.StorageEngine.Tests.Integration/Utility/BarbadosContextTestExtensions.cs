@@ -33,14 +33,14 @@ namespace Barbados.StorageEngine.Tests.Integration.Utility
 			return _createBTreeIndexFacade(context, collection, sequence.IndexField, sequence.KeyMaxLength, sequence.UseDefaultKeyMaxLength);
 		}
 
-		public static BarbadosCollectionFacade GetTestBarbadosCollectionFacade(this BarbadosContext context, string name)
+		public static ManagedCollectionFacade GetTestBarbadosCollectionFacade(this BarbadosContext context, string name)
 		{
 			return context.DatabaseFacade.Collections.TryGet(name, out var collection)
 				? collection
 				: throw new BarbadosInternalErrorException();
 		}
 
-		public static BarbadosCollectionFacade CreateTestBarbadosCollectionFacade(this BarbadosContext context, string name)
+		public static ManagedCollectionFacade CreateTestBarbadosCollectionFacade(this BarbadosContext context, string name)
 		{
 			return
 				context.DatabaseFacade.Collections.TryCreate(name) &&
