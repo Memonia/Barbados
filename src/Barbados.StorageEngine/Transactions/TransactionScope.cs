@@ -1,6 +1,6 @@
 ﻿using System;
 
-using Barbados.StorageEngine.Transactions.Recovery;
+using Barbados.StorageEngine.Storage.Wal;
 
 namespace Barbados.StorageEngine.Transactions
 {

@@ -4,12 +4,7 @@
 	{
 		Root = 1,
 		Allocation,
-		BTreeRoot,
-		BTreeNode,
-		BTreeLeaf,
-		BTreeLeafOverflow,
-		Collection,
-		Object,
-		ObjectOverflow
+		BTreeNode = 8,
+		BTreeLeaf
 	}
 }

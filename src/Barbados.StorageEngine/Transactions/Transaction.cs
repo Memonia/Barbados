@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 
+using Barbados.StorageEngine.Storage.Wal;
 using Barbados.StorageEngine.Transactions.Locks;
-using Barbados.StorageEngine.Transactions.Recovery;
 
 namespace Barbados.StorageEngine.Transactions
 {

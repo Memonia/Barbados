@@ -1,0 +1,17 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<TargetFramework>net9.0</TargetFramework>
+		<Nullable>enable</Nullable>
+
+		<Authors>Memonia</Authors>
+		<PackageId>Memonia.Barbados.CommonUtils</PackageId>
+		<Description>Common utilities for internal use</Description>
+		<RepositoryUrl>https://github.com/Memonia/Barbados</RepositoryUrl>
+		<RepositoryType>git</RepositoryType>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<InternalsVisibleTo Include="Sandbox" />
+		<InternalsVisibleTo Include="Barbados.CommonUtils.Tests" />
+	</ItemGroup>
+</Project>

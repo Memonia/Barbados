@@ -26,7 +26,7 @@ namespace Barbados.StorageEngine.Storage
 			
 			var fa = @readonly ? FileAccess.Read : FileAccess.ReadWrite;
 			var handle = File.OpenHandle(path, FileMode.OpenOrCreate, fa);
-			return new DiskStorageWrapper(handle);
+			return new DiskWrapper(handle);
 		}
 	}
 }

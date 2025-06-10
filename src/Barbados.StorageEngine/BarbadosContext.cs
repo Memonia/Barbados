@@ -2,11 +2,8 @@
 using System.IO;
 
 using Barbados.StorageEngine.Caching;
-using Barbados.StorageEngine.Configuration;
 using Barbados.StorageEngine.Storage;
-using Barbados.StorageEngine.Transactions;
-using Barbados.StorageEngine.Transactions.Locks;
-using Barbados.StorageEngine.Transactions.Recovery;
+using Barbados.StorageEngine.Storage.Wal;
 
 namespace Barbados.StorageEngine
 {
@@ -46,7 +43,7 @@ namespace Barbados.StorageEngine
 			switch (connectionSettings.OnConnectAction)
 			{
 				case OnConnectAction.EnsureDatabaseCreated:
-					DatabaseFacade.EnsureCreated(
+					StorageObjectHelpers.EnsureDatabaseCreated(
 						connectionSettings.DatabaseFilePath, connectionSettings.WalFilePath, factory
 					);
 					break;
@@ -54,7 +51,7 @@ namespace Barbados.StorageEngine
 				case OnConnectAction.EnsureDatabaseOverwritten:
 					File.Delete(connectionSettings.WalFilePath);
 					File.Delete(connectionSettings.DatabaseFilePath);
-					DatabaseFacade.EnsureCreated(
+					StorageObjectHelpers.EnsureDatabaseCreated(
 						connectionSettings.DatabaseFilePath, connectionSettings.WalFilePath, factory
 					);
 					break;
@@ -67,7 +64,7 @@ namespace Barbados.StorageEngine
 						);
 					}
 
-					DatabaseFacade.EnsureCreated(
+					StorageObjectHelpers.EnsureDatabaseCreated(
 						connectionSettings.DatabaseFilePath, connectionSettings.WalFilePath, factory
 					);
 					break;
@@ -103,14 +100,9 @@ namespace Barbados.StorageEngine
 				throw;
 			}
 
-			var lockManager = new LockManager();
-			var txManager = new TransactionManager(
-				storageOptions.TransactionAcquireLockTimeout, walBuffer, lockManager
-			);
-
-			DatabaseFacade = new DatabaseFacade(lockManager, txManager);
+			DatabaseFacade = new DatabaseFacade(walBuffer, storageOptions.TransactionAcquireLockTimeout);
 			StorageOptions = storageOptions;
-			ConnectionSettings = connectionSettings;
+			ConnectionSettings = connectionSettings;	
 		}
 
 		public void Dispose()

@@ -1,5 +1,4 @@
 ﻿using Barbados.StorageEngine.Storage.Paging;
-using Barbados.StorageEngine.Storage.Paging.Pages;
 
 namespace Barbados.StorageEngine.Transactions
 {
