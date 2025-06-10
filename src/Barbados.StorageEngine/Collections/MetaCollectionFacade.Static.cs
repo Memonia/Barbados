@@ -1,19 +1,21 @@
 ﻿using System.Collections.Generic;
 
-using Barbados.StorageEngine.Documents;
-using Barbados.StorageEngine.Indexing;
+using Barbados.Documents;
+using Barbados.StorageEngine.BTree;
+using Barbados.StorageEngine.Collections.Extensions;
+using Barbados.StorageEngine.Collections.Indexes;
+using Barbados.StorageEngine.Storage.Paging;
 using Barbados.StorageEngine.Transactions;
 
 namespace Barbados.StorageEngine.Collections
 {
 	internal partial class MetaCollectionFacade
 	{
-		public static int NameIndexKeyMaxLength { get; } = 64;
 		public static ObjectId MetaCollectionId { get; } = new(-1);
 
 		public static IEnumerable<BarbadosDocument> EnumerateIndexDocuments(BarbadosDocument document)
 		{
-			if (document.TryGetDocumentArray(CommonIdentifiers.MetaCollection.IndexArrayField, out var indexesArray))
+			if (document.TryGetDocumentArray(BarbadosDocumentKeys.MetaCollection.IndexArrayField, out var indexesArray))
 			{
 				return indexesArray;
 			}
@@ -21,50 +23,45 @@ namespace Barbados.StorageEngine.Collections
 			return [];
 		}
 
-		public static BTreeIndexFacade CreateBTreeIndexFacade(
-			BarbadosDocument document,
-			TransactionManager transactionManager,
-			BTreeClusteredIndexFacade clusteredIndexFacade
-		)
+		public static IndexInfo CreateIndexInfo(BarbadosDocument indexDocument)
 		{
-			var rawHandle = document.GetInt64(
-				CommonIdentifiers.MetaCollection.IndexDocumentPageHandleField
-			);
-			var indexField = document.GetString(
-				CommonIdentifiers.MetaCollection.IndexDocumentIndexedFieldField
-			); 
-			var keyMaxLength = document.GetInt32(
-				CommonIdentifiers.MetaCollection.IndexDocumentKeyMaxLengthField
+			var rawHandle = indexDocument.GetInt64(
+				BarbadosDocumentKeys.MetaCollection.IndexDocumentPageHandleField
 			);
 
-			var info = new BTreeIndexInfo()
-			{
-				CollectionId = clusteredIndexFacade.Info.CollectionId,
-				RootHandle = new(rawHandle),
-				IndexField = indexField,
-				KeyMaxLength = keyMaxLength
-			};
+			var field = indexDocument.GetString(
+				BarbadosDocumentKeys.MetaCollection.IndexDocumentIndexedFieldField
+			);
 
-			return new BTreeIndexFacade(transactionManager, clusteredIndexFacade, info);
+			return new IndexInfo(
+				new BTreeInfo(new PageHandle(rawHandle)), field
+			);
 		}
 
-		public static BarbadosCollectionFacade CreateBarbadosCollectionFacade(
+		public static ManagedCollectionFacade CreateBarbadosCollectionFacade(
 			BarbadosDocument document,
 			TransactionManager transactionManager,
 			IndexControllerService indexControllerService,
-			CollectionControllerService collectionControllerService
+			CollectionMetadataService metadataService
 		)
 		{
 			var collectionPageHandleRaw = document.GetInt64(
-				CommonIdentifiers.MetaCollection.AbsCollectionDocumentPageHandleField
+				BarbadosDocumentKeys.MetaCollection.AbsCollectionDocumentPageHandleField
 			);
 
-			return new BarbadosCollectionFacade(
-				document.Id,
-				transactionManager,
-				new BTreeClusteredIndexFacade(document.Id, new(collectionPageHandleRaw)),
-				indexControllerService,
-				collectionControllerService
+			var idGenMode = document.GetInt32(
+				BarbadosDocumentKeys.MetaCollection.AbsCollectionDocumentIdGenModeField
+			);
+
+			var info = new CollectionInfo()
+			{
+				BTreeInfo = new BTreeInfo(new PageHandle(collectionPageHandleRaw)),
+				CollectionId = document.GetObjectId(),
+				AutomaticIdGeneratorMode = (AutomaticIdGeneratorMode)idGenMode
+			};
+
+			return new ManagedCollectionFacade(
+				info, transactionManager, metadataService, indexControllerService
 			);
 		}
 	}

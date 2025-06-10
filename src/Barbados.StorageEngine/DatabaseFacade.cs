@@ -1,14 +1,18 @@
-﻿
+﻿using System;
+
+using Barbados.StorageEngine.BTree;
 using Barbados.StorageEngine.Collections;
-using Barbados.StorageEngine.Indexing;
+using Barbados.StorageEngine.Collections.Extensions;
+using Barbados.StorageEngine.Collections.Indexes;
 using Barbados.StorageEngine.Storage.Paging;
-using Barbados.StorageEngine.Storage.Paging.Pages;
+using Barbados.StorageEngine.Storage.Wal;
+using Barbados.StorageEngine.Storage.Wal.Pages;
 using Barbados.StorageEngine.Transactions;
 using Barbados.StorageEngine.Transactions.Locks;
 
 namespace Barbados.StorageEngine
 {
-	internal sealed partial class DatabaseFacade : IDatabaseFacade
+	internal sealed class DatabaseFacade : IDatabaseFacade
 	{
 		IDatabaseMonitor IDatabaseFacade.Monitor => Monitor;
 		IIndexController IDatabaseFacade.Indexes => Indexes;
@@ -23,28 +27,26 @@ namespace Barbados.StorageEngine
 		private readonly LockManager _lockManager;
 		private readonly TransactionManager _txManager;
 
-		public DatabaseFacade(LockManager lockManager, TransactionManager transactionManager)
+		public DatabaseFacade(WalBuffer wal, TimeSpan transactionAcquireLockTimeout)
 		{
-			_lockManager = lockManager;
-			_txManager = transactionManager;
+			_lockManager = new();
+			_txManager = new(transactionAcquireLockTimeout, wal, _lockManager);
 
 			// Initialise meta collection
 			_lockManager.CreateLock(MetaCollectionFacade.MetaCollectionId);
 			var meta = _createMetaFacade();
 
 			// Create locks for existing collections
-			foreach (var document in meta.GetCursor(ValueSelector.SelectNone))
+			using var cursor = meta.Find(FindOptions.All);
+			foreach (var document in cursor)
 			{
-				_lockManager.CreateLock(document.Id);
+				_lockManager.CreateLock(document.GetObjectId());
 			}
 
 			var ics = new IndexControllerService();
-			var ccs = new CollectionControllerService(meta);
-			Collections = new(_lockManager, _txManager, meta, ics, ccs);
+			Collections = new(_lockManager, _txManager, meta, ics);
 			Indexes = new(_txManager, meta, Collections, ics);
 			Monitor = new(meta);
-
-			Indexes.LoadIndexes();
 		}
 
 		public ITransactionBuilder CreateTransaction(TransactionMode mode)
@@ -65,26 +67,23 @@ namespace Barbados.StorageEngine
 		private MetaCollectionFacade _createMetaFacade()
 		{
 			using var tx = _txManager.GetAutomaticTransaction(
-				MetaCollectionFacade.MetaCollectionId, TransactionMode.ReadWrite
+				MetaCollectionFacade.MetaCollectionId, TransactionMode.Read
 			);
 
 			var root = tx.Load<RootPage>(PageHandle.Root);
-			var clusteredIndexFacade = new BTreeClusteredIndexFacade(
-				MetaCollectionFacade.MetaCollectionId, root.MetaCollectionPageHandle
+			var mcinfo = new CollectionInfo()
+			{
+				BTreeInfo = new BTreeInfo(root.MetaCollectionPageHandle),
+				CollectionId = MetaCollectionFacade.MetaCollectionId,
+				AutomaticIdGeneratorMode = AutomaticIdGeneratorMode.BetterSpaceUtilisation
+			};
+
+			var niinfo = new IndexInfo(
+				new BTreeInfo(root.MetaCollectionNameIndexRootPageHandle),
+				BarbadosDocumentKeys.MetaCollection.AbsCollectionDocumentNameField
 			);
 
-			var nameIndexFacade = new BTreeIndexFacade(
-				_txManager, clusteredIndexFacade,
-				new()
-				{
-					CollectionId = MetaCollectionFacade.MetaCollectionId,
-					RootHandle = root.MetaCollectionNameIndexRootPageHandle,
-					IndexField = CommonIdentifiers.MetaCollection.AbsCollectionDocumentNameField,
-					KeyMaxLength = MetaCollectionFacade.NameIndexKeyMaxLength
-				}
-			);
-
-			return new MetaCollectionFacade(_txManager, clusteredIndexFacade, nameIndexFacade);
+			return new MetaCollectionFacade(mcinfo, niinfo, TransactionManager);
 		}
 	}
 }

@@ -1,0 +1,42 @@
+name: 'nuget'
+on:
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'
+
+jobs:
+  ci:
+    name: 'ci'
+    uses: './.github/workflows/ci.yaml'
+
+  push:
+    name: 'push'
+    needs: [ci]
+    runs-on: 'ubuntu-latest'
+    steps:
+    - name: 'get-version-from-tag'
+      run: 'echo "VERSION=${GITHUB_REF/refs\/tags\/v/}" >> $GITHUB_ENV'
+
+    - name: 'checkout'
+      uses: 'actions/checkout@v4'
+
+    - name: 'setup-dotnet'
+      uses: 'actions/setup-dotnet@v4'
+      with:
+        dotnet-version: '8.0.x'
+
+    - name: 'restore'
+      run: 'dotnet restore'
+
+    - name: 'build'
+      run: 'dotnet build --configuration Release --no-restore /p:Version=${VERSION}'
+
+    - name: 'pack'
+      run: |
+        'dotnet pack src/Barbados.CommonUtils --configuration Release --output nupkgs --no-build /p:Version=${VERSION}'
+        'dotnet pack src/Barbados.Documents --configuration Release --output nupkgs --no-build /p:Version=${VERSION}'
+        'dotnet pack src/Barbados.QueryEngine --configuration Release --output nupkgs --no-build /p:Version=${VERSION}'
+        'dotnet pack src/Barbados.StorageEngine --configuration Release --output nupkgs --no-build /p:Version=${VERSION}'
+
+    - name: 'push'
+      run: 'dotnet nuget push "nupkgs/*.nupkg" --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json'

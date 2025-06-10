@@ -1,40 +1,36 @@
 ﻿using System;
 using System.Collections.Generic;
 
+using Barbados.Documents;
 using Barbados.QueryEngine.Helpers;
 using Barbados.StorageEngine.Collections;
-using Barbados.StorageEngine.Documents;
 
 namespace Barbados.QueryEngine.Query
 {
-	internal sealed class Query(IReadOnlyBarbadosCollection collection, QueryPlanBuilder builder) : IQuery
+	public sealed class Query
 	{
-		private void _throwTranslated()
+		private readonly QueryPlanBuilder _builder;
+		private readonly IReadOnlyBarbadosCollection _collection;
+
+		private IQueryPlanEvaluator? _translated;
+
+		internal Query(IReadOnlyBarbadosCollection collection, QueryPlanBuilder builder)
 		{
-			if (_translated is not null)
-			{
-				throw new InvalidOperationException(
-					"The query plan has been translated and cannot be modified anymore"
-				);
-			}
+			_builder = builder;
+			_collection = collection;
 		}
 
-		private IQueryPlanEvaluator? _translated = null;
-
-		private readonly QueryPlanBuilder _builder = builder;
-		private readonly IReadOnlyBarbadosCollection collection = collection;
-
-		public IQuery Filter(IFilter filter)
+		public Query Filter(Filter filter)
 		{
 			_throwTranslated();
 			_builder.Filter(filter.Expression);
 			return this;
 		}
 
-		public IQuery Project(IProjection projection)
+		public Query Project(Projection projection)
 		{
 			_throwTranslated();
-			_builder.Project(projection.GetSelector());
+			_builder.Project(projection.GetCurrentSelection());
 			return this;
 		}
 
@@ -55,9 +51,19 @@ namespace Barbados.QueryEngine.Query
 			return _translated!.Evaluate();
 		}
 
+		private void _throwTranslated()
+		{
+			if (_translated is not null)
+			{
+				throw new InvalidOperationException(
+					"The query plan has been translated and cannot be modified anymore"
+				);
+			}
+		}
+
 		private void _ensureTranslated()
 		{
-			_translated ??= QueryTranslator.TranslatePlan(_builder.Build(), collection);
+			_translated ??= QueryTranslator.TranslatePlan(_builder.Build(), _collection);
 		}
 	}
 }

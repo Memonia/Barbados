@@ -1,7 +1,7 @@
 ﻿using System;
 
+using Barbados.Documents;
 using Barbados.QueryEngine.Build.Expressions;
-using Barbados.StorageEngine.Documents;
 
 namespace Barbados.QueryEngine.Evaluation.Expressions
 {

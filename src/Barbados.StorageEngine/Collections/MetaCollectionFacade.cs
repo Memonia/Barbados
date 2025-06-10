@@ -1,116 +1,95 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 
-using Barbados.StorageEngine.Documents;
+using Barbados.Documents;
+using Barbados.StorageEngine.BTree;
+using Barbados.StorageEngine.Collections.Extensions;
+using Barbados.StorageEngine.Collections.Indexes;
 using Barbados.StorageEngine.Exceptions;
-using Barbados.StorageEngine.Indexing;
-using Barbados.StorageEngine.Storage.Paging.Pages;
 using Barbados.StorageEngine.Transactions;
 
 namespace Barbados.StorageEngine.Collections
 {
-	internal sealed partial class MetaCollectionFacade : AbstractCollectionFacade, IReadOnlyBarbadosCollection
+	internal sealed partial class MetaCollectionFacade : BaseBarbadosCollectionFacade, IReadOnlyBarbadosCollection
 	{
-		private readonly BTreeIndexFacade _nameIndexFacade;
+		public override BarbadosDbObjectName Name => BarbadosDbObjects.Collections.MetaCollection;
+
+		private readonly IndexInfo _nameIndexInfo;
 		private readonly BarbadosDocument.Builder _documentBuilder;
 
-		public MetaCollectionFacade(
-			TransactionManager transactionManager,
-			BTreeClusteredIndexFacade clusteredIndexFacade,
-			BTreeIndexFacade nameIndexFacade
-		) : base(MetaCollectionId, transactionManager, clusteredIndexFacade)
+		public MetaCollectionFacade(CollectionInfo info, IndexInfo nameIndexInfo, TransactionManager transactionManager)
+			: base(info, transactionManager)
 		{
-			_nameIndexFacade = nameIndexFacade;
+			_nameIndexInfo = nameIndexInfo;
 			_documentBuilder = new();
 		}
 
-		public bool Find(string collection, out ObjectId id)
+		public bool TryGetCollectionId(string collection, out ObjectId id)
 		{
-			using var tx = TransactionManager.GetAutomaticTransaction(MetaCollectionId, TransactionMode.Read);
-			var ids = _nameIndexFacade.FindExact(collection).ToList();
-			if (ids.Count > 1)
-			{
-				throw new BarbadosInternalErrorException();
-			}
-
-			if (ids.Count != 1)
+			var fo = new FindOptionsBuilder().Eq(collection).Build();
+			using var cursor = Find(fo, _nameIndexInfo.Field);
+			var doc = cursor.FirstOrDefault();
+			if (doc is null)
 			{
 				id = default!;
 				return false;
 			}
 
-			id = ids[0];
+			id = doc.GetObjectId();
 			return true;
 		}
 
-		public ObjectId Create(string collection)
+		public bool TryGetCollectionDocument(ObjectId id, out BarbadosDocument document)
+		{
+			var fo = new FindOptionsBuilder().Eq(id.Value).Build();
+			using var cursor = Find(fo);
+			document = cursor.FirstOrDefault()!;
+			return document is not null;
+		}
+
+		public ObjectId Create(string collection, CreateCollectionOptions options)
 		{
 			using var tx = TransactionManager.GetAutomaticTransaction(MetaCollectionId, TransactionMode.ReadWrite);
-			var h = tx.AllocateHandle();
-			var page = new CollectionPage(h);
+			var btreeInfo = BTreeContext.CreateBTree(tx);
 
-			tx.Save(page);
 			var collectionDocument = _documentBuilder
-				.Add(CommonIdentifiers.MetaCollection.CollectionDocumentNameField, collection)
-				.Add(CommonIdentifiers.MetaCollection.CollectionDocumentPageHandleField, h.Handle)
+				.Add(BarbadosDocumentKeys.MetaCollection.CollectionDocumentNameField, collection)
+				.Add(BarbadosDocumentKeys.MetaCollection.CollectionDocumentPageHandleField, btreeInfo.RootHandle.Handle)
+				.Add(BarbadosDocumentKeys.MetaCollection.CollectionDocumentIdGenModeField, (int)options.AutomaticIdGeneratorMode)
 				.Build();
 
-			var document = _documentBuilder
-				.Add(CommonIdentifiers.MetaCollection.CollectionDocumentField, collectionDocument)
-				.Build();
+			_documentBuilder
+				.Add(BarbadosDocumentKeys.MetaCollection.CollectionDocumentField, collectionDocument);
 
-			var id = Insert(document);
+			var document = InsertWithAutomaticId(_documentBuilder);
 			TransactionManager.CommitTransaction(tx);
-			return id;
+			return document.GetObjectId();
 		}
 
-		public BarbadosDocument CreateIndex(BarbadosDocument document, string field)
+		public BarbadosDocument CreateIndex(BarbadosDocument document, BarbadosKey field)
 		{
-			return CreateIndex(document, field, Constants.DefaultMaxIndexKeyLength);
-		}
-
-		public BarbadosDocument CreateIndex(BarbadosDocument document, string field, int keyMaxLength)
-		{
-			if (keyMaxLength < Constants.MinIndexKeyMaxLength || keyMaxLength > Constants.IndexKeyMaxLength)
-			{
-				throw new ArgumentException(
-					$"Allowed custom length is between " +
-					$"{Constants.MinIndexKeyMaxLength} and " +
-					$"{Constants.IndexKeyMaxLength} bytes, got {keyMaxLength}",
-					nameof(keyMaxLength)
-				);
-			}
-
-			var collection = document.GetString(CommonIdentifiers.MetaCollection.AbsCollectionDocumentNameField);
-			if (!document.TryGetDocumentArray(CommonIdentifiers.MetaCollection.IndexArrayField, out var indexArray))
+			var collection = document.GetString(BarbadosDocumentKeys.MetaCollection.AbsCollectionDocumentNameField);
+			if (!document.TryGetDocumentArray(BarbadosDocumentKeys.MetaCollection.IndexArrayField, out var indexArray))
 			{
 				indexArray = [];
 			}
 
 			foreach (var index in indexArray)
 			{
-				var storedIndexedFieldName = index.GetString(CommonIdentifiers.MetaCollection.IndexDocumentIndexedFieldField);
+				var storedIndexedFieldName = index.GetString(BarbadosDocumentKeys.MetaCollection.IndexDocumentIndexedFieldField);
 				if (field == storedIndexedFieldName)
 				{
-					throw new BarbadosException(
-						BarbadosExceptionCode.IndexAlreadyExists,
-						$"Index on '{field}' in collection '{collection}' already exists"
-					);
+					BarbadosCollectionExceptionHelpers.ThrowIndexAlreadyExists(collection, field.ToString());
 				}
 			}
 
 			using var tx = TransactionManager.GetAutomaticTransaction(MetaCollectionId, TransactionMode.ReadWrite);
-			var ih = tx.AllocateHandle();
-			var ipage = new BTreeRootPage(ih);
-
-			tx.Save(ipage);
+			var btreeInfo = BTreeContext.CreateBTree(tx);
 
 			var indexDocument = _documentBuilder
-				.Add(CommonIdentifiers.MetaCollection.IndexDocumentIndexedFieldField, field)
-				.Add(CommonIdentifiers.MetaCollection.IndexDocumentPageHandleField, ih.Handle)
-				.Add(CommonIdentifiers.MetaCollection.IndexDocumentKeyMaxLengthField, keyMaxLength)
+				.Add(BarbadosDocumentKeys.MetaCollection.IndexDocumentIndexedFieldField, field.ToString())
+				.Add(BarbadosDocumentKeys.MetaCollection.IndexDocumentPageHandleField, btreeInfo.RootHandle.Handle)
 				.Build();
 
 			var updatedIndexesArray = new BarbadosDocument[indexArray.Length + 1];
@@ -118,11 +97,12 @@ namespace Barbados.StorageEngine.Collections
 			updatedIndexesArray[^1] = indexDocument;
 
 			var updated = _documentBuilder
-				.AddFieldFrom(CommonIdentifiers.MetaCollection.CollectionDocumentField, document)
-				.Add(CommonIdentifiers.MetaCollection.IndexArrayField, updatedIndexesArray)
+				.AddObjectId(document.GetObjectId())
+				.AddFrom(BarbadosDocumentKeys.MetaCollection.CollectionDocumentField, document)
+				.Add(BarbadosDocumentKeys.MetaCollection.IndexArrayField, updatedIndexesArray)
 				.Build();
 
-			if (!TryUpdate(document.Id, updated))
+			if (!TryUpdate(updated))
 			{
 				throw new BarbadosInternalErrorException();
 			}
@@ -134,31 +114,33 @@ namespace Barbados.StorageEngine.Collections
 		public void Rename(BarbadosDocument document, string name)
 		{
 			_documentBuilder
-				.Add(CommonIdentifiers.MetaCollection.AbsCollectionDocumentNameField, name)
-				.AddFieldFrom(CommonIdentifiers.MetaCollection.AbsCollectionDocumentPageHandleField, document);
+				.AddObjectId(document.GetObjectId())
+				.Add(BarbadosDocumentKeys.MetaCollection.AbsCollectionDocumentNameField, name)
+				.AddFrom(BarbadosDocumentKeys.MetaCollection.AbsCollectionDocumentPageHandleField, document)
+				.AddFrom(BarbadosDocumentKeys.MetaCollection.AbsCollectionDocumentIdGenModeField, document);
 
-			if (document.TryGetDocumentArray(CommonIdentifiers.MetaCollection.IndexArrayField, out var indexesArray))
+			if (document.TryGetDocumentArray(BarbadosDocumentKeys.MetaCollection.IndexArrayField, out var indexesArray))
 			{
-				_documentBuilder.Add(CommonIdentifiers.MetaCollection.IndexArrayField, indexesArray);
+				_documentBuilder.Add(BarbadosDocumentKeys.MetaCollection.IndexArrayField, indexesArray);
 			}
 
 			var updated = _documentBuilder.Build();
-			if (!TryUpdate(document.Id, updated))
+			if (!TryUpdate(updated))
 			{
 				throw new BarbadosInternalErrorException();
 			}
 		}
 
-		public void RemoveIndex(BarbadosDocument document, string field)
+		public void RemoveIndex(BarbadosDocument document, BarbadosKey field)
 		{
-			var indexArray = document.GetDocumentArray(CommonIdentifiers.MetaCollection.IndexArrayField);
+			var indexArray = document.GetDocumentArray(BarbadosDocumentKeys.MetaCollection.IndexArrayField);
 			Debug.Assert(indexArray.Length > 0);
 
 			var updatedIndexesArray = new BarbadosDocument[indexArray.Length - 1];
 			for (int i = 0; i < updatedIndexesArray.Length;)
 			{
 				var indexDocument = indexArray[i];
-				var indexField = indexDocument.GetString(CommonIdentifiers.MetaCollection.IndexDocumentIndexedFieldField);
+				var indexField = indexDocument.GetString(BarbadosDocumentKeys.MetaCollection.IndexDocumentIndexedFieldField);
 				if (indexField != field)
 				{
 					updatedIndexesArray[i] = indexDocument;
@@ -168,22 +150,38 @@ namespace Barbados.StorageEngine.Collections
 
 			if (updatedIndexesArray.Length > 0)
 			{
-				_documentBuilder.Add(CommonIdentifiers.MetaCollection.IndexArrayField, updatedIndexesArray);
+				_documentBuilder.Add(BarbadosDocumentKeys.MetaCollection.IndexArrayField, updatedIndexesArray);
 			}
 
 			var updated = _documentBuilder
-				.AddFieldFrom(CommonIdentifiers.MetaCollection.CollectionDocumentField, document)
+				.AddObjectId(document.GetObjectId())
+				.AddFrom(BarbadosDocumentKeys.MetaCollection.CollectionDocumentField, document)
 				.Build();
 
-			if (!TryUpdate(document.Id, updated))
+			if (!TryUpdate(updated))
 			{
 				throw new BarbadosInternalErrorException();
 			}
 		}
 
-		protected override IEnumerable<BTreeIndexFacade> EnumerateIndexes()
+		public bool IndexExists(BarbadosKey field)
 		{
-			yield return _nameIndexFacade;
+			return field == BarbadosDocumentKeys.MetaCollection.AbsCollectionDocumentNameField;
+		}
+
+		protected override IndexInfo GetIndexInfo(BarbadosKey field)
+		{
+			if (field != BarbadosDocumentKeys.MetaCollection.AbsCollectionDocumentNameField)
+			{
+				BarbadosCollectionExceptionHelpers.ThrowIndexDoesNotExist(Id, field.ToString());
+			}
+
+			return _nameIndexInfo;
+		}
+
+		protected override IEnumerable<IndexInfo> EnumerateIndexes()
+		{
+			yield return _nameIndexInfo;
 		}
 	}
 }

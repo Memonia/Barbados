@@ -1,4 +1,4 @@
-﻿using Barbados.StorageEngine.Documents;
+﻿using Barbados.Documents;
 
 namespace Barbados.QueryEngine.Evaluation.Expressions
 {

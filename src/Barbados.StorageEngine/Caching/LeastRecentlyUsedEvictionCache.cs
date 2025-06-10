@@ -2,6 +2,7 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Threading;
 
 namespace Barbados.StorageEngine.Caching
 {
@@ -18,7 +19,7 @@ namespace Barbados.StorageEngine.Caching
 		public int MaxCount { get; }
 
 		// For _evictionList
-		private readonly object _sync;
+		private readonly Lock _sync;
 
 		// Most recently accessed value is stored at the head of the list
 		private readonly LinkedList<ValueWrapper> _evictionList;

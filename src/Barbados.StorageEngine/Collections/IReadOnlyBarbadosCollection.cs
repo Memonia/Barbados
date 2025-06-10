@@ -1,22 +1,16 @@
-﻿using Barbados.StorageEngine.Documents;
-using Barbados.StorageEngine.Indexing;
+﻿using Barbados.Documents;
 
 namespace Barbados.StorageEngine.Collections
 {
 	public interface IReadOnlyBarbadosCollection
 	{
 		ObjectId Id { get; }
-		BarbadosIdentifier Name { get; }
+		BarbadosDbObjectName Name { get; }
+		AutomaticIdGeneratorMode AutomaticIdGeneratorMode { get; }
 
-		bool TryGetBTreeIndex(string field, out IReadOnlyBTreeIndex index);
+		bool IndexExists(BarbadosKey field);
 
-		bool TryRead(ObjectId id, out BarbadosDocument document);
-		bool TryRead(ObjectId id, ValueSelector selector, out BarbadosDocument document);
-
-		BarbadosDocument Read(ObjectId id);
-		BarbadosDocument Read(ObjectId id, ValueSelector selector);
-
-		ICursor<BarbadosDocument> GetCursor();
-		ICursor<BarbadosDocument> GetCursor(ValueSelector selector);
+		ICursor<BarbadosDocument> Find(FindOptions options);
+		ICursor<BarbadosDocument> Find(FindOptions options, BarbadosKey indexField);
 	}
 }

@@ -1,0 +1,21 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<TargetFramework>net9.0</TargetFramework>
+		<Nullable>enable</Nullable>
+
+		<Authors>Memonia</Authors>
+		<PackageId>Memonia.Barbados.Documents</PackageId>
+		<Description>Document implementation for the Barbados document store</Description>
+		<RepositoryUrl>https://github.com/Memonia/Barbados</RepositoryUrl>
+		<RepositoryType>git</RepositoryType>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<InternalsVisibleTo Include="Sandbox" />
+		<InternalsVisibleTo Include="Barbados.Documents.Tests" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <ProjectReference Include="..\Barbados.CommonUtils\Barbados.CommonUtils.csproj" />
+	</ItemGroup>
+</Project>

@@ -1,10 +1,10 @@
 ﻿using System.Collections.Generic;
-using System.Linq;
 
+using Barbados.Documents;
 using Barbados.StorageEngine.Collections;
-using Barbados.StorageEngine.Documents;
+using Barbados.StorageEngine.Collections.Extensions;
+using Barbados.StorageEngine.Collections.Indexes;
 using Barbados.StorageEngine.Exceptions;
-using Barbados.StorageEngine.Indexing;
 using Barbados.StorageEngine.Transactions;
 using Barbados.StorageEngine.Transactions.Locks;
 
@@ -28,15 +28,104 @@ namespace Barbados.StorageEngine
 			_metaFacade = metaCollectionFacade;
 			_collectionController = collectionController;
 			_indexControllerService = indexControllerService;
+
+			_loadIndexInfo();
 		}
 
-		public void LoadIndexes()
+		public bool TryGet(ObjectId collectionId, BarbadosKey field, out IndexInfo info)
+		{
+			return _indexControllerService.TryGet(collectionId, field, out info);
+		}
+
+		public bool TryCreate(ObjectId collectionId, BarbadosKey field)
+		{
+			if (!_collectionController.TryGet(collectionId, out var collection, out var document))
+			{
+				return false;
+			}
+
+			using var tx = _txManager.CreateTransaction(TransactionMode.ReadWrite)
+				.IncludeLock(collectionId, LockMode.Write)
+				.IncludeLock(_metaFacade.Id, LockMode.Write)
+				.BeginTransaction();
+
+			var idoc = _metaFacade.CreateIndex(document, field);
+			var info = MetaCollectionFacade.CreateIndexInfo(idoc);
+			collection.IndexBuild(info);
+
+			_indexControllerService.Add(collectionId, info);
+			_txManager.CommitTransaction(tx);
+			return true;
+		}
+
+		public bool TryDelete(ObjectId collectionId, string field)
+		{
+			if (!_indexControllerService.TryGet(collectionId, field, out var info))
+			{
+				return false;
+			}
+
+			if (!_collectionController.TryGet(collectionId, out var facade, out var document))
+			{
+				return false;
+			}
+
+			using var tx = _txManager.CreateTransaction(TransactionMode.ReadWrite)
+				.IncludeLock(collectionId, LockMode.Write)
+				.IncludeLock(_metaFacade.Id, LockMode.Write)
+				.BeginTransaction();
+
+			facade.IndexDeallocate(info);
+			_metaFacade.RemoveIndex(document, field);
+
+			if (!_indexControllerService.TryRemove(collectionId, field, out _))
+			{
+				throw new BarbadosInternalErrorException();
+			}
+
+			_txManager.CommitTransaction(tx);
+			return true;
+		}
+
+		public bool TryGet(string collectionName, string field, out IndexInfo info)
+		{
+			if (!_metaFacade.TryGetCollectionId(collectionName, out var id))
+			{
+				info = default!;
+				return false;
+			}
+
+			return TryGet(id, field, out info);
+		}
+
+		public bool TryCreate(string collectionName, string field)
+		{
+			if (!_metaFacade.TryGetCollectionId(collectionName, out var id))
+			{
+				return false;
+			}
+
+			return TryCreate(id, field);
+		}
+
+		public bool TryDelete(string collectionName, string field)
+		{
+			if (!_metaFacade.TryGetCollectionId(collectionName, out var id))
+			{
+				return false;
+			}
+
+			return TryDelete(id, field);
+		}
+
+		private void _loadIndexInfo()
 		{
 			var indexDocuments = new Dictionary<ObjectId, List<BarbadosDocument>>();
-			foreach (var document in _metaFacade.GetCursor())
+			using var cursor = _metaFacade.Find(FindOptions.All);
+			foreach (var document in cursor)
 			{
 				indexDocuments.Add(
-					document.Id, MetaCollectionFacade.EnumerateIndexDocuments(document).ToList()
+					document.GetObjectId(), [.. MetaCollectionFacade.EnumerateIndexDocuments(document)]
 				);
 			}
 
@@ -49,97 +138,9 @@ namespace Barbados.StorageEngine
 						throw new BarbadosInternalErrorException();
 					}
 
-					_indexControllerService.AddFacade(
-						MetaCollectionFacade.CreateBTreeIndexFacade(
-							doc, _txManager, collection.ClusteredIndexFacade
-						)
-					);
+					_indexControllerService.Add(id, MetaCollectionFacade.CreateIndexInfo(doc));
 				}
 			}
-		}
-
-		public bool TryGet(ObjectId collectionId, string field, out BTreeIndexFacade facade)
-		{
-			return _indexControllerService.TryGetFacade(collectionId, field, out facade);
-		}
-
-		public bool TryCreate(ObjectId collectionId, string field, int maxKeyLength, bool useDefault)
-		{
-			if (!_collectionController.TryGet(collectionId, out var collection, out var document))
-			{
-				return false;
-			}
-
-			using var tx = _txManager.CreateTransaction(TransactionMode.ReadWrite)
-				.IncludeLock(collectionId, LockMode.Write)
-				.IncludeLock(_metaFacade.Id, LockMode.Write)
-				.BeginTransaction();
-
-			var idoc = useDefault
-				? _metaFacade.CreateIndex(document, field)
-				: _metaFacade.CreateIndex(document, field, maxKeyLength);
-
-			var facade = MetaCollectionFacade.CreateBTreeIndexFacade(idoc, _txManager, collection.ClusteredIndexFacade);
-			collection.BTreeIndexBuild(facade);
-
-			_indexControllerService.AddFacade(facade);
-			_txManager.CommitTransaction(tx);
-			return true;
-		}
-
-		public bool TryDelete(ObjectId collectionId, string field)
-		{
-			if (!_indexControllerService.TryGetFacade(collectionId, field, out var facade))
-			{
-				return false;
-			}
-
-			if (!_collectionController.TryGet(collectionId, out _, out var document))
-			{
-				return false;
-			}
-
-			using var tx = _txManager.CreateTransaction(TransactionMode.ReadWrite)
-				.IncludeLock(collectionId, LockMode.Write)
-				.IncludeLock(_metaFacade.Id, LockMode.Write)
-				.BeginTransaction();
-
-			_indexControllerService.TryRemoveFacade(collectionId, field, out _);
-			_metaFacade.RemoveIndex(document, field);
-			facade.Deallocate(tx);
-			_txManager.CommitTransaction(tx);
-			return true;
-		}
-
-		public bool TryGet(string collectionName, string field, out BTreeIndexFacade facade)
-		{
-			if (!_metaFacade.Find(collectionName, out var id))
-			{
-				facade = default!;
-				return false;
-			}
-
-			return TryGet(id, field, out facade);
-		}
-
-		public bool TryCreate(string collectionName, string field, int maxKeyLength, bool useDefault)
-		{
-			if (!_metaFacade.Find(collectionName, out var id))
-			{
-				return false;
-			}
-
-			return TryCreate(id, field, maxKeyLength, useDefault);
-		}
-
-		public bool TryDelete(string collectionName, string field)
-		{
-			if (!_metaFacade.Find(collectionName, out var id))
-			{
-				return false;
-			}
-
-			return TryDelete(id, field);
 		}
 	}
 }

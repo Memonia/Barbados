@@ -1,20 +1,22 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
-		<TargetFramework>net8.0</TargetFramework>
+		<TargetFramework>net9.0</TargetFramework>
 		<Nullable>enable</Nullable>
 
 		<Authors>Memonia</Authors>
 		<PackageId>Memonia.Barbados.QueryEngine</PackageId>
-		<Description>A query engine for Barbados document store</Description>
+		<Description>Query support for the Barbados document store</Description>
 		<RepositoryUrl>https://github.com/Memonia/Barbados</RepositoryUrl>
 		<RepositoryType>git</RepositoryType>
 	</PropertyGroup>
 
 	<ItemGroup>
 		<InternalsVisibleTo Include="Sandbox" />
+		<InternalsVisibleTo Include="Barbados.QueryEngine.Tests.Integration" />
 	</ItemGroup>
 
 	<ItemGroup>
+		<ProjectReference Include="..\Barbados.Documents\Barbados.Documents.csproj" />
 		<ProjectReference Include="..\Barbados.StorageEngine\Barbados.StorageEngine.csproj" />
 	</ItemGroup>
 </Project>

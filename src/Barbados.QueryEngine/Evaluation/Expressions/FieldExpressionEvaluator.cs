@@ -1,6 +1,5 @@
-﻿using Barbados.QueryEngine.Build.Expressions;
-using Barbados.StorageEngine;
-using Barbados.StorageEngine.Documents;
+﻿using Barbados.Documents;
+using Barbados.QueryEngine.Build.Expressions;
 
 namespace Barbados.QueryEngine.Evaluation.Expressions
 {
@@ -8,7 +7,7 @@ namespace Barbados.QueryEngine.Evaluation.Expressions
 	{
 		public IQueryExpression Expression { get; } = expression;
 
-		private readonly BarbadosIdentifier _name = expression.Name;
+		private readonly BarbadosKey _name = expression.Name;
 
 		public BarbadosDocument Evaluate(BarbadosDocument document)
 		{
