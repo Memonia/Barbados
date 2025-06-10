@@ -18,7 +18,7 @@ jobs:
         dotnet-version: '9.0.x'
 
     - name: 'restore'
-      run: 'dotnet restore ./Barbados.slnx'
+      run: 'dotnet restore'
 
     - name: 'build'
       run: 'dotnet build --no-restore'
