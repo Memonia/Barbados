@@ -1,6 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
-		<TargetFramework>net8.0</TargetFramework>
+		<TargetFramework>net9.0</TargetFramework>
 		<Nullable>enable</Nullable>
 
 		<Authors>Memonia</Authors>
@@ -12,6 +12,7 @@
 
 	<ItemGroup>
 		<InternalsVisibleTo Include="Sandbox" />
+		<InternalsVisibleTo Include="Barbados.QueryEngine.Tests.Integration" />
 	</ItemGroup>
 
 	<ItemGroup>

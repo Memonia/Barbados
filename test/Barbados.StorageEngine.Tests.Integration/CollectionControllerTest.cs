@@ -1,8 +1,9 @@
 ﻿using System;
 using System.Linq;
 
+using Barbados.StorageEngine.Collections;
 using Barbados.StorageEngine.Exceptions;
-using Barbados.StorageEngine.Tests.Integration.Utility;
+using Barbados.StorageEngine.Tests.Integration.Utils;
 
 namespace Barbados.StorageEngine.Tests.Integration
 {
@@ -43,6 +44,27 @@ namespace Barbados.StorageEngine.Tests.Integration
 				Assert.Throws<ArgumentException>(
 					() => Context.Database.Collections.EnsureCreated(BarbadosDbObjects.Collections.MetaCollection)
 				);
+			}
+
+			[Test]
+			public void WithAutomaticIdGenerationMode_CollectionDoesNotExist_CollectionCreatedWithMode()
+			{
+				var name = nameof(WithAutomaticIdGenerationMode_CollectionDoesNotExist_CollectionCreatedWithMode);
+				var opts = new CreateCollectionOptions()
+				{
+					AutomaticIdGeneratorMode = AutomaticIdGeneratorMode.BetterWritePerformance
+				};
+
+				var before = Context.Database.Collections.Exists(name);
+				Context.Database.Collections.EnsureCreated(name, opts);
+				var after = Context.Database.Collections.Exists(name);
+				var collection = Context.Database.Collections.Get(name);
+				Assert.Multiple(() =>
+				{
+					Assert.That(before, Is.False);
+					Assert.That(after, Is.True);
+					Assert.That(collection.AutomaticIdGeneratorMode, Is.EqualTo(opts.AutomaticIdGeneratorMode));
+				});
 			}
 		}
 
@@ -220,6 +242,20 @@ namespace Barbados.StorageEngine.Tests.Integration
 				Assert.Throws<ArgumentException>(
 					() => Context.Database.Collections.Create(BarbadosDbObjects.Collections.MetaCollection)
 				);
+			}
+
+			[Test]
+			public void WithAutomaticIdGenerationMode_CollectionCreatedWithMode()
+			{
+				var name = nameof(WithAutomaticIdGenerationMode_CollectionCreatedWithMode);
+				var opts = new CreateCollectionOptions()
+				{
+					AutomaticIdGeneratorMode = AutomaticIdGeneratorMode.BetterWritePerformance
+				};
+
+				Context.Database.Collections.Create(name, opts);
+				var collection = Context.Database.Collections.Get(name);
+				Assert.That(collection.AutomaticIdGeneratorMode, Is.EqualTo(opts.AutomaticIdGeneratorMode));
 			}
 		}
 

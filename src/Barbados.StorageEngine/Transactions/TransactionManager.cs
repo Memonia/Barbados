@@ -3,13 +3,22 @@ using System.Collections.Concurrent;
 using System.Diagnostics;
 
 using Barbados.StorageEngine.Exceptions;
+using Barbados.StorageEngine.Storage.Wal;
 using Barbados.StorageEngine.Transactions.Locks;
-using Barbados.StorageEngine.Transactions.Recovery;
 
 namespace Barbados.StorageEngine.Transactions
 {
 	internal sealed partial class TransactionManager
 	{
+		private static readonly BarbadosException _transactionScopeMismatch = new(BarbadosExceptionCode.TransactionScopeMismatch,
+			"Failed to complete the transaction. A more recent transaction scope is still active. " +
+			"Make sure cursors and other disposable database objects have been disposed of"
+		);
+
+		private static readonly BarbadosException _transactionScopeCompleted = new(BarbadosExceptionCode.TransactionScopeCompleted,
+			"Current transaction scope has already been completed"
+		);
+
 		private static TransactionScope _popCurrentScope(Transaction transaction)
 		{
 			if (!transaction.TransactionScopes.TryPop(out var scope))
@@ -28,7 +37,7 @@ namespace Barbados.StorageEngine.Transactions
 			}
 		}
 
-		private readonly object _sync;
+		private readonly System.Threading.Lock _sync;
 		private readonly TimeSpan _defaultTimeout;
 		private readonly WalBuffer _wal;
 		private readonly LockManager _lockManager;
@@ -69,8 +78,8 @@ namespace Barbados.StorageEngine.Transactions
 
 				if (!lockTaken)
 				{
-					throw new BarbadosException(BarbadosExceptionCode.TransactionTargetMismatch, 
-						$"Object with id {lockId} is not a part of current transaction"
+					throw new BarbadosException(BarbadosExceptionCode.TransactionTargetMismatch,
+						$"Object with id {lockId} is not a part of the current transaction"
 					);
 				}
 
@@ -138,15 +147,13 @@ namespace Barbados.StorageEngine.Transactions
 		{
 			if (!scope.IsActive)
 			{
-				throw new BarbadosException(
-					BarbadosExceptionCode.TransactionScopeCompleted, "Current transaction scope is already completed"
-				);
+				throw _transactionScopeCompleted;
 			}
 
 			var tx = _getCurrentTransaction();
 			if (_popCurrentScope(tx) != scope)
 			{
-				throw new BarbadosInternalErrorException();
+				throw _transactionScopeMismatch;
 			}
 
 			_commit(tx, scope);
@@ -156,15 +163,13 @@ namespace Barbados.StorageEngine.Transactions
 		{
 			if (!scope.IsActive)
 			{
-				throw new BarbadosException(
-					BarbadosExceptionCode.TransactionScopeMismatch, "Current transaction scope is already completed"
-				);
+				throw _transactionScopeCompleted;
 			}
 
 			var tx = _getCurrentTransaction();
 			if (_popCurrentScope(tx) != scope)
 			{
-				throw new BarbadosInternalErrorException();
+				throw _transactionScopeMismatch;
 			}
 
 			_rollback(tx, scope);
@@ -189,7 +194,7 @@ namespace Barbados.StorageEngine.Transactions
 			{
 				if (!_transactions.TryRemove(Environment.CurrentManagedThreadId, out _))
 				{
-					throw new BarbadosInternalErrorException();
+					throw BarbadosInternalErrorExceptionHelpers.TransactionForCurrentThreadDoesNotExist();
 				}
 
 				_wal.Commit(scope.Snapshot);
@@ -204,7 +209,7 @@ namespace Barbados.StorageEngine.Transactions
 			{
 				if (!_transactions.TryRemove(Environment.CurrentManagedThreadId, out _))
 				{
-					throw new BarbadosInternalErrorException();
+					throw BarbadosInternalErrorExceptionHelpers.TransactionForCurrentThreadDoesNotExist();
 				}
 
 				_wal.Rollback(scope.Snapshot);
@@ -217,7 +222,7 @@ namespace Barbados.StorageEngine.Transactions
 			Debug.Assert(transaction.TransactionScopes.Count == 1);
 			if (!_transactions.TryAdd(Environment.CurrentManagedThreadId, transaction))
 			{
-				throw new BarbadosInternalErrorException();
+				throw new BarbadosInternalErrorException("Current thread already has an open transaction associated with it");
 			}
 
 			transaction.TransactionScopes.Peek().OnCompleted += _onCompletedTransactionScope;
@@ -225,7 +230,7 @@ namespace Barbados.StorageEngine.Transactions
 
 		private void _onCompletedTransactionScope(TransactionScope scope)
 		{
-			// Transaction was commited or rolledback, no need to do anything else
+			// Transaction was commited or rolled-back, no need to do anything else
 			if (!scope.IsActive)
 			{
 				return;

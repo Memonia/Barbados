@@ -1,0 +1,14 @@
+<Solution>
+	<Folder Name="/src/">
+		<Project Path="src/Barbados.CommonUtils/Barbados.CommonUtils.csproj" />
+		<Project Path="src/Barbados.Documents/Barbados.Documents.csproj" />
+		<Project Path="src/Barbados.QueryEngine/Barbados.QueryEngine.csproj" />
+		<Project Path="src/Barbados.StorageEngine/Barbados.StorageEngine.csproj" />
+	</Folder>
+	<Folder Name="/test/">
+		<Project Path="test/Barbados.Documents.Tests/Barbados.Documents.Tests.csproj" />
+		<Project Path="test/Barbados.StorageEngine.Tests.Integration/Barbados.StorageEngine.Tests.Integration.csproj" />
+		<Project Path="test/Barbados.StorageEngine.Tests/Barbados.StorageEngine.Tests.csproj" />
+		<Project Path="test/Sandbox/Sandbox.csproj" />
+	</Folder>
+</Solution>

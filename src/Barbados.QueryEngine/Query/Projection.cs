@@ -1,22 +1,52 @@
-﻿using System.Collections.Generic;
-
-using Barbados.Documents;
+﻿using System;
+using System.Collections.Generic;
 
 namespace Barbados.QueryEngine.Query
 {
-	internal sealed class Projection : IProjection
+	public sealed class Projection
 	{
-		private readonly List<BarbadosKey> _keys = [];
+		internal bool Inclusive => _inclusive ?? true;
+		internal List<string> Keys { get; }
 
-		public BarbadosKeySelector GetSelector()
+		public bool? _inclusive;
+
+		internal Projection()
 		{
-			return new(_keys);
+			Keys = [];
 		}
 
-		public IProjection Include(string field)
+		public Projection Include(params string[] keys)
 		{
-			_keys.Add(field);
+			if (_inclusive.HasValue && _inclusive.Value)
+			{
+				throw new InvalidOperationException("Cannot include a key in an exclusive projection");
+			}
+
+			_inclusive = true;
+			Keys.AddRange(keys);
 			return this;
+		}
+
+		public Projection Exclude(params string[] keys)
+		{
+			if (_inclusive.HasValue && !_inclusive.Value)
+			{
+				throw new InvalidOperationException("Cannot include a key in an inclusive projection");
+			}
+
+			_inclusive = false;
+			Keys.AddRange(keys);
+			return this;
+		}
+
+		internal KeySelection GetCurrentSelection()
+		{
+			if (_inclusive is null)
+			{
+				return KeySelection.All;
+			}
+
+			return new KeySelection(Keys, Inclusive);
 		}
 	}
 }

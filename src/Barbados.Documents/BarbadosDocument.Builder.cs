@@ -2,7 +2,7 @@
 using System.Text;
 
 using Barbados.Documents.Exceptions;
-using Barbados.Documents.Serialisation;
+using Barbados.Documents.RadixTree;
 
 namespace Barbados.Documents
 {
@@ -29,8 +29,7 @@ namespace Barbados.Documents
 				return doc;
 			}
 
-			// TODO: remove
-			public Builder AddAllFrom(BarbadosDocument document)
+			public Builder AddFrom(BarbadosDocument document)
 			{
 				var e = document.GetKeyEnumerator();
 				while (e.MoveNext())

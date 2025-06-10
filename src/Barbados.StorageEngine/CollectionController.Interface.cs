@@ -1,6 +1,5 @@
 ﻿using System.Collections.Generic;
 
-using Barbados.Documents;
 using Barbados.StorageEngine.Collections;
 using Barbados.StorageEngine.Exceptions;
 
@@ -8,115 +7,135 @@ namespace Barbados.StorageEngine
 {
 	internal partial class CollectionController
 	{
-		void ICollectionController.EnsureCreated(BarbadosDbObjectName collectionName)
+		IBarbadosCollection ICollectionController.Get(ObjectId collectionId)
 		{
-			BarbadosArgumentException.ThrowReservedCollectionName(collectionName, nameof(collectionName));
-			TryCreate(collectionName);
+			return Get(collectionId);
 		}
 
-		void ICollectionController.EnsureDeleted(BarbadosDbObjectName collectionName)
+		IBarbadosCollection ICollectionController.Get(BarbadosDbObjectName collectionName)
 		{
-			BarbadosArgumentException.ThrowReservedCollectionName(collectionName, nameof(collectionName));
-			TryDelete(collectionName);
+			return Get(collectionName);
 		}
 
-		IEnumerable<string> ICollectionController.List()
+		public IEnumerable<string> List()
 		{
 			yield return BarbadosDbObjects.Collections.MetaCollection;
-			foreach (var document in _metaFacade.GetCursor())
+
+			using var cursor = _metaFacade.Find(FindOptions.All);
+			foreach (var document in cursor)
 			{
-				yield return document.GetString(
-					BarbadosDocumentKeys.MetaCollection.AbsCollectionDocumentNameField
-				);
+				yield return document.GetString(BarbadosDocumentKeys.MetaCollection.AbsCollectionDocumentNameField);
 			}
 		}
 
-		bool ICollectionController.Exists(ObjectId collectionId)
+		public ManagedCollectionFacade Get(ObjectId collectionId)
+		{
+			BarbadosArgumentExceptionHelpers.ThrowReservedCollectionId(collectionId, nameof(collectionId));
+			if (!TryGet(collectionId, out var facade))
+			{
+				BarbadosCollectionExceptionHelpers.ThrowCollectionDoesNotExist(collectionId);
+			}
+
+			return facade;
+		}
+
+		public ManagedCollectionFacade Get(BarbadosDbObjectName collectionName)
+		{
+			BarbadosArgumentExceptionHelpers.ThrowReservedCollectionName(collectionName, nameof(collectionName));
+			if (!TryGet(collectionName, out var facade))
+			{
+				BarbadosCollectionExceptionHelpers.ThrowCollectionDoesNotExist(collectionName);
+			}
+
+			return facade;
+		}
+
+		public void EnsureCreated(BarbadosDbObjectName collectionName)
+		{
+			EnsureCreated(collectionName, CreateCollectionOptions.Default);
+		}
+
+		public void EnsureCreated(BarbadosDbObjectName collectionName, CreateCollectionOptions options)
+		{
+			BarbadosArgumentExceptionHelpers.ThrowReservedCollectionName(collectionName, nameof(collectionName));
+			TryCreate(collectionName, options);
+		}
+
+		public void EnsureDeleted(BarbadosDbObjectName collectionName)
+		{
+			BarbadosArgumentExceptionHelpers.ThrowReservedCollectionName(collectionName, nameof(collectionName));
+			TryDelete(collectionName);
+		}
+
+		public bool Exists(ObjectId collectionId)
 		{
 			if (collectionId.Value == _metaFacade.Id.Value)
 			{
 				return true;
 			}
 
-			return _metaFacade.TryRead(collectionId, BarbadosKeySelector.SelectNone, out _);
+			return _metaFacade.TryGetCollectionDocument(collectionId, out _);
 		}
 
-		bool ICollectionController.Exists(BarbadosDbObjectName collectionName)
+		public bool Exists(BarbadosDbObjectName collectionName)
 		{
 			if (collectionName == BarbadosDbObjects.Collections.MetaCollection)
 			{
 				return true;
 			}
 
-			return _metaFacade.Find(collectionName, out _);
+			return _metaFacade.TryGetCollectionId(collectionName, out _);
 		}
 
-		IBarbadosCollection ICollectionController.Get(ObjectId collectionId)
+		public void Rename(ObjectId collectionId, BarbadosDbObjectName replacement)
 		{
-			BarbadosArgumentException.ThrowReservedCollectionId(collectionId, nameof(collectionId));
-			if (!TryGet(collectionId, out var facade))
-			{
-				BarbadosCollectionException.ThrowCollectionDoesNotExist(collectionId);
-			}
-
-			return facade;
-		}
-
-		IBarbadosCollection ICollectionController.Get(BarbadosDbObjectName collectionName)
-		{
-			BarbadosArgumentException.ThrowReservedCollectionName(collectionName, nameof(collectionName));
-			if (!TryGet(collectionName, out var facade))
-			{
-				BarbadosCollectionException.ThrowCollectionDoesNotExist(collectionName);
-			}
-
-			return facade;
-		}
-
-		void ICollectionController.Rename(ObjectId collectionId, BarbadosDbObjectName replacement)
-		{
-			BarbadosArgumentException.ThrowReservedCollectionId(collectionId, nameof(collectionId));
-			BarbadosArgumentException.ThrowReservedCollectionName(replacement, nameof(replacement));
+			BarbadosArgumentExceptionHelpers.ThrowReservedCollectionId(collectionId, nameof(collectionId));
+			BarbadosArgumentExceptionHelpers.ThrowReservedCollectionName(replacement, nameof(replacement));
 			if (!TryRename(collectionId, replacement))
 			{
-				BarbadosCollectionException.ThrowCollectionDoesNotExist(collectionId);
+				BarbadosCollectionExceptionHelpers.ThrowCollectionDoesNotExist(collectionId);
 			}
 		}
 
-		void ICollectionController.Delete(ObjectId collectionId)
+		public void Delete(ObjectId collectionId)
 		{
-			BarbadosArgumentException.ThrowReservedCollectionId(collectionId, nameof(collectionId));
+			BarbadosArgumentExceptionHelpers.ThrowReservedCollectionId(collectionId, nameof(collectionId));
 			if (!TryDelete(collectionId))
 			{
-				BarbadosCollectionException.ThrowCollectionDoesNotExist(collectionId);
+				BarbadosCollectionExceptionHelpers.ThrowCollectionDoesNotExist(collectionId);
 			}
 		}
 
-		void ICollectionController.Create(BarbadosDbObjectName collectionName)
+		public void Create(BarbadosDbObjectName collectionName)
 		{
-			BarbadosArgumentException.ThrowReservedCollectionName(collectionName, nameof(collectionName));
-			if (!TryCreate(collectionName))
+			Create(collectionName, CreateCollectionOptions.Default);
+		}
+
+		public void Create(BarbadosDbObjectName collectionName, CreateCollectionOptions options)
+		{
+			BarbadosArgumentExceptionHelpers.ThrowReservedCollectionName(collectionName, nameof(collectionName));
+			if (!TryCreate(collectionName, options))
 			{
-				BarbadosCollectionException.ThrowCollectionAlreadyExists(collectionName);
+				BarbadosCollectionExceptionHelpers.ThrowCollectionAlreadyExists(collectionName);
 			}
 		}
 
-		void ICollectionController.Rename(BarbadosDbObjectName collectionName, BarbadosDbObjectName replacement)
+		public void Rename(BarbadosDbObjectName collectionName, BarbadosDbObjectName replacement)
 		{
-			BarbadosArgumentException.ThrowReservedCollectionName(replacement, nameof(replacement));
-			BarbadosArgumentException.ThrowReservedCollectionName(collectionName, nameof(collectionName));
+			BarbadosArgumentExceptionHelpers.ThrowReservedCollectionName(replacement, nameof(replacement));
+			BarbadosArgumentExceptionHelpers.ThrowReservedCollectionName(collectionName, nameof(collectionName));
 			if (!TryRename(collectionName, replacement))
 			{
-				BarbadosCollectionException.ThrowCollectionDoesNotExist(collectionName);
+				BarbadosCollectionExceptionHelpers.ThrowCollectionDoesNotExist(collectionName);
 			}
 		}
 
-		void ICollectionController.Delete(BarbadosDbObjectName collectionName)
+		public void Delete(BarbadosDbObjectName collectionName)
 		{
-			BarbadosArgumentException.ThrowReservedCollectionName(collectionName, nameof(collectionName));
+			BarbadosArgumentExceptionHelpers.ThrowReservedCollectionName(collectionName, nameof(collectionName));
 			if (!TryDelete(collectionName))
 			{
-				BarbadosCollectionException.ThrowCollectionDoesNotExist(collectionName);
+				BarbadosCollectionExceptionHelpers.ThrowCollectionDoesNotExist(collectionName);
 			}
 		}
 	}

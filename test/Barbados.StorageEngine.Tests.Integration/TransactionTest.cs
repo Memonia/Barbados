@@ -4,8 +4,9 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using Barbados.Documents;
+using Barbados.StorageEngine.Collections;
 using Barbados.StorageEngine.Exceptions;
-using Barbados.StorageEngine.Tests.Integration.Utility;
+using Barbados.StorageEngine.Tests.Integration.Utils;
 using Barbados.StorageEngine.Transactions;
 
 namespace Barbados.StorageEngine.Tests.Integration
@@ -22,7 +23,7 @@ namespace Barbados.StorageEngine.Tests.Integration
 			using var _ = Context.Database.CreateTransaction(TransactionMode.ReadWrite)
 				.BeginTransaction();
 
-			Assert.Throws<BarbadosException>(() => collection.GetCursor().ToList());
+			Assert.Throws<BarbadosException>(() => collection.Find(FindOptions.All).FirstOrDefault());
 		}
 
 		[Test]
@@ -57,58 +58,20 @@ namespace Barbados.StorageEngine.Tests.Integration
 			Context.Database.Collections.Create(cname);
 			var collection = Context.Database.Collections.Get(cname);
 			var doc = new BarbadosDocument.Builder()
-				.Add("test-field", 1)
+				.Add(BarbadosDocumentKeys.DocumentId, 1)
 				.Build();
 
 			using var _ = Context.Database.CreateTransaction(TransactionMode.ReadWrite)
 				.Include(collection)
 				.BeginTransaction();
 
-			var id = collection.Insert(doc);
+			collection.Insert(doc);
 
 			Context.Database.CommitTransaction();
 
-			var r = collection.TryRead(id, out var rdoc);
-
-			Assert.Multiple(() =>
-			{
-				Assert.That(r, Is.True);
-				Assert.That(id, Is.EqualTo(rdoc.GetObjectId()));
-				Assert.That(doc.Count(), Is.EqualTo(rdoc.Count()));
-				Assert.That(collection.GetCursor(), Has.Exactly(1).Items);
-			});
-		}
-
-		[Test]
-		public void StartTransaction_ThrowException_ChangesReverted()
-		{
-			var cname = nameof(StartTransaction_ThrowException_ChangesReverted);
-			Context.Database.Collections.Create(cname);
-			var collection = Context.Database.Collections.Get(cname);
-			var doc = new BarbadosDocument.Builder()
-				.Add("test-field", 1)
-				.Build();
-
-			var id = ObjectId.Invalid;
-			try
-			{
-				using var _ = Context.Database.CreateTransaction(TransactionMode.ReadWrite)
-					.Include(collection)
-					.BeginTransaction();
-
-				id = collection.Insert(doc);
-				throw new Exception();
-			}
-
-			catch
-			{
-				var r = collection.TryRead(id, out var rdoc);
-				Assert.Multiple(() =>
-				{
-					Assert.That(r, Is.False);
-					Assert.That(collection.GetCursor(), Has.Exactly(0).Items);
-				});
-			}
+			var found = collection.Find(FindOptions.Single(1)).ToList();
+			Assert.That(found, Has.Exactly(1).Items);
+			Assert.That(found[0].Count(), Is.EqualTo(doc.Count()));
 		}
 
 		[Test]
@@ -118,24 +81,46 @@ namespace Barbados.StorageEngine.Tests.Integration
 			Context.Database.Collections.Create(cname);
 			var collection = Context.Database.Collections.Get(cname);
 			var doc = new BarbadosDocument.Builder()
-				.Add("test-field", 1)
+				.Add(BarbadosDocumentKeys.DocumentId, 1)
 				.Build();
 
 			using var _ = Context.Database.CreateTransaction(TransactionMode.ReadWrite)
 				.Include(collection)
 				.BeginTransaction();
 
-			var id = collection.Insert(doc);
+			collection.Insert(doc);
 
 			Context.Database.RollbackTransaction();
 
-			var r = collection.TryRead(id, out var rdoc);
+			var found = collection.Find(FindOptions.All).ToList();
+			Assert.That(found, Has.Exactly(0).Items);
+		}
 
-			Assert.Multiple(() =>
+		[Test]
+		public void StartTransaction_ThrowException_ChangesReverted()
+		{
+			var cname = nameof(StartTransaction_ThrowException_ChangesReverted);
+			Context.Database.Collections.Create(cname);
+			var collection = Context.Database.Collections.Get(cname);
+			var doc = new BarbadosDocument.Builder()
+				.Add(BarbadosDocumentKeys.DocumentId, 1)
+				.Build();
+
+			try
 			{
-				Assert.That(r, Is.False);
-				Assert.That(collection.GetCursor(), Has.Exactly(0).Items);
-			});
+				using var _ = Context.Database.CreateTransaction(TransactionMode.ReadWrite)
+					.Include(collection)
+					.BeginTransaction();
+
+				collection.Insert(doc);
+				throw new Exception();
+			}
+
+			catch
+			{
+				var found = collection.Find(FindOptions.All).ToList();
+				Assert.That(found, Has.Exactly(0).Items);
+			}
 		}
 
 		[Test]

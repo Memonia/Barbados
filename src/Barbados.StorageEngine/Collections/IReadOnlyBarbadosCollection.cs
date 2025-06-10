@@ -1,5 +1,4 @@
 ﻿using Barbados.Documents;
-using Barbados.StorageEngine.Indexing;
 
 namespace Barbados.StorageEngine.Collections
 {
@@ -7,16 +6,11 @@ namespace Barbados.StorageEngine.Collections
 	{
 		ObjectId Id { get; }
 		BarbadosDbObjectName Name { get; }
+		AutomaticIdGeneratorMode AutomaticIdGeneratorMode { get; }
 
-		bool TryGetBTreeIndex(string field, out IReadOnlyBTreeIndex index);
+		bool IndexExists(BarbadosKey field);
 
-		bool TryRead(ObjectId id, out BarbadosDocument document);
-		bool TryRead(ObjectId id, BarbadosKeySelector selector, out BarbadosDocument document);
-
-		BarbadosDocument Read(ObjectId id);
-		BarbadosDocument Read(ObjectId id, BarbadosKeySelector selector);
-
-		ICursor<BarbadosDocument> GetCursor();
-		ICursor<BarbadosDocument> GetCursor(BarbadosKeySelector selector);
+		ICursor<BarbadosDocument> Find(FindOptions options);
+		ICursor<BarbadosDocument> Find(FindOptions options, BarbadosKey indexField);
 	}
 }

@@ -1,4 +1,4 @@
-﻿using Barbados.Documents.Serialisation.Values;
+﻿using Barbados.Documents.RadixTree.Values;
 
 namespace Barbados.Documents
 {
@@ -6,8 +6,8 @@ namespace Barbados.Documents
 	{
 		public static bool TryCompareFields(BarbadosKey field, BarbadosDocument a, BarbadosDocument b, out int result)
 		{
-			if (a._buffer.TryGetBufferRaw(field.SearchPrefix.AsBytes(), out var ma, out var va) &&
-				b._buffer.TryGetBufferRaw(field.SearchPrefix.AsBytes(), out var mb, out var vb) &&
+			if (a._buffer.TryGetBufferRaw(field.SearchPrefix, out var ma, out var va) &&
+				b._buffer.TryGetBufferRaw(field.SearchPrefix, out var mb, out var vb) &&
 				ma == mb
 			)
 			{

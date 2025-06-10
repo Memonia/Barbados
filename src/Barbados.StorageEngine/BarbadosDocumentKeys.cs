@@ -6,29 +6,18 @@ namespace Barbados.StorageEngine
 	{
 		public static BarbadosKey DocumentId { get; } = $"{BarbadosDbObjects.ReservedNamePrefix}id";
 
-		public static class IndexQuery
-		{
-			public static readonly BarbadosKey SearchValue = "sval";
-			public static readonly BarbadosKey Take = "take";
-			public static readonly BarbadosKey Inclusive = "incl";
-			public static readonly BarbadosKey Ascending = "asc";
-			public static readonly BarbadosKey Exact = "eq";
-			public static readonly BarbadosKey Range = "rg";
-			public static readonly BarbadosKey LessThan = "lt";
-			public static readonly BarbadosKey GreaterThan = "gt";
-		}
-
 		internal static class MetaCollection
 		{
-			public static readonly BarbadosKey IndexArrayField = "i";
-			public static readonly BarbadosKey IndexDocumentPageHandleField = "ph";
-			public static readonly BarbadosKey IndexDocumentIndexedFieldField = "n";
-			public static readonly BarbadosKey IndexDocumentKeyMaxLengthField = "l";
-			public static readonly BarbadosKey CollectionDocumentField = "c";
-			public static readonly BarbadosKey CollectionDocumentNameField = "n";
-			public static readonly BarbadosKey CollectionDocumentPageHandleField = "ph";
-			public static readonly BarbadosKey AbsCollectionDocumentNameField = "c.n";
-			public static readonly BarbadosKey AbsCollectionDocumentPageHandleField = "c.ph";
+			public static BarbadosKey IndexArrayField { get; } = "i";
+			public static BarbadosKey IndexDocumentPageHandleField { get; } = "ph";
+			public static BarbadosKey IndexDocumentIndexedFieldField { get; } = "n";
+			public static BarbadosKey CollectionDocumentField { get; } = "c";
+			public static BarbadosKey CollectionDocumentNameField { get; } = "n";
+			public static BarbadosKey CollectionDocumentPageHandleField { get; } = "ph";
+			public static BarbadosKey CollectionDocumentIdGenModeField { get; } = "g";
+			public static BarbadosKey AbsCollectionDocumentNameField { get; } = $"{CollectionDocumentField}{BarbadosKey.NestingSeparator}{CollectionDocumentNameField}";
+			public static BarbadosKey AbsCollectionDocumentPageHandleField { get; } = $"{CollectionDocumentField}{BarbadosKey.NestingSeparator}{CollectionDocumentPageHandleField}";
+			public static BarbadosKey AbsCollectionDocumentIdGenModeField { get; } = $"{CollectionDocumentField}{BarbadosKey.NestingSeparator}{CollectionDocumentIdGenModeField}";
 		}
 	}
 }

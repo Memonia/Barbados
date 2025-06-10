@@ -1,44 +1,48 @@
 ﻿using System.Collections.Generic;
 
-using Barbados.StorageEngine.Indexing;
+using Barbados.Documents;
+using Barbados.StorageEngine.Collections.Indexes;
+using Barbados.StorageEngine.Exceptions;
 using Barbados.StorageEngine.Transactions;
 
 namespace Barbados.StorageEngine.Collections
 {
-	internal sealed class ManagedCollectionFacade : BaseBarbadosCollectionFacade
+	internal sealed class ManagedCollectionFacade : BaseBarbadosCollectionFacade, IBarbadosCollection
 	{
-		public override BarbadosDbObjectName Name => _collectionControllerService.GetCollectionName(Id);
+		public override BarbadosDbObjectName Name => _metadataService.GetName();
 
 		private readonly IndexControllerService _indexControllerService;
-		private readonly CollectionControllerService _collectionControllerService;
+		private readonly CollectionMetadataService _metadataService;
 
 		public ManagedCollectionFacade(
-			ObjectId id,
+			CollectionInfo info,
 			TransactionManager transactionManager,
-			BTreeClusteredIndexFacade clusteredIndexFacade,
-			IndexControllerService indexControllerService,
-			CollectionControllerService collectionControllerService
-		) : base(id, transactionManager, clusteredIndexFacade)
+			CollectionMetadataService metadataService,
+			IndexControllerService indexControllerService
+		) : base(info, transactionManager)
 		{
 			_indexControllerService = indexControllerService;
-			_collectionControllerService = collectionControllerService;
+			_metadataService = metadataService;
 		}
 
-		public override bool TryGetBTreeIndex(string field, out IReadOnlyBTreeIndex index)
+		public bool IndexExists(BarbadosKey field)
 		{
-			if (_indexControllerService.TryGetFacade(Id, field, out var facade))
+			return _indexControllerService.TryGet(Id, field, out _);
+		}
+
+		protected override IndexInfo GetIndexInfo(BarbadosKey field)
+		{
+			if (!_indexControllerService.TryGet(Id, field, out var info))
 			{
-				index = facade;
-				return true;
+				BarbadosCollectionExceptionHelpers.ThrowIndexDoesNotExist(Id, field.ToString());
 			}
 
-			index = default!;
-			return false;
+			return info;
 		}
 
-		protected override IEnumerable<BTreeIndexFacade> EnumerateIndexes()
+		protected override IEnumerable<IndexInfo> EnumerateIndexes()
 		{
-			return _indexControllerService.EnumerateBTreeIndexFacades(ClusteredIndexFacade);
+			return _indexControllerService.EnumerateIndexes(Id);
 		}
 	}
 }

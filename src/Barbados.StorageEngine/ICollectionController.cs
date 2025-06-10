@@ -7,6 +7,7 @@ namespace Barbados.StorageEngine
 	public interface ICollectionController
 	{
 		void EnsureCreated(BarbadosDbObjectName collectionName);
+		void EnsureCreated(BarbadosDbObjectName collectionName, CreateCollectionOptions options);
 		void EnsureDeleted(BarbadosDbObjectName collectionName);
 
 		IEnumerable<string> List();
@@ -20,6 +21,7 @@ namespace Barbados.StorageEngine
 		void Rename(ObjectId collectionId, BarbadosDbObjectName replacement);
 		void Delete(ObjectId collectionId);
 		void Create(BarbadosDbObjectName collectionName);
+		void Create(BarbadosDbObjectName collectionName, CreateCollectionOptions options);
 		void Rename(BarbadosDbObjectName collectionName, BarbadosDbObjectName replacement);
 		void Delete(BarbadosDbObjectName collectionName);
 	}

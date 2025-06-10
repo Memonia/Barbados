@@ -1,6 +1,5 @@
 ﻿using System;
 
-using Barbados.Documents;
 using Barbados.QueryEngine.Build;
 
 namespace Barbados.QueryEngine
@@ -22,25 +21,25 @@ namespace Barbados.QueryEngine
 			return Plan;
 		}
 
-		public QueryPlanBuilder() : this(BarbadosKeySelector.SelectAll)
+		public QueryPlanBuilder() : this(new KeySelection([], true))
 		{
 
 		}
 
-		public QueryPlanBuilder(BarbadosKeySelector selector)
+		public QueryPlanBuilder(KeySelection selection)
 		{
-			Plan = new Scan(selector);
+			Plan = new ScanPlan(selection);
 		}
 
 		public QueryPlanBuilder Filter(IQueryExpression expr)
 		{
-			Plan = new Filter(Plan, expr);
+			Plan = new FilterPlan(Plan, expr);
 			return this;
 		}
 
-		public QueryPlanBuilder Project(BarbadosKeySelector selector)
+		public QueryPlanBuilder Project(KeySelection selection)
 		{
-			Plan = new Projection(Plan, selector);
+			Plan = new ProjectionPlan(Plan, selection);
 			return this;
 		}
 	}

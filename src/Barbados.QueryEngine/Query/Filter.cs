@@ -1,7 +1,12 @@
 ﻿namespace Barbados.QueryEngine.Query
 {
-	internal sealed class Filter(IQueryExpression expression) : IFilter
+	public sealed class Filter
 	{
-		public IQueryExpression Expression { get; } = expression;
+		internal IQueryExpression Expression { get; }
+
+		internal Filter(IQueryExpression expression)
+		{
+			Expression = expression;
+		}
 	}
 }

@@ -4,12 +4,14 @@ namespace Barbados.StorageEngine.Collections
 {
 	public interface IBarbadosCollection : IReadOnlyBarbadosCollection
 	{
-		bool TryUpdate(ObjectId id, BarbadosDocument document);
-		bool TryRemove(ObjectId Id);
+		BarbadosDocument InsertWithAutomaticId(BarbadosDocument.Builder builder);
 
-		void Update(ObjectId id, BarbadosDocument document);
-		void Remove(ObjectId id);
+		void Insert(BarbadosDocument document);
+		void Update(BarbadosDocument document);
+		void Remove(BarbadosDocument document);
 
-		ObjectId Insert(BarbadosDocument document);
+		bool TryInsert(BarbadosDocument document);
+		bool TryUpdate(BarbadosDocument document);
+		bool TryRemove(BarbadosDocument document);
 	}
 }

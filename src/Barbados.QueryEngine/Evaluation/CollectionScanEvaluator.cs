@@ -10,20 +10,24 @@ namespace Barbados.QueryEngine.Evaluation
 	{
 		public IReadOnlyCollection<IQueryPlanEvaluator> Children => [];
 
-		private readonly BarbadosKeySelector _selector;
+		private readonly FindOptions _options;
 		private readonly IReadOnlyBarbadosCollection _collection;
 
-		public CollectionScanEvaluator(IReadOnlyBarbadosCollection collection, BarbadosKeySelector selector)
+		public CollectionScanEvaluator(IReadOnlyBarbadosCollection collection, FindOptions options)
 		{
-			_selector = selector;
+			_options = options;
 			_collection = collection;
 		}
 
 		public IEnumerable<BarbadosDocument> Evaluate()
 		{
-			return _collection.GetCursor(_selector);
+			using var cursor = _collection.Find(_options);
+			foreach (var document in cursor)
+			{
+				yield return document;
+			}
 		}
 
-		public override string ToString() => FormatHelpers.FormatValueSelector($"Scan({_collection.Name})", _selector);
+		public override string ToString() => FormatHelpers.FormatSelection($"Scan({_collection.Name})", _options);
 	}
 }

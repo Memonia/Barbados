@@ -1,20 +1,19 @@
-﻿using System.Text;
+﻿using System;
+using System.Text;
 
-using Barbados.Documents;
+using Barbados.StorageEngine.Collections;
 
 namespace Barbados.QueryEngine.Helpers
 {
 	internal static class FormatHelpers
 	{
+		private static readonly int _newLineLength = Environment.NewLine.Length;
+
 		public static string FormatPlan(IQueryPlan plan)
 		{
 			static void _format(StringBuilder builder, IQueryPlan root, int indent)
 			{
-				for (int i = 0; i < indent; ++i)
-				{
-					builder.Append("  ");
-				}
-
+				builder.Append(' ', indent * 2);
 				builder.Append(root.ToString());
 				if (root.Child is not null)
 				{
@@ -32,15 +31,17 @@ namespace Barbados.QueryEngine.Helpers
 		{
 			static void _format(StringBuilder builder, IQueryPlanEvaluator root, int indent)
 			{
-				for (int i = 0; i < indent; ++i)
+				var rootStr = root.ToString();
+				var rootStrSpan = rootStr.AsSpan();
+				foreach (var line in rootStrSpan.Split(Environment.NewLine))
 				{
-					builder.Append("  ");
+					builder.Append(' ', indent * 2);
+					builder.Append(rootStrSpan[line]);
+					builder.AppendLine();
 				}
 
-				builder.Append(root.ToString());
 				foreach (var child in root.Children)
 				{
-					builder.AppendLine();
 					_format(builder, child, indent + 1);
 				}
 			}
@@ -50,15 +51,23 @@ namespace Barbados.QueryEngine.Helpers
 			return sb.ToString();
 		}
 
-		public static string FormatValueSelector(string name, BarbadosKeySelector selector)
+		public static string FormatSelection(string name, FindOptions options)
 		{
-			if (selector.All)
+			var sb = new StringBuilder();
+			sb.Append($"{name}: ");
+			sb.Append(options.AsDocument());
+			return sb.ToString();
+		}
+
+		public static string FormatSelection(string name, KeySelection selection)
+		{
+			if (selection.Keys.Count == 0)
 			{
 				return $"{name}: [?all]";
 			}
 
 			var sb = new StringBuilder();
-			foreach (var projection in selector)
+			foreach (var projection in selection.Keys)
 			{
 				sb.Append($"'{projection}'");
 				sb.Append(", ");
@@ -69,7 +78,7 @@ namespace Barbados.QueryEngine.Helpers
 				sb.Remove(sb.Length - 2, 2);
 			}
 
-			return $"{name}: [{sb}]";
+			return $"{name}: ?{(selection.KeysIncluded ? "include" : "exclude")} [{sb}]";
 		}
 	}
 }

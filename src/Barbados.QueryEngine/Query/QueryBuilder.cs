@@ -7,7 +7,7 @@ namespace Barbados.QueryEngine.Query
 	{
 		public static class Filters
 		{
-			public static IFilter Or(IFilter left, IFilter right)
+			public static Filter Or(Filter left, Filter right)
 			{
 				return new Filter(
 					BinaryExpressionFactory.Create(
@@ -18,7 +18,7 @@ namespace Barbados.QueryEngine.Query
 				);
 			}
 
-			public static IFilter And(IFilter left, IFilter right)
+			public static Filter And(Filter left, Filter right)
 			{
 				return new Filter(
 					BinaryExpressionFactory.Create(
@@ -29,14 +29,14 @@ namespace Barbados.QueryEngine.Query
 				);
 			}
 
-			public static IFilter Not(IFilter filter)
+			public static Filter Not(Filter filter)
 			{
 				return new Filter(
 					new NotExpression(filter.Expression)
 				);
 			}
 
-			public static IFilter Eq<T>(string field, T value)
+			public static Filter Eq<T>(string field, T value)
 			{
 				return new Filter(
 					ComparisonExpressionFactory.Create(
@@ -48,7 +48,7 @@ namespace Barbados.QueryEngine.Query
 				);
 			}
 
-			public static IFilter Neq<T>(string field, T value)
+			public static Filter Neq<T>(string field, T value)
 			{
 				return new Filter(
 					ComparisonExpressionFactory.Create(
@@ -60,7 +60,7 @@ namespace Barbados.QueryEngine.Query
 				);
 			}
 
-			public static IFilter Lt<T>(string field, T value)
+			public static Filter Lt<T>(string field, T value)
 			{
 				return new Filter(
 					ComparisonExpressionFactory.Create(
@@ -72,7 +72,7 @@ namespace Barbados.QueryEngine.Query
 				);
 			}
 
-			public static IFilter LtEq<T>(string field, T value)
+			public static Filter LtEq<T>(string field, T value)
 			{
 				return new Filter(
 					ComparisonExpressionFactory.Create(
@@ -84,7 +84,7 @@ namespace Barbados.QueryEngine.Query
 				);
 			}
 
-			public static IFilter Gt<T>(string field, T value)
+			public static Filter Gt<T>(string field, T value)
 			{
 				return new Filter(
 					ComparisonExpressionFactory.Create(
@@ -96,7 +96,7 @@ namespace Barbados.QueryEngine.Query
 				);
 			}
 
-			public static IFilter GtEq<T>(string field, T value)
+			public static Filter GtEq<T>(string field, T value)
 			{
 				return new Filter(
 					ComparisonExpressionFactory.Create(
@@ -109,6 +109,6 @@ namespace Barbados.QueryEngine.Query
 			}
 		}
 
-		public static IProjection Projection => new Projection();
+		public static Projection Projection => new();
 	}
 }

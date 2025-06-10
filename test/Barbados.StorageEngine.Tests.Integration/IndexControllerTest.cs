@@ -2,7 +2,7 @@
 using System.Linq;
 
 using Barbados.StorageEngine.Exceptions;
-using Barbados.StorageEngine.Tests.Integration.Utility;
+using Barbados.StorageEngine.Tests.Integration.Utils;
 
 namespace Barbados.StorageEngine.Tests.Integration
 {
@@ -61,30 +61,6 @@ namespace Barbados.StorageEngine.Tests.Integration
 			}
 
 			[Test]
-			public void ById_MaxKeyLengthLessThanAllowed_Throws()
-			{
-				var cname = nameof(ById_MaxKeyLengthLessThanAllowed_Throws);
-				Context.Database.Collections.Create(cname);
-
-				var maxLength = Constants.MinIndexKeyMaxLength - 1;
-				Assert.Throws<ArgumentException>(
-					() => Context.Database.Indexes.EnsureCreated(cname, _fname, maxLength)
-				);
-			}
-
-			[Test]
-			public void ById_MaxKeyLengthGreaterThanAllowed_Throws()
-			{
-				var cname = nameof(ById_MaxKeyLengthGreaterThanAllowed_Throws);
-				Context.Database.Collections.Create(cname);
-
-				var maxLength = Constants.IndexKeyMaxLength + 1;
-				Assert.Throws<ArgumentException>(
-					() => Context.Database.Indexes.EnsureCreated(cname, _fname, maxLength)
-				);
-			}
-
-			[Test]
 			public void ByName_CollectionExists_IndexDoesNotExist_IndexCreated()
 			{
 				var cname = nameof(ByName_CollectionExists_IndexDoesNotExist_IndexCreated);
@@ -127,30 +103,6 @@ namespace Barbados.StorageEngine.Tests.Integration
 			{
 				Assert.Throws<ArgumentException>(
 					() => Context.Database.Indexes.EnsureCreated(BarbadosDbObjects.Collections.MetaCollection, _fname)
-				);
-			}
-
-			[Test]
-			public void ByName_MaxKeyLengthLessThanAllowed_Throws()
-			{
-				var cname = nameof(ByName_MaxKeyLengthLessThanAllowed_Throws);
-				Context.Database.Collections.Create(cname);
-
-				var maxLength = Constants.MinIndexKeyMaxLength - 1;
-				Assert.Throws<ArgumentException>(
-					() => Context.Database.Indexes.EnsureCreated(cname, _fname, maxLength)
-				);
-			}
-
-			[Test]
-			public void ByName_MaxKeyLengthGreaterThanAllowed_Throws()
-			{
-				var cname = nameof(ByName_MaxKeyLengthGreaterThanAllowed_Throws);
-				Context.Database.Collections.Create(cname);
-			
-				var maxLength = Constants.IndexKeyMaxLength + 1;
-				Assert.Throws<ArgumentException>(
-					() => Context.Database.Indexes.EnsureCreated(cname, _fname, maxLength)
 				);
 			}
 		}
@@ -323,97 +275,6 @@ namespace Barbados.StorageEngine.Tests.Integration
 			}
 		}
 
-		public sealed class Get : SetupTeardownBarbadosContextTestClass<Get>
-		{
-			[Test]
-			public void ById_CollectionExists_IndexExists_ReturnsIndex()
-			{
-				var cname = nameof(ById_CollectionExists_IndexExists_ReturnsIndex);
-				Context.Database.Collections.Create(cname);
-				Context.Database.Indexes.Create(cname, _fname);
-				var collection = Context.Database.Collections.Get(cname);
-				var index = Context.Database.Indexes.Get(collection.Id, _fname);
-
-				Assert.Multiple(() =>
-				{
-					Assert.That(index.IndexField.ToString(), Is.EqualTo(_fname));
-					Assert.That(index.CollectionId, Is.EqualTo(collection.Id));
-				});
-			}
-
-			[Test]
-			public void ById_CollectionExists_IndexDoesNotExist_Throws()
-			{
-				var cname = nameof(ById_CollectionExists_IndexDoesNotExist_Throws);
-				Context.Database.Collections.Create(cname);
-				var collection = Context.Database.Collections.Get(cname);
-
-				Assert.Throws<BarbadosException>(
-					() => Context.Database.Indexes.Get(collection.Id, _fname)
-				);
-			}
-
-			[Test]
-			public void ById_CollectionDoesNotExist_Throws()
-			{
-				Assert.Throws<BarbadosException>(
-					() => Context.Database.Indexes.Get(ObjectId.Invalid, _fname)
-				);
-			}
-
-			[Test]
-			public void ById_ReservedCollectionId_Throws()
-			{
-				Assert.Throws<ArgumentException>(
-					() => Context.Database.Indexes.Get(new ObjectId(-1), _fname)
-				);
-			}
-
-			[Test]
-			public void ByName_CollectionExists_IndexExists_ReturnsIndex()
-			{
-				var cname = nameof(ByName_CollectionExists_IndexExists_ReturnsIndex);
-				Context.Database.Collections.Create(cname);
-				Context.Database.Indexes.Create(cname, _fname);
-				var collection = Context.Database.Collections.Get(cname);
-				var index = Context.Database.Indexes.Get(cname, _fname);
-
-				Assert.Multiple(() =>
-				{
-					Assert.That(index.IndexField.ToString(), Is.EqualTo(_fname));
-					Assert.That(index.CollectionId, Is.EqualTo(collection.Id));
-				});
-			}
-
-			[Test]
-			public void ByName_CollectionExists_IndexDoesNotExist_Throws()
-			{
-				var cname = nameof(ByName_CollectionExists_IndexDoesNotExist_Throws);
-				Context.Database.Collections.Create(cname);
-
-				Assert.Throws<BarbadosException>(
-					() => Context.Database.Indexes.Get(cname, _fname)
-				);
-			}
-
-			[Test]
-			public void ByName_CollectionDoesNotExist_Throws()
-			{
-				var cname = nameof(ByName_CollectionDoesNotExist_Throws);
-				Assert.Throws<BarbadosException>(
-					() => Context.Database.Indexes.Get(cname, _fname)
-				);
-			}
-
-			[Test]
-			public void ByName_ReservedCollectionName_Throws()
-			{
-				Assert.Throws<ArgumentException>(
-					() => Context.Database.Indexes.Get(BarbadosDbObjects.Collections.MetaCollection, _fname)
-				);
-			}
-		}
-
 		public sealed class Create : SetupTeardownBarbadosContextTestClass<Create>
 		{
 			[Test]
@@ -463,30 +324,6 @@ namespace Barbados.StorageEngine.Tests.Integration
 			}
 
 			[Test]
-			public void ById_MaxKeyLengthLessThanAllowed_Throws()
-			{
-				var cname = nameof(ById_MaxKeyLengthLessThanAllowed_Throws);
-				Context.Database.Collections.Create(cname);
-
-				var maxLength = Constants.MinIndexKeyMaxLength - 1;
-				Assert.Throws<ArgumentException>(
-					() => Context.Database.Indexes.Create(cname, _fname, maxLength)
-				);
-			}
-
-			[Test]
-			public void ById_MaxKeyLengthGreaterThanAllowed_Throws()
-			{
-				var cname = nameof(ById_MaxKeyLengthGreaterThanAllowed_Throws);
-				Context.Database.Collections.Create(cname);
-
-				var maxLength = Constants.IndexKeyMaxLength + 1;
-				Assert.Throws<ArgumentException>(
-					() => Context.Database.Indexes.Create(cname, _fname, maxLength)
-				);
-			}
-
-			[Test]
 			public void ByName_CollectionExists_IndexDoesNotExist_IndexCreated()
 			{
 				var cname = nameof(ByName_CollectionExists_IndexDoesNotExist_IndexCreated);
@@ -528,30 +365,6 @@ namespace Barbados.StorageEngine.Tests.Integration
 			{
 				Assert.Throws<ArgumentException>(
 					() => Context.Database.Indexes.Create(BarbadosDbObjects.Collections.MetaCollection, _fname)
-				);
-			}
-
-			[Test]
-			public void ByName_MaxKeyLengthLessThanAllowed_Throws()
-			{
-				var cname = nameof(ByName_MaxKeyLengthLessThanAllowed_Throws);
-				Context.Database.Collections.Create(cname);
-
-				var maxLength = Constants.MinIndexKeyMaxLength - 1;
-				Assert.Throws<ArgumentException>(
-					() => Context.Database.Indexes.Create(cname, _fname, maxLength)
-				);
-			}
-
-			[Test]
-			public void ByName_MaxKeyLengthGreaterThanAllowed_Throws()
-			{
-				var cname = nameof(ByName_MaxKeyLengthGreaterThanAllowed_Throws);
-				Context.Database.Collections.Create(cname);
-
-				var maxLength = Constants.IndexKeyMaxLength + 1;
-				Assert.Throws<ArgumentException>(
-					() => Context.Database.Indexes.Create(cname, _fname, maxLength)
 				);
 			}
 		}

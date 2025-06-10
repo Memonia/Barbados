@@ -17,12 +17,12 @@ namespace Barbados.Documents.Tests
 					.Add(_field, value)
 					.Build();
 
-				var r = document.TryGetInt8(_field, out var gotten);
+				var r = document.TryGetInt8(_field, out var got);
 
 				Assert.Multiple(() =>
 				{
 					Assert.That(r, Is.True);
-					Assert.That(gotten, Is.EqualTo(value));
+					Assert.That(got, Is.EqualTo(value));
 				});
 			}
 
@@ -34,12 +34,12 @@ namespace Barbados.Documents.Tests
 					.Add(_field, value)
 					.Build();
 
-				var r = document.TryGetInt16(_field, out var gotten);
+				var r = document.TryGetInt16(_field, out var got);
 
 				Assert.Multiple(() =>
 				{
 					Assert.That(r, Is.True);
-					Assert.That(gotten, Is.EqualTo(value));
+					Assert.That(got, Is.EqualTo(value));
 				});
 			}
 
@@ -51,12 +51,12 @@ namespace Barbados.Documents.Tests
 					.Add(_field, value)
 					.Build();
 
-				var r = document.TryGetInt32(_field, out var gotten);
+				var r = document.TryGetInt32(_field, out var got);
 
 				Assert.Multiple(() =>
 				{
 					Assert.That(r, Is.True);
-					Assert.That(gotten, Is.EqualTo(value));
+					Assert.That(got, Is.EqualTo(value));
 				});
 			}
 
@@ -68,12 +68,12 @@ namespace Barbados.Documents.Tests
 					.Add(_field, value)
 					.Build();
 
-				var r = document.TryGetInt64(_field, out var gotten);
+				var r = document.TryGetInt64(_field, out var got);
 
 				Assert.Multiple(() =>
 				{
 					Assert.That(r, Is.True);
-					Assert.That(gotten, Is.EqualTo(value));
+					Assert.That(got, Is.EqualTo(value));
 				});
 			}
 
@@ -85,12 +85,12 @@ namespace Barbados.Documents.Tests
 					.Add(_field, value)
 					.Build();
 
-				var r = document.TryGetUInt8(_field, out var gotten);
+				var r = document.TryGetUInt8(_field, out var got);
 
 				Assert.Multiple(() =>
 				{
 					Assert.That(r, Is.True);
-					Assert.That(gotten, Is.EqualTo(value));
+					Assert.That(got, Is.EqualTo(value));
 				});
 			}
 
@@ -102,12 +102,12 @@ namespace Barbados.Documents.Tests
 					.Add(_field, value)
 					.Build();
 
-				var r = document.TryGetUInt16(_field, out var gotten);
+				var r = document.TryGetUInt16(_field, out var got);
 
 				Assert.Multiple(() =>
 				{
 					Assert.That(r, Is.True);
-					Assert.That(gotten, Is.EqualTo(value));
+					Assert.That(got, Is.EqualTo(value));
 				});
 			}
 
@@ -119,12 +119,12 @@ namespace Barbados.Documents.Tests
 					.Add(_field, value)
 					.Build();
 
-				var r = document.TryGetUInt32(_field, out var gotten);
+				var r = document.TryGetUInt32(_field, out var got);
 
 				Assert.Multiple(() =>
 				{
 					Assert.That(r, Is.True);
-					Assert.That(gotten, Is.EqualTo(value));
+					Assert.That(got, Is.EqualTo(value));
 				});
 			}
 
@@ -136,12 +136,12 @@ namespace Barbados.Documents.Tests
 					.Add(_field, value)
 					.Build();
 
-				var r = document.TryGetUInt64(_field, out var gotten);
+				var r = document.TryGetUInt64(_field, out var got);
 
 				Assert.Multiple(() =>
 				{
 					Assert.That(r, Is.True);
-					Assert.That(gotten, Is.EqualTo(value));
+					Assert.That(got, Is.EqualTo(value));
 				});
 			}
 
@@ -153,12 +153,12 @@ namespace Barbados.Documents.Tests
 					.Add(_field, value)
 					.Build();
 
-				var r = document.TryGetFloat32(_field, out var gotten);
+				var r = document.TryGetFloat32(_field, out var got);
 
 				Assert.Multiple(() =>
 				{
 					Assert.That(r, Is.True);
-					Assert.That(gotten, Is.EqualTo(value));
+					Assert.That(got, Is.EqualTo(value));
 				});
 			}
 
@@ -170,12 +170,12 @@ namespace Barbados.Documents.Tests
 					.Add(_field, value)
 					.Build();
 
-				var r = document.TryGetFloat64(_field, out var gotten);
+				var r = document.TryGetFloat64(_field, out var got);
 
 				Assert.Multiple(() =>
 				{
 					Assert.That(r, Is.True);
-					Assert.That(gotten, Is.EqualTo(value));
+					Assert.That(got, Is.EqualTo(value));
 				});
 			}
 
@@ -187,12 +187,12 @@ namespace Barbados.Documents.Tests
 					.Add(_field, value)
 					.Build();
 
-				var r = document.TryGetDateTime(_field, out var gotten);
+				var r = document.TryGetDateTime(_field, out var got);
 
 				Assert.Multiple(() =>
 				{
 					Assert.That(r, Is.True);
-					Assert.That(gotten, Is.EqualTo(value));
+					Assert.That(got, Is.EqualTo(value));
 				});
 			}
 
@@ -204,12 +204,12 @@ namespace Barbados.Documents.Tests
 					.Add(_field, value)
 					.Build();
 
-				var r = document.TryGetBoolean(_field, out var gotten);
+				var r = document.TryGetBoolean(_field, out var got);
 
 				Assert.Multiple(() =>
 				{
 					Assert.That(r, Is.True);
-					Assert.That(gotten, Is.EqualTo(value));
+					Assert.That(got, Is.EqualTo(value));
 				});
 			}
 
@@ -221,12 +221,12 @@ namespace Barbados.Documents.Tests
 					.Add(_field, value)
 					.Build();
 
-				var r = document.TryGetString(_field, out var gotten);
+				var r = document.TryGetString(_field, out var got);
 
 				Assert.Multiple(() =>
 				{
 					Assert.That(r, Is.True);
-					Assert.That(gotten, Is.EqualTo(value));
+					Assert.That(got, Is.EqualTo(value));
 				});
 			}
 
@@ -238,12 +238,12 @@ namespace Barbados.Documents.Tests
 				.Add(_field, value)
 				.Build();
 
-				var r = document.TryGetInt8Array(_field, out var gotten);
+				var r = document.TryGetInt8Array(_field, out var got);
 
 				Assert.Multiple(() =>
 				{
 					Assert.That(r, Is.True);
-					Assert.That(gotten, Is.EqualTo(value));
+					Assert.That(got, Is.EqualTo(value));
 				});
 			}
 
@@ -255,12 +255,12 @@ namespace Barbados.Documents.Tests
 				.Add(_field, value)
 				.Build();
 
-				var r = document.TryGetInt16Array(_field, out var gotten);
+				var r = document.TryGetInt16Array(_field, out var got);
 
 				Assert.Multiple(() =>
 				{
 					Assert.That(r, Is.True);
-					Assert.That(gotten, Is.EqualTo(value));
+					Assert.That(got, Is.EqualTo(value));
 				});
 			}
 
@@ -272,12 +272,12 @@ namespace Barbados.Documents.Tests
 				.Add(_field, value)
 				.Build();
 
-				var r = document.TryGetInt32Array(_field, out var gotten);
+				var r = document.TryGetInt32Array(_field, out var got);
 
 				Assert.Multiple(() =>
 				{
 					Assert.That(r, Is.True);
-					Assert.That(gotten, Is.EqualTo(value));
+					Assert.That(got, Is.EqualTo(value));
 				});
 			}
 
@@ -289,12 +289,12 @@ namespace Barbados.Documents.Tests
 				.Add(_field, value)
 				.Build();
 
-				var r = document.TryGetInt64Array(_field, out var gotten);
+				var r = document.TryGetInt64Array(_field, out var got);
 
 				Assert.Multiple(() =>
 				{
 					Assert.That(r, Is.True);
-					Assert.That(gotten, Is.EqualTo(value));
+					Assert.That(got, Is.EqualTo(value));
 				});
 			}
 
@@ -306,12 +306,12 @@ namespace Barbados.Documents.Tests
 				.Add(_field, value)
 				.Build();
 
-				var r = document.TryGetUInt8Array(_field, out var gotten);
+				var r = document.TryGetUInt8Array(_field, out var got);
 
 				Assert.Multiple(() =>
 				{
 					Assert.That(r, Is.True);
-					Assert.That(gotten, Is.EqualTo(value));
+					Assert.That(got, Is.EqualTo(value));
 				});
 			}
 
@@ -323,12 +323,12 @@ namespace Barbados.Documents.Tests
 				.Add(_field, value)
 				.Build();
 
-				var r = document.TryGetUInt16Array(_field, out var gotten);
+				var r = document.TryGetUInt16Array(_field, out var got);
 
 				Assert.Multiple(() =>
 				{
 					Assert.That(r, Is.True);
-					Assert.That(gotten, Is.EqualTo(value));
+					Assert.That(got, Is.EqualTo(value));
 				});
 			}
 
@@ -340,12 +340,12 @@ namespace Barbados.Documents.Tests
 				.Add(_field, value)
 				.Build();
 
-				var r = document.TryGetUInt32Array(_field, out var gotten);
+				var r = document.TryGetUInt32Array(_field, out var got);
 
 				Assert.Multiple(() =>
 				{
 					Assert.That(r, Is.True);
-					Assert.That(gotten, Is.EqualTo(value));
+					Assert.That(got, Is.EqualTo(value));
 				});
 			}
 
@@ -357,12 +357,12 @@ namespace Barbados.Documents.Tests
 				.Add(_field, value)
 				.Build();
 
-				var r = document.TryGetUInt64Array(_field, out var gotten);
+				var r = document.TryGetUInt64Array(_field, out var got);
 
 				Assert.Multiple(() =>
 				{
 					Assert.That(r, Is.True);
-					Assert.That(gotten, Is.EqualTo(value));
+					Assert.That(got, Is.EqualTo(value));
 				});
 			}
 
@@ -374,12 +374,12 @@ namespace Barbados.Documents.Tests
 				.Add(_field, value)
 				.Build();
 
-				var r = document.TryGetFloat32Array(_field, out var gotten);
+				var r = document.TryGetFloat32Array(_field, out var got);
 
 				Assert.Multiple(() =>
 				{
 					Assert.That(r, Is.True);
-					Assert.That(gotten, Is.EqualTo(value));
+					Assert.That(got, Is.EqualTo(value));
 				});
 			}
 
@@ -391,12 +391,12 @@ namespace Barbados.Documents.Tests
 				.Add(_field, value)
 				.Build();
 
-				var r = document.TryGetFloat64Array(_field, out var gotten);
+				var r = document.TryGetFloat64Array(_field, out var got);
 
 				Assert.Multiple(() =>
 				{
 					Assert.That(r, Is.True);
-					Assert.That(gotten, Is.EqualTo(value));
+					Assert.That(got, Is.EqualTo(value));
 				});
 			}
 
@@ -414,12 +414,12 @@ namespace Barbados.Documents.Tests
 				.Add(_field, value)
 				.Build();
 
-				var r = document.TryGetDateTimeArray(_field, out var gotten);
+				var r = document.TryGetDateTimeArray(_field, out var got);
 
 				Assert.Multiple(() =>
 				{
 					Assert.That(r, Is.True);
-					Assert.That(gotten, Is.EqualTo(value));
+					Assert.That(got, Is.EqualTo(value));
 				});
 			}
 
@@ -431,12 +431,12 @@ namespace Barbados.Documents.Tests
 					.Add(_field, value)
 				.Build();
 
-				var r = document.TryGetBooleanArray(_field, out var gotten);
+				var r = document.TryGetBooleanArray(_field, out var got);
 
 				Assert.Multiple(() =>
 				{
 					Assert.That(r, Is.True);
-					Assert.That(gotten, Is.EqualTo(value));
+					Assert.That(got, Is.EqualTo(value));
 				});
 			}
 
@@ -448,12 +448,12 @@ namespace Barbados.Documents.Tests
 					.Add(_field, value)
 				.Build();
 
-				var r = document.TryGetStringArray(_field, out var gotten);
+				var r = document.TryGetStringArray(_field, out var got);
 
 				Assert.Multiple(() =>
 				{
 					Assert.That(r, Is.True);
-					Assert.That(gotten, Is.EqualTo(value));
+					Assert.That(got, Is.EqualTo(value));
 				});
 			}
 
@@ -465,12 +465,12 @@ namespace Barbados.Documents.Tests
 					.Add(_field, value)
 				.Build();
 
-				var r = document.TryGetStringArray(_field, out var gotten);
+				var r = document.TryGetStringArray(_field, out var got);
 
 				Assert.Multiple(() =>
 				{
 					Assert.That(r, Is.True);
-					Assert.That(gotten, Is.EqualTo(value));
+					Assert.That(got, Is.EqualTo(value));
 				});
 			}
 

@@ -9,17 +9,17 @@ namespace Barbados.QueryEngine.Evaluation
 	{
 		public IReadOnlyCollection<IQueryPlanEvaluator> Children { get; }
 
-		private readonly BarbadosKeySelector _selector;
+		private readonly KeySelection _selection;
 		private readonly BarbadosDocument.Builder _evaluationResultBuilder;
 
 		public ProjectionEvaluator(
 			IReadOnlyCollection<IQueryPlanEvaluator> input,
-			BarbadosKeySelector selector,
+			KeySelection selection,
 			BarbadosDocument.Builder evaluationResultBuilder
 		)
 		{
 			Children = input;
-			_selector = selector;
+			_selection = selection;
 			_evaluationResultBuilder = evaluationResultBuilder;
 		}
 
@@ -29,9 +29,12 @@ namespace Barbados.QueryEngine.Evaluation
 			{
 				foreach (var document in child.Evaluate())
 				{
-					foreach (var key in _selector)
+					foreach (var key in _selection.Keys)
 					{
-						_evaluationResultBuilder.AddFrom(key, document);
+						if (document.HasField(key))
+						{
+							_evaluationResultBuilder.AddFrom(key, document);
+						}
 					}
 
 					yield return _evaluationResultBuilder.Build(reset: true);
@@ -39,6 +42,6 @@ namespace Barbados.QueryEngine.Evaluation
 			}
 		}
 
-		public override string ToString() => FormatHelpers.FormatValueSelector("Projection", _selector);
+		public override string ToString() => FormatHelpers.FormatSelection("Projection", _selection);
 	}
 }

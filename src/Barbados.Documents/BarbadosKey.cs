@@ -1,6 +1,6 @@
 ﻿using System;
 
-using Barbados.Documents.Serialisation;
+using Barbados.Documents.RadixTree;
 
 namespace Barbados.Documents
 {

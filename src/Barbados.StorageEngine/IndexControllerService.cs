@@ -2,80 +2,56 @@
 using System.Collections.Generic;
 
 using Barbados.Documents;
+using Barbados.StorageEngine.Collections.Indexes;
 using Barbados.StorageEngine.Exceptions;
-
-using Barbados.StorageEngine.Indexing;
 
 namespace Barbados.StorageEngine
 {
 	internal sealed class IndexControllerService
 	{
-		private readonly ConcurrentDictionary<ObjectId, ConcurrentDictionary<BarbadosKey, BTreeIndexFacade>> _facades;
+		private readonly ConcurrentDictionary<ObjectId, ConcurrentDictionary<BarbadosKey, IndexInfo>> _indexes;
 
 		public IndexControllerService()
 		{
-			_facades = [];
+			_indexes = [];
 		}
 
-		public void AddFacade(BTreeIndexFacade facade)
+		public void Add(ObjectId collectionId, IndexInfo info)
 		{
-			var facades = _facades.GetOrAdd(facade.CollectionId, _ => []);
-			if (!facades.TryAdd(facade.IndexField, facade))
+			var indexes = _indexes.GetOrAdd(collectionId, _ => []);
+			if (!indexes.TryAdd(info.Field, info))
 			{
 				throw new BarbadosInternalErrorException();
 			}
 		}
 
-		public bool TryGetFacade(ObjectId collectionId, string field, out BTreeIndexFacade facade)
+		public bool TryGet(ObjectId collectionId, BarbadosKey field, out IndexInfo info)
 		{
-			var facades = _facades.GetOrAdd(collectionId, _ => []);
-			if (facades.TryGetValue(field, out facade!))
-			{
-				return true;
-			}
-
-			facade = default!;
-			return false;
+			var indexes = _indexes.GetOrAdd(collectionId, _ => []);
+			return indexes.TryGetValue(field, out info!);
 		}
 
-		public bool TryRemoveFacade(ObjectId collectionId, string field, out BTreeIndexFacade facade)
+		public bool TryRemove(ObjectId collectionId)
 		{
-			var facades = _facades.GetOrAdd(collectionId, _ => []);
-			if (facades.TryRemove(field, out facade!))
-			{
-				facade.IsDeleted = true;
-				return true;
-			}
-
-			facade = default!;
-			return false;
+			return _indexes.TryRemove(collectionId, out _);
 		}
 
-		public bool TryRemoveFacades(ObjectId collectionId)
+		public bool TryRemove(ObjectId collectionId, BarbadosKey field, out IndexInfo info)
 		{
-			if (!_facades.TryRemove(collectionId, out var facades))
-			{
-				return false;
-			}
-
-			foreach (var facade in facades.Values)
-			{
-				facade.IsDeleted = true;
-			}
-
-			return true;
+			var indexes = _indexes.GetOrAdd(collectionId, _ => []);
+			return indexes.TryRemove(field, out info!);
 		}
 
-		public IEnumerable<BTreeIndexFacade> EnumerateBTreeIndexFacades(BTreeClusteredIndexFacade clusteredIndexFacade)
+		public IEnumerable<IndexInfo> EnumerateIndexes(ObjectId collectionId)
 		{
-			if (!_facades.TryGetValue(clusteredIndexFacade.Info.CollectionId, out var facades))
+			if (!_indexes.TryGetValue(collectionId, out var indexes))
 			{
 				yield break;
 			}
 
-			foreach (var facade in facades.Values)
+			foreach (var index in indexes.Values)
 			{
-				yield return facade;
+				yield return index;
 			}
 		}
 	}
