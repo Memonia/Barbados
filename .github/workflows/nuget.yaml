@@ -33,10 +33,10 @@ jobs:
 
     - name: 'pack'
       run: |
-        'dotnet pack src/Barbados.CommonUtils --configuration Release --output nupkgs --no-build /p:Version=${VERSION}'
-        'dotnet pack src/Barbados.Documents --configuration Release --output nupkgs --no-build /p:Version=${VERSION}'
-        'dotnet pack src/Barbados.QueryEngine --configuration Release --output nupkgs --no-build /p:Version=${VERSION}'
-        'dotnet pack src/Barbados.StorageEngine --configuration Release --output nupkgs --no-build /p:Version=${VERSION}'
+        dotnet pack src/Barbados.CommonUtils --configuration Release --output nupkgs --no-build /p:Version=${VERSION}
+        dotnet pack src/Barbados.Documents --configuration Release --output nupkgs --no-build /p:Version=${VERSION}
+        dotnet pack src/Barbados.QueryEngine --configuration Release --output nupkgs --no-build /p:Version=${VERSION}
+        dotnet pack src/Barbados.StorageEngine --configuration Release --output nupkgs --no-build /p:Version=${VERSION}
 
     - name: 'push'
       run: 'dotnet nuget push "nupkgs/*.nupkg" --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json'
