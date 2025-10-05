@@ -5,10 +5,10 @@
 Barbados is an embedded, ACID-compliant, thread-safe document store. Major features include: write-ahead log, transaction processing, queries and custom document storage format.
 * **Transaction processing:** each collection or index operation is a part of an automatic transaction or a user-created explicit transaction.
 * **Disaster recovery**: transactions rely on WAL (Write-Ahead Log) to avoid data loss.
-* **B-Tree:** collections are organised as clustered indexes and may have an unlimited number of non-clustered indexes on. Instead of using standard overflow pages to handle documents which don't fit on a single page, the underlying B-Tree implements automatic chunking. Chunking improves space utilisation of a clustered index and makes it depend on how well the B-Tree is balanced.
+* **B-Tree:** collections are organised as clustered indexes and may have an unlimited number of non-clustered indexes. Instead of using standard overflow pages to handle documents which don't fit on a single page, the underlying B-Tree implements automatic chunking. Chunking improves space utilisation of a clustered index and makes it dependent on how well the B-Tree is balanced.
 * **Concurrency:** collections and indexes support multiple simultaneous readers or a single writer.
 * **Custom document format:** under the hood, a document is a serialised radix tree. This format allows documents to be loaded into memory without any deserialisation or preprocessing steps. Because each field, no matter how deep it is nested in sub-documents, is addressable individually, independent of other fields, they can be indexed or loaded partially, just like the top-level fields.
-* **Queries:** Barbados includes a primitive query engine to provide support for basic data retrieval.
+* **Queries:** documents in a collection can be retrieved using provided query API.
 
 ## How to use it
 There are two main packages users should target. [Memonia.Barbados.StorageEngine](https://www.nuget.org/packages/Memonia.Barbados.StorageEngine) is the core package, which exposes full engine capabilities. [Memonia.Barbados.QueryEngine](https://www.nuget.org/packages/Memonia.Barbados.QueryEngine) package wraps low-level functions of the storage engine and exposes a query API. Below is a code snippet highlighting basic functionality.
