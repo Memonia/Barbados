@@ -23,7 +23,7 @@ jobs:
     - name: 'setup-dotnet'
       uses: 'actions/setup-dotnet@v4'
       with:
-        dotnet-version: '9.0.x'
+        dotnet-version: '10.0.x'
 
     - name: 'restore'
       run: 'dotnet restore'
@@ -37,6 +37,7 @@ jobs:
         dotnet pack src/Barbados.Documents --configuration Release --output nupkgs --no-build /p:Version=${VERSION}
         dotnet pack src/Barbados.QueryEngine --configuration Release --output nupkgs --no-build /p:Version=${VERSION}
         dotnet pack src/Barbados.StorageEngine --configuration Release --output nupkgs --no-build /p:Version=${VERSION}
+        dotnet pack src/Barbados --configuration Release --output nupkgs --no-build /p:Version=${VERSION}
 
     - name: 'push'
       run: 'dotnet nuget push "nupkgs/*.nupkg" --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json'

@@ -2,12 +2,14 @@
 {
 	internal partial class RadixTreeBuffer
 	{
-		private readonly struct NodeInfoWithDepth
+		private readonly struct NodeInfoDepth
 		{
+			public static int FirstLevelDepth { get; } = 1;
+
 			public int Depth { get; }
 			public NodeInfo NodeInfo { get; }
 
-			public NodeInfoWithDepth(int depth, NodeInfo info)
+			public NodeInfoDepth(int depth, NodeInfo info)
 			{
 				Depth = depth;
 				NodeInfo = info;

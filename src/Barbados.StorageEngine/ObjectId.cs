@@ -8,7 +8,7 @@
 		public static ObjectId MaxValue { get; } = new(long.MaxValue);
 		public static ObjectId MinValue { get; } = new(long.MinValue);
 
-		public bool IsValid => Value != 0;
+		public bool IsValid => Value != Invalid.Value;
 
 		public long Value { get; }
 

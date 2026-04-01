@@ -31,7 +31,7 @@ namespace Barbados.QueryEngine.Evaluation
 				{
 					foreach (var key in _selection.Keys)
 					{
-						if (document.HasField(key))
+						if (document.HasValue(key) || document.HasDocument(key))
 						{
 							_evaluationResultBuilder.AddFrom(key, document);
 						}

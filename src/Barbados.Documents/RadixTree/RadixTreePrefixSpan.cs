@@ -14,13 +14,13 @@ namespace Barbados.Documents.RadixTree
 			_prefix = prefix;
 		}
 
-		public bool StartsWith(RadixTreePrefix other) => StartsWith(other.AsSpan());
+		public bool SequenceEqual(RadixTreePrefixSpan other) => _prefix.SequenceEqual(other._prefix);
 		public bool StartsWith(RadixTreePrefixSpan other) => _prefix.StartsWith(other._prefix);
-		public int CommonPrefixLength(RadixTreePrefix other) => CommonPrefixLength(other.AsSpan());
 		public int CommonPrefixLength(RadixTreePrefixSpan other) => _prefix.CommonPrefixLength(other._prefix);
 
 		public ReadOnlySpan<byte> AsBytes() => _prefix;
 		public override string ToString() => Encoding.UTF8.GetString(_prefix);
+		public string ToString(int truncateLength) => Encoding.UTF8.GetString(_prefix[..^truncateLength]);
 
 		public void WriteTo(Span<byte> destination) => _prefix.CopyTo(destination);
 

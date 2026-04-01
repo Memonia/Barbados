@@ -31,18 +31,19 @@ namespace Barbados.Documents.Json
 		public override void Write(Utf8JsonWriter writer, BarbadosDocument value, JsonSerializerOptions options)
 		{
 			writer.WriteStartObject();
-			var e = value.GetKeyStringEnumerator();
+			var e = value.GetKeyEnumerator(flat: false);
 			while (e.MoveNext())
 			{
-				writer.WritePropertyName(e.Current);
-				if (value.TryGetDocument(e.Current, out var nested))
+				var current = e.GetCurrent();
+				writer.WritePropertyName(current.ToString());
+				if (value.TryGetDocument(current, out var doc))
 				{
-					Write(writer, nested, options);
+					Write(writer, doc, options);
 				}
 
 				else
 				{
-					var v = value.Get(e.Current);
+					var v = value.Get(current);
 					var raw = JsonSerializer.Serialize(v, _valueOptions);
 					writer.WriteRawValue(raw, skipInputValidation: true);
 				}

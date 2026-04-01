@@ -17,9 +17,14 @@ namespace Barbados.Documents.RadixTree
 				_root = new RadixTreeNode();
 			}
 
-			public bool PrefixExists(RadixTreePrefix prefix)
+			public bool PrefixExists(RadixTreePrefixSpan prefix)
 			{
-				return _root.TryGet(prefix.AsSpan(), out _);
+				return _root.TryGet(prefix, out _);
+			}
+
+			public bool PrefixHasValue(RadixTreePrefixSpan prefix)
+			{
+				return _root.TryGet(prefix, out var value) && value is not null;
 			}
 
 			public RadixTreeBuffer Build()
@@ -32,48 +37,43 @@ namespace Barbados.Documents.RadixTree
 				_root = new RadixTreeNode();
 			}
 
-			public Builder AddInt8(RadixTreePrefix name, sbyte value) => AddBuffer(name, ValueBufferFactory.Create(value));
-			public Builder AddInt16(RadixTreePrefix name, short value) => AddBuffer(name, ValueBufferFactory.Create(value));
-			public Builder AddInt32(RadixTreePrefix name, int value) => AddBuffer(name, ValueBufferFactory.Create(value));
-			public Builder AddInt64(RadixTreePrefix name, long value) => AddBuffer(name, ValueBufferFactory.Create(value));
-			public Builder AddUInt8(RadixTreePrefix name, byte value) => AddBuffer(name, ValueBufferFactory.Create(value));
-			public Builder AddUInt16(RadixTreePrefix name, ushort value) => AddBuffer(name, ValueBufferFactory.Create(value));
-			public Builder AddUInt32(RadixTreePrefix name, uint value) => AddBuffer(name, ValueBufferFactory.Create(value));
-			public Builder AddUInt64(RadixTreePrefix name, ulong value) => AddBuffer(name, ValueBufferFactory.Create(value));
-			public Builder AddFloat32(RadixTreePrefix name, float value) => AddBuffer(name, ValueBufferFactory.Create(value));
-			public Builder AddFloat64(RadixTreePrefix name, double value) => AddBuffer(name, ValueBufferFactory.Create(value));
-			public Builder AddBoolean(RadixTreePrefix name, bool value) => AddBuffer(name, ValueBufferFactory.Create(value));
-			public Builder AddDateTime(RadixTreePrefix name, DateTime value) => AddBuffer(name, ValueBufferFactory.Create(value));
-			public Builder AddString(RadixTreePrefix name, string value) => AddBuffer(name, ValueBufferFactory.Create(value));
+			public Builder AddInt8(RadixTreePrefixSpan prefix, sbyte value) => AddBuffer(prefix, ValueBufferFactory.Create(value));
+			public Builder AddInt16(RadixTreePrefixSpan prefix, short value) => AddBuffer(prefix, ValueBufferFactory.Create(value));
+			public Builder AddInt32(RadixTreePrefixSpan prefix, int value) => AddBuffer(prefix, ValueBufferFactory.Create(value));
+			public Builder AddInt64(RadixTreePrefixSpan prefix, long value) => AddBuffer(prefix, ValueBufferFactory.Create(value));
+			public Builder AddUInt8(RadixTreePrefixSpan prefix, byte value) => AddBuffer(prefix, ValueBufferFactory.Create(value));
+			public Builder AddUInt16(RadixTreePrefixSpan prefix, ushort value) => AddBuffer(prefix, ValueBufferFactory.Create(value));
+			public Builder AddUInt32(RadixTreePrefixSpan prefix, uint value) => AddBuffer(prefix, ValueBufferFactory.Create(value));
+			public Builder AddUInt64(RadixTreePrefixSpan prefix, ulong value) => AddBuffer(prefix, ValueBufferFactory.Create(value));
+			public Builder AddFloat32(RadixTreePrefixSpan prefix, float value) => AddBuffer(prefix, ValueBufferFactory.Create(value));
+			public Builder AddFloat64(RadixTreePrefixSpan prefix, double value) => AddBuffer(prefix, ValueBufferFactory.Create(value));
+			public Builder AddBoolean(RadixTreePrefixSpan prefix, bool value) => AddBuffer(prefix, ValueBufferFactory.Create(value));
+			public Builder AddDateTime(RadixTreePrefixSpan prefix, DateTime value) => AddBuffer(prefix, ValueBufferFactory.Create(value));
+			public Builder AddString(RadixTreePrefixSpan prefix, string value) => AddBuffer(prefix, ValueBufferFactory.Create(value));
 
-			public Builder AddInt8Array(RadixTreePrefix name, sbyte[] values) => AddBuffer(name, ValueBufferFactory.Create(values));
-			public Builder AddInt16Array(RadixTreePrefix name, short[] values) => AddBuffer(name, ValueBufferFactory.Create(values));
-			public Builder AddInt32Array(RadixTreePrefix name, int[] values) => AddBuffer(name, ValueBufferFactory.Create(values));
-			public Builder AddInt64Array(RadixTreePrefix name, long[] values) => AddBuffer(name, ValueBufferFactory.Create(values));
-			public Builder AddUInt8Array(RadixTreePrefix name, byte[] values) => AddBuffer(name, ValueBufferFactory.Create(values));
-			public Builder AddUInt16Array(RadixTreePrefix name, ushort[] values) => AddBuffer(name, ValueBufferFactory.Create(values));
-			public Builder AddUInt32Array(RadixTreePrefix name, uint[] values) => AddBuffer(name, ValueBufferFactory.Create(values));
-			public Builder AddUInt64Array(RadixTreePrefix name, ulong[] values) => AddBuffer(name, ValueBufferFactory.Create(values));
-			public Builder AddFloat32Array(RadixTreePrefix name, float[] values) => AddBuffer(name, ValueBufferFactory.Create(values));
-			public Builder AddFloat64Array(RadixTreePrefix name, double[] values) => AddBuffer(name, ValueBufferFactory.Create(values));
-			public Builder AddBooleanArray(RadixTreePrefix name, bool[] values) => AddBuffer(name, ValueBufferFactory.Create(values));
-			public Builder AddDateTimeArray(RadixTreePrefix name, DateTime[] values) => AddBuffer(name, ValueBufferFactory.Create(values));
-			public Builder AddStringArray(RadixTreePrefix name, string[] values) => AddBuffer(name, ValueBufferFactory.Create(values));
+			public Builder AddInt8Array(RadixTreePrefixSpan prefix, sbyte[] values) => AddBuffer(prefix, ValueBufferFactory.Create(values));
+			public Builder AddInt16Array(RadixTreePrefixSpan prefix, short[] values) => AddBuffer(prefix, ValueBufferFactory.Create(values));
+			public Builder AddInt32Array(RadixTreePrefixSpan prefix, int[] values) => AddBuffer(prefix, ValueBufferFactory.Create(values));
+			public Builder AddInt64Array(RadixTreePrefixSpan prefix, long[] values) => AddBuffer(prefix, ValueBufferFactory.Create(values));
+			public Builder AddUInt8Array(RadixTreePrefixSpan prefix, byte[] values) => AddBuffer(prefix, ValueBufferFactory.Create(values));
+			public Builder AddUInt16Array(RadixTreePrefixSpan prefix, ushort[] values) => AddBuffer(prefix, ValueBufferFactory.Create(values));
+			public Builder AddUInt32Array(RadixTreePrefixSpan prefix, uint[] values) => AddBuffer(prefix, ValueBufferFactory.Create(values));
+			public Builder AddUInt64Array(RadixTreePrefixSpan prefix, ulong[] values) => AddBuffer(prefix, ValueBufferFactory.Create(values));
+			public Builder AddFloat32Array(RadixTreePrefixSpan prefix, float[] values) => AddBuffer(prefix, ValueBufferFactory.Create(values));
+			public Builder AddFloat64Array(RadixTreePrefixSpan prefix, double[] values) => AddBuffer(prefix, ValueBufferFactory.Create(values));
+			public Builder AddBooleanArray(RadixTreePrefixSpan prefix, bool[] values) => AddBuffer(prefix, ValueBufferFactory.Create(values));
+			public Builder AddDateTimeArray(RadixTreePrefixSpan prefix, DateTime[] values) => AddBuffer(prefix, ValueBufferFactory.Create(values));
+			public Builder AddStringArray(RadixTreePrefixSpan prefix, string[] values) => AddBuffer(prefix, ValueBufferFactory.Create(values));
 
-			public Builder AddBuffer(RadixTreePrefix name, IValueBuffer buffer)
+			public Builder AddBuffer(RadixTreePrefixSpan prefix, IValueBuffer buffer)
 			{
-				return AddBuffer(name.AsSpan(), buffer);
-			}
-
-			public Builder AddBuffer(RadixTreePrefixSpan nameSpan, IValueBuffer buffer)
-			{
-				_root.Add(nameSpan, buffer);
+				_root.Add(prefix, buffer);
 				return this;
 			}
 
-			public Builder AddPrefix(RadixTreePrefix name)
+			public Builder AddPrefix(RadixTreePrefixSpan prefix)
 			{
-				_root.Add(name.AsSpan(), null);
+				_root.Add(prefix, null);
 				return this;
 			}
 		}

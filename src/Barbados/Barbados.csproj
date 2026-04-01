@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<TargetFramework>net10.0</TargetFramework>
+
+		<Authors>Memonia</Authors>
+		<PackageId>Memonia.Barbados</PackageId>
+		<Description>An embedded document store for .NET </Description>
+		<RepositoryUrl>https://github.com/Memonia/Barbados</RepositoryUrl>
+		<RepositoryType>git</RepositoryType>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\Barbados.QueryEngine\Barbados.QueryEngine.csproj" />
+		<ProjectReference Include="..\Barbados.StorageEngine\Barbados.StorageEngine.csproj" />
+	</ItemGroup>
+</Project>

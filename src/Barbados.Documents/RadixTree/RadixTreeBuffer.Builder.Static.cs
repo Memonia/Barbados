@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 
-using Barbados.Documents.Exceptions;
+using Barbados.Documents.RadixTree.Exceptions;
 using Barbados.Documents.RadixTree.Metadata;
 using Barbados.Documents.RadixTree.Values;
 
@@ -43,14 +43,14 @@ namespace Barbados.Documents.RadixTree
 
 				catch (OverflowException oe)
 				{
-					throw new BarbadosDocumentSerialisationException(
+					throw new RadixTreeSerialisationException(
 						$"Resulting buffer exceeded the maximum length of {int.MaxValue}", oe
 					);
 				}
 
 				if (prefixTableLength > MaxPrefixTableLength)
 				{
-					throw new BarbadosDocumentSerialisationException(
+					throw new RadixTreeSerialisationException(
 						$"The prefix table exceeded maximum length of {MaxPrefixTableLength} bytes" 
 					);
 
@@ -58,7 +58,7 @@ namespace Barbados.Documents.RadixTree
 
 				if (valueTableLength > MaxValueTableLength)
 				{
-					throw new BarbadosDocumentSerialisationException(
+					throw new RadixTreeSerialisationException(
 						$"The value table exceeded maximum length of {MaxValueTableLength} bytes"
 					);
 				}

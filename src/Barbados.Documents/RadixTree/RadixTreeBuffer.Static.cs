@@ -8,8 +8,19 @@ namespace Barbados.Documents.RadixTree
 {
 	internal partial class RadixTreeBuffer
 	{
+		public static bool IsEmpty(ReadOnlySpan<byte> buffer)
+		{
+			return buffer.Length <= PrefixTableOffset;
+		}
+
 		public static bool TryGetBuffer(ReadOnlySpan<byte> buffer, RadixTreePrefixSpan prefix, out IValueBuffer valueBuffer)
 		{
+			if (IsEmpty(buffer))
+			{
+				valueBuffer = default!;
+				return false;
+			}
+
 			if (_tryGetValueBufferRaw(buffer, prefix.AsBytes(), out var valueBufferRaw, out var descriptor))
 			{
 				valueBuffer = ValueBufferFactory.CreateFromRawBuffer(valueBufferRaw, descriptor.Marker);
@@ -43,7 +54,7 @@ namespace Barbados.Documents.RadixTree
 			var extractedPrefixTableLength = 0;
 			var extractedValueTableLength = 0;
 			var currentValueTableOffset = _getValueTableOffset(buffer);
-			var bfnenr = new BreadthFirstNoRootNodeEnumerator(buffer, rootOffset);
+			var bfnenr = new PrivateEnums.BreadthFirstNodesNoRoot(buffer, rootOffset);
 			while (bfnenr.TryGetNext(out var info))
 			{
 				extractedRelativeNodeOffsets.Add(info.Offset, extractedPrefixTableLength);
@@ -65,7 +76,7 @@ namespace Barbados.Documents.RadixTree
 			var extractedPrefixTableOffset = PrefixTableOffset;
 			var extractedValueTableOffset = extractedPrefixTableOffset + extractedPrefixTableLength;
 			var extractedRelativeValueTableOffset = 0;
-			bfnenr = new BreadthFirstNoRootNodeEnumerator(buffer, rootOffset);
+			bfnenr = new PrivateEnums.BreadthFirstNodesNoRoot(buffer, rootOffset);
 
 			ValueBufferRawHelpers.WriteInt32(extractedSpan, extractedValueTableOffset);
 			while (bfnenr.TryGetNext(out var info))
@@ -116,17 +127,7 @@ namespace Barbados.Documents.RadixTree
 			return new RadixTreeBuffer(extracted);
 		}
 
-		private static bool _isEmpty(ReadOnlySpan<byte> buffer)
-		{
-			return buffer.Length <= 4;
-		}
-
-		private static bool _tryGetValueBufferRaw(
-			ReadOnlySpan<byte> buffer,
-			ReadOnlySpan<byte> prefix,
-			out ReadOnlySpan<byte> valueBuffer,
-			out ValueDescriptor descriptor
-			)
+		private static bool _tryGetValueBufferRaw(ReadOnlySpan<byte> buffer, ReadOnlySpan<byte> prefix, out ReadOnlySpan<byte> valueBuffer, out ValueDescriptor descriptor)
 		{
 			if (!_tryGetValueDescriptor(buffer, prefix, out descriptor))
 			{
@@ -160,7 +161,7 @@ namespace Barbados.Documents.RadixTree
 
 		private static int _getNodeOffset(ReadOnlySpan<byte> buffer, ReadOnlySpan<byte> prefix)
 		{
-			if (_isEmpty(buffer))
+			if (IsEmpty(buffer))
 			{
 				return -1;
 			}
@@ -169,13 +170,15 @@ namespace Barbados.Documents.RadixTree
 			int prefixSearchPosition = 0;
 			while (prefixSearchPosition < prefix.Length)
 			{
-				var currentSearchPrefix = prefix[prefixSearchPosition..];
+				var currentSearchPrefixPortion = prefix[prefixSearchPosition..];
 				var pd = _getPrefixDescriptor(buffer, nodeOffset);
 				var info = new NodeInfo(nodeOffset, pd);
 
-				var currentPrefix = _getNodePrefix(buffer, info);
-				var cpl = currentSearchPrefix.CommonPrefixLength(currentPrefix);
-				if (cpl == 0)
+				var currentNodePrefix = _getNodePrefix(buffer, info);
+				var cpl = currentSearchPrefixPortion.CommonPrefixLength(currentNodePrefix);
+
+				// If not full match - look at the next subtree
+				if (cpl != currentNodePrefix.Length)
 				{
 					if (pd.IsLastChild)
 					{
@@ -187,7 +190,7 @@ namespace Barbados.Documents.RadixTree
 				}
 
 				prefixSearchPosition += cpl;
-				if (cpl == currentPrefix.Length && cpl == currentSearchPrefix.Length)
+				if (cpl == currentSearchPrefixPortion.Length)
 				{
 					return nodeOffset;
 				}

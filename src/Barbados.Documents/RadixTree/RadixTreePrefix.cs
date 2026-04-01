@@ -8,6 +8,15 @@ namespace Barbados.Documents.RadixTree
 
 		public static implicit operator RadixTreePrefixSpan(RadixTreePrefix prefix) => prefix.AsSpan();
 
+		public static int GetLength(ReadOnlySpan<char> prefix) => Encoding.UTF8.GetByteCount(prefix);
+		public static int GetLength(ReadOnlySpan<char> prefix, ReadOnlySpan<char> append) => Encoding.UTF8.GetByteCount(prefix) + Encoding.UTF8.GetByteCount(append);
+		public static void Write(ReadOnlySpan<char> prefix, in Span<byte> destination) => Encoding.UTF8.GetBytes(prefix, destination);
+		public static void Write(ReadOnlySpan<char> prefix, ReadOnlySpan<char> append, in Span<byte> destination)
+		{
+			Encoding.UTF8.GetBytes(prefix, destination);
+			Encoding.UTF8.GetBytes(append, destination[prefix.Length..]);
+		}
+
 		public static RadixTreePrefix Empty { get; } = new(string.Empty);
 
 		public int Length => _prefix.Length;
@@ -21,8 +30,8 @@ namespace Barbados.Documents.RadixTree
 
 		public RadixTreePrefix(ReadOnlySpan<char> prefix)
 		{
-			_prefix = new byte[Encoding.UTF8.GetByteCount(prefix)];
-			Encoding.UTF8.GetBytes(prefix, _prefix);
+			_prefix = new byte[GetLength(prefix)];
+			Write(prefix, _prefix);
 		}
 
 		public RadixTreePrefix(RadixTreePrefixSpan prefix) : this(prefix.AsBytes().ToArray())
@@ -34,7 +43,8 @@ namespace Barbados.Documents.RadixTree
 		public ReadOnlySpan<byte> AsBytes() => AsSpan().AsBytes();
 
 		public override string ToString() => AsSpan().ToString();
+		public string ToString(int truncateLength) => AsSpan().ToString(truncateLength);
 
-		public RadixTreePrefix this[Range range] => new(_prefix[range]);
+		public RadixTreePrefixSpan this[Range range] => AsSpan()[range];
 	}
 }

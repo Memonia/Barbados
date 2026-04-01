@@ -30,6 +30,6 @@ namespace Barbados.QueryEngine.Evaluation
 			}
 		}
 
-		public override string ToString() => FormatHelpers.FormatSelection($"IndexSeek({_field})", _options);
+		public override string ToString() => FormatHelpers.FormatSelection($"IndexSeek('{_field}')", _options);
 	}
 }

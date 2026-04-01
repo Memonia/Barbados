@@ -1,12 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System.Collections.Generic;
 
+using Barbados.Documents.RadixTree.Exceptions;
 using Barbados.Documents.RadixTree.Values;
 
 namespace Barbados.Documents.RadixTree
 {
-	internal sealed class RadixTreeNode
+	internal sealed partial class RadixTreeNode
 	{
 		/* A radix tree implementation tailored for key-value accumulation during document creation
 		 * and subsequent serialisation
@@ -67,17 +66,14 @@ namespace Barbados.Documents.RadixTree
 			}
 		}
 
-		public bool TryGet(RadixTreePrefixSpan key, out IValueBuffer value)
+		public bool TryGet(RadixTreePrefixSpan key, out IValueBuffer? value)
 		{
 			// The tree is not empty-string terminated, so if the key is empty at this point in search,
-			// current node is the only place where the value can be.
-			//
-			// The search should start from the root of the tree, where the value is always null.
-			// If an empty string was given, then there's no match anyways and null is to be expected
+			// then we have found the corresponding node
 			if (key.Length == 0)
 			{
-				value = Value!;
-				return value is not null;
+				value = Value;
+				return true;
 			}
 
 			foreach (var (prefix, child) in _children)
@@ -88,7 +84,7 @@ namespace Barbados.Documents.RadixTree
 				}
 			}
 
-			value = default!;
+			value = default;
 			return false;
 		}
 
@@ -113,7 +109,7 @@ namespace Barbados.Documents.RadixTree
 						// If current child has a value - the key is a duplicate
 						if (child.Value is not null)
 						{
-							throw new ArgumentException($"Duplicate key {key.ToString()}");
+							throw new RadixTreeDuplicateKeyException();
 						}
 
 						child.Value = value;
@@ -143,8 +139,8 @@ namespace Barbados.Documents.RadixTree
 					var split = new RadixTreeNode();
 
 					_children.RemoveAt(index);
-					_children.Add(new(splitPrefix, split));
-					split._children.Add(new(prefixRightSplit, child));
+					_children.Add(new(new(splitPrefix), split));
+					split._children.Add(new(new(prefixRightSplit), child));
 
 					// It could be that the key was a prefix for the current prefix, in which case
 					// the search stops at the split point. The tree is not empty-string terminated
@@ -184,28 +180,6 @@ namespace Barbados.Documents.RadixTree
 			{
 				var node = new RadixTreeNode(value);
 				_children.Add(new(new(key), node));
-			}
-		}
-
-		public string GetTree()
-		{
-			var sb = new StringBuilder();
-
-			_getTree(sb, 0);
-			return sb.ToString();
-		}
-
-		private void _getTree(StringBuilder sb, int depth)
-		{
-			sb.Append(' ');
-			sb.Append(Value?.ToString() ?? "<none>");
-			sb.AppendLine();
-			foreach (var (prefix, child) in _children)
-			{
-				sb.Append(' ', depth);
-				sb.Append('|');
-				sb.Append(prefix);
-				child._getTree(sb, depth + 1);
 			}
 		}
 	}

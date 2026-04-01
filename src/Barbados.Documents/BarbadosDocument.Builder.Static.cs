@@ -22,43 +22,70 @@ namespace Barbados.Documents
 
 			public static BarbadosDocument FromBytesInclude(ReadOnlySpan<byte> bytes, IEnumerable<BarbadosKey> keys)
 			{
+				// TODO: Any way to reduce allocations?
+
+				if (RadixTreeBuffer.IsEmpty(bytes))
+				{
+					return BarbadosDocument.Empty;
+				}
+
 				var set = new HashSet<BarbadosKey>(keys);
-				var builder = new RadixTreeBuffer.Builder();
+				var builder = new Builder();
 				foreach (var key in set)
 				{
-					if (key.IsDocument)
+					if (RadixTreeBuffer.TryGetBuffer(bytes, key.ValueSearchPrefix, out var valueBuffer))
 					{
-						var e = new RadixTreeBuffer.PrefixValueEnumerator(bytes, key.SearchPrefix);
-						while (e.TryGetNext(out var sk, out var valueBuffer))
-						{
-							builder.AddBuffer(sk, valueBuffer);
-						}
+						builder.Add(key.ValueSearchPrefix, valueBuffer);
 					}
 
 					else
 					{
-						if (RadixTreeBuffer.TryGetBuffer(bytes, key.SearchPrefix, out var valueBuffer))
+						var e = new RadixTreeBuffer.FullPrefixHasValueEnumerator(bytes, key.DocumentSearchPrefix);
+						while (e.MoveNext())
 						{
-							builder.AddBuffer(key.SearchPrefix, valueBuffer);
+							var sk = e.GetCurrentPrefix(out valueBuffer);
+							var keyPrefixLength = key.DocumentSearchPrefix.AsBytes().Length;
+							var full = new byte[keyPrefixLength + sk.AsBytes().Length];
+							key.DocumentSearchPrefix.AsBytes().CopyTo(full);
+							sk.AsBytes().CopyTo(full.AsSpan()[keyPrefixLength..]);
+							builder.Add(new RadixTreePrefixSpan(full), valueBuffer);
 						}
 					}
 				}
 
-				return new(builder.Build());
+				return builder.Build();
 			}
 
 			public static BarbadosDocument FromBytesExclude(ReadOnlySpan<byte> bytes, IEnumerable<BarbadosKey> keys)
 			{
-				var include = new HashSet<BarbadosKey>();
-				var e = new RadixTreeBuffer.PrefixValueEnumerator(bytes);
-				while (e.TryGetNext(out var key, out _))
+				// TODO: Implement it properly. Right now it's incredibly lazy and much slower than the 'include'
+
+				if (RadixTreeBuffer.IsEmpty(bytes))
 				{
-					include.Add(new(key));
+					return BarbadosDocument.Empty;
+				}
+
+				var include = new HashSet<BarbadosKey>();
+				var doc = FromBytes(bytes);
+				var e = doc.GetKeyEnumerator(flat: true);
+				while (e.MoveNext())
+				{
+					include.Add(e.GetCurrent());
 				}
 
 				foreach (var key in keys)
 				{
-					include.Remove(key);
+					if (doc.TryGetDocumentKeyEnumerator(key, flat: true, out e))
+					{
+						while (e.MoveNext())
+						{
+							include.Remove(key.DocumentSearchPrefix.ToString() + e.GetCurrent());
+						}
+					}
+					else
+					{
+						include.Remove(key);
+					}
 				}
 
 				return FromBytesInclude(bytes, include);

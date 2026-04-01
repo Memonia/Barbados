@@ -16,19 +16,25 @@ namespace Barbados.Documents.Tests
 			[Test]
 			public void GivenNestingSeparator_Throws()
 			{
-				var str = new string([BarbadosKey.NestingSeparator]);
-				Assert.Throws<ArgumentException>(() => new BarbadosKey(str));
+				Assert.Throws<ArgumentException>(() => new BarbadosKey(BarbadosKey.NestingSeparator));
 			}
 
 			[Test]
-			public void GivenStringWhichStartsWithNestingSeparator_Throws()
+			public void GivenStringStartsWithNestingSeparator_Throws()
 			{
 				var str = $"{BarbadosKey.NestingSeparator}test";
 				Assert.Throws<ArgumentException>(() => new BarbadosKey(str));
 			}
 
 			[Test]
-			public void GivenStringWhichContainsConsecutiveNestingSeparators_Throws()
+			public void GivenStringEndsWithNestingSeparator_Throws()
+			{
+				var str = $"test{BarbadosKey.NestingSeparator}";
+				Assert.Throws<ArgumentException>(() => new BarbadosKey(str));
+			}
+
+			[Test]
+			public void GivenStringContainsConsecutiveNestingSeparators_Throws()
 			{
 				var str =
 					"test" +
@@ -40,78 +46,19 @@ namespace Barbados.Documents.Tests
 			}
 		}
 
-		public sealed class IsDocument
+		public sealed class Properties
 		{
 			[Test]
-			public void GivenStringWhichEndsWithNestingSeparator_ReturnsTrue()
-			{
-				var str = "test" + BarbadosKey.NestingSeparator;
-				var key = new BarbadosKey(str);
-
-				Assert.That(key.IsDocument, Is.True);
-			}
-
-			[Test]
-			public void GivenStringDoesNotEndWithNestingSeparator_ReturnsFalse()
+			public void GivenString_ReturnCorrectSearchPrefixes()
 			{
 				var str = "test";
 				var key = new BarbadosKey(str);
 
-				Assert.That(key.IsDocument, Is.False);
-			}
-		}
-
-		public sealed class GetValueKey
-		{
-			[Test]
-			public void GivenStringWhichEndsWithNestingSeparator_ReturnsStringWithoutNestingSeparator()
-			{
-				var name = "test";
-				var str = name + BarbadosKey.NestingSeparator;
-				var key = new BarbadosKey(str);
-
-				var res = key.GetValueKey().ToString();
-
-				Assert.That(res, Is.EqualTo(name));
-			}
-
-			[Test]
-			public void GivenStringHasNestingLevelTwoAndEndsWithNestingSeparator_ReturnsStringWithoutNestingSeparator()
-			{
-				var name = "test" + BarbadosKey.NestingSeparator + "test";
-				var str = name + BarbadosKey.NestingSeparator;
-				var key = new BarbadosKey(str);
-
-				var res = key.GetValueKey().ToString();
-
-				Assert.That(res, Is.EqualTo(name));
-			}
-		}
-
-		public sealed class GetDocumenKey
-		{
-			[Test]
-			public void GivenStringDoesNotEndWithNestingSeparator_ReturnsSameStringWhichEndsWithNestingSeparator()
-			{
-				var str = "test";
-				var result = str + BarbadosKey.NestingSeparator;
-				var key = new BarbadosKey(str);
-
-				var res = key.GetDocumentKey().ToString();
-
-				Assert.That(res, Is.EqualTo(result));
-			}
-
-			[Test]
-			public void GivenStringHasNestingLevelTwoAndDoesNotEndWithNestingSeparator_ReturnsSameStringWhichEndsWithNestingSeparator()
-			{
-				var str = "test" + BarbadosKey.NestingSeparator + "test";
-				var result = str + BarbadosKey.NestingSeparator;
-				var key = new BarbadosKey(str);
-
-				var res = key.GetDocumentKey().ToString();
-
-				Assert.That(res, Is.EqualTo(result));
+				using (Assert.EnterMultipleScope())
+				{
+					Assert.That(key.ValueSearchPrefix.AsBytes().EndsWith(BarbadosKey.NestingSeparatorAsPrefix.AsBytes()), Is.False);
+					Assert.That(key.DocumentSearchPrefix.AsBytes().EndsWith(BarbadosKey.NestingSeparatorAsPrefix.AsBytes()), Is.True);
+				}
 			}
 		}
 	}

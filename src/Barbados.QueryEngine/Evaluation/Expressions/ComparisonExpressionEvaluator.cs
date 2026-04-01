@@ -16,7 +16,7 @@ namespace Barbados.QueryEngine.Evaluation.Expressions
 
 		protected override BarbadosDocument Evaluate(BarbadosDocument left, BarbadosDocument right)
 		{
-			if (BarbadosDocument.TryCompareFields(_comparedField, left, right, out int result))
+			if (BarbadosDocument.TryCompare(_comparedField, left, right, out int result))
 			{
 				return _resultBuilder
 					.Add(QueryValueNames.Predicate, InterpretResult(result))

@@ -1,11 +1,11 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
-		<TargetFramework>net9.0</TargetFramework>
+		<TargetFramework>net10.0</TargetFramework>
 		<Nullable>enable</Nullable>
 
 		<Authors>Memonia</Authors>
 		<PackageId>Memonia.Barbados.QueryEngine</PackageId>
-		<Description>Query support for the Barbados document store</Description>
+		<Description>Query support for Barbados document store</Description>
 		<RepositoryUrl>https://github.com/Memonia/Barbados</RepositoryUrl>
 		<RepositoryType>git</RepositoryType>
 	</PropertyGroup>

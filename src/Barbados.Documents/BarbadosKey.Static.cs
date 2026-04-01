@@ -6,26 +6,26 @@ namespace Barbados.Documents
 {
 	public partial struct BarbadosKey
 	{
-		internal static ReadOnlySpan<char> GetRootDocumentPortion(ReadOnlySpan<char> key)
+		internal static ReadOnlySpan<char> GetFirstNestingLevel(ReadOnlySpan<char> prefix)
 		{
-			var index = key.IndexOf(NestingSeparator);
-			if (index == -1)
+			var i = prefix.IndexOf(NestingSeparator);
+			if (i < 0)
 			{
-				return key;
+				return prefix;
 			}
 
-			return key[..index];
+			return prefix[..i];
 		}
 
-		internal static ReadOnlySpan<byte> GetRootDocumentPortion(RadixTreePrefixSpan prefix)
+		internal static RadixTreePrefixSpan GetFirstNestingLevel(RadixTreePrefixSpan prefix)
 		{
-			var index = prefix.AsBytes().IndexOf(_nestingSepAsPrefix.AsBytes());
-			if (index == -1)
+			var i = prefix.AsBytes().IndexOf(NestingSeparatorAsPrefix.AsBytes());
+			if (i < 0)
 			{
-				return prefix.AsBytes();
+				return prefix;
 			}
 
-			return prefix.AsBytes()[..index];
+			return prefix[..i];
 		}
 	}
 }

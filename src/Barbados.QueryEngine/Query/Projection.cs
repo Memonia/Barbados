@@ -17,7 +17,7 @@ namespace Barbados.QueryEngine.Query
 
 		public Projection Include(params string[] keys)
 		{
-			if (_inclusive.HasValue && _inclusive.Value)
+			if (_inclusive.HasValue && !_inclusive.Value)
 			{
 				throw new InvalidOperationException("Cannot include a key in an exclusive projection");
 			}
@@ -29,7 +29,7 @@ namespace Barbados.QueryEngine.Query
 
 		public Projection Exclude(params string[] keys)
 		{
-			if (_inclusive.HasValue && !_inclusive.Value)
+			if (_inclusive.HasValue && _inclusive.Value)
 			{
 				throw new InvalidOperationException("Cannot include a key in an inclusive projection");
 			}

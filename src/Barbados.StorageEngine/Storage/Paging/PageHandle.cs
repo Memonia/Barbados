@@ -4,8 +4,8 @@
 	{
 		public const int BinaryLength = sizeof(long);
 
-		public static readonly PageHandle Null = new(0);
-		public static readonly PageHandle Root = new(1);
+		public static PageHandle Null { get; } = new(0);
+		public static PageHandle Root { get; } = new(1);
 
 		public bool IsNull => Handle == Null.Handle;
 		public bool IsWithinBounds => Handle < (long.MaxValue / Constants.PageLength);

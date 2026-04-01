@@ -2,7 +2,7 @@
 
 namespace Barbados.Documents.Exceptions
 {
-	internal static class BarbadosDocumentException
+	internal static class BarbadosDocumentExceptionHelpers
 	{
 		public static T ThrowElementOfTypeNotFoundOrReturnValue<T>(bool result, T value, BarbadosKey key)
 		{

@@ -4,6 +4,7 @@
 		<Project Path="src/Barbados.Documents/Barbados.Documents.csproj" />
 		<Project Path="src/Barbados.QueryEngine/Barbados.QueryEngine.csproj" />
 		<Project Path="src/Barbados.StorageEngine/Barbados.StorageEngine.csproj" />
+		<Project Path="src/Barbados/Barbados.csproj" />
 	</Folder>
 	<Folder Name="/test/">
 		<Project Path="test/Barbados.Documents.Tests/Barbados.Documents.Tests.csproj" />

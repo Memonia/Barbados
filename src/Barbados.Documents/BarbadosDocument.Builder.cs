@@ -1,8 +1,11 @@
 ﻿using System;
+using System.Linq;
 using System.Text;
 
 using Barbados.Documents.Exceptions;
 using Barbados.Documents.RadixTree;
+using Barbados.Documents.RadixTree.Exceptions;
+using Barbados.Documents.RadixTree.Values;
 
 namespace Barbados.Documents
 {
@@ -31,10 +34,11 @@ namespace Barbados.Documents
 
 			public Builder AddFrom(BarbadosDocument document)
 			{
-				var e = document.GetKeyEnumerator();
+				var e = document.GetKeyEnumerator(flat: false);
 				while (e.MoveNext())
 				{
-					Add(e.Current, document.Get(e.Current));
+					var current = e.GetCurrent();
+					Add(current, document.Get(current));
 				}
 
 				return this;
@@ -90,59 +94,134 @@ namespace Barbados.Documents
 				};
 			}
 
-			public Builder Add(BarbadosKey key, sbyte value) => _add(key, () => _builder.AddInt8(key.SearchPrefix, value));
-			public Builder Add(BarbadosKey key, short value) => _add(key, () => _builder.AddInt16(key.SearchPrefix, value));
-			public Builder Add(BarbadosKey key, int value) => _add(key, () => _builder.AddInt32(key.SearchPrefix, value));
-			public Builder Add(BarbadosKey key, long value) => _add(key, () => _builder.AddInt64(key.SearchPrefix, value));
-			public Builder Add(BarbadosKey key, byte value) => _add(key, () => _builder.AddUInt8(key.SearchPrefix, value));
-			public Builder Add(BarbadosKey key, ushort value) => _add(key, () => _builder.AddUInt16(key.SearchPrefix, value));
-			public Builder Add(BarbadosKey key, uint value) => _add(key, () => _builder.AddUInt32(key.SearchPrefix, value));
-			public Builder Add(BarbadosKey key, ulong value) => _add(key, () => _builder.AddUInt64(key.SearchPrefix, value));
-			public Builder Add(BarbadosKey key, float value) => _add(key, () => _builder.AddFloat32(key.SearchPrefix, value));
-			public Builder Add(BarbadosKey key, double value) => _add(key, () => _builder.AddFloat64(key.SearchPrefix, value));
-			public Builder Add(BarbadosKey key, bool value) => _add(key, () => _builder.AddBoolean(key.SearchPrefix, value));
-			public Builder Add(BarbadosKey key, DateTime value) => _add(key, () => _builder.AddDateTime(key.SearchPrefix, value));
-			public Builder Add(BarbadosKey key, string value) => _add(key, () => _builder.AddString(key.SearchPrefix, value));
+			public Builder Add(BarbadosKey key, sbyte value) => _addValue(key, () => _builder.AddInt8(key.ValueSearchPrefix, value));
+			public Builder Add(BarbadosKey key, short value) => _addValue(key, () => _builder.AddInt16(key.ValueSearchPrefix, value));
+			public Builder Add(BarbadosKey key, int value) => _addValue(key, () => _builder.AddInt32(key.ValueSearchPrefix, value));
+			public Builder Add(BarbadosKey key, long value) => _addValue(key, () => _builder.AddInt64(key.ValueSearchPrefix, value));
+			public Builder Add(BarbadosKey key, byte value) => _addValue(key, () => _builder.AddUInt8(key.ValueSearchPrefix, value));
+			public Builder Add(BarbadosKey key, ushort value) => _addValue(key, () => _builder.AddUInt16(key.ValueSearchPrefix, value));
+			public Builder Add(BarbadosKey key, uint value) => _addValue(key, () => _builder.AddUInt32(key.ValueSearchPrefix, value));
+			public Builder Add(BarbadosKey key, ulong value) => _addValue(key, () => _builder.AddUInt64(key.ValueSearchPrefix, value));
+			public Builder Add(BarbadosKey key, float value) => _addValue(key, () => _builder.AddFloat32(key.ValueSearchPrefix, value));
+			public Builder Add(BarbadosKey key, double value) => _addValue(key, () => _builder.AddFloat64(key.ValueSearchPrefix, value));
+			public Builder Add(BarbadosKey key, bool value) => _addValue(key, () => _builder.AddBoolean(key.ValueSearchPrefix, value));
+			public Builder Add(BarbadosKey key, DateTime value) => _addValue(key, () => _builder.AddDateTime(key.ValueSearchPrefix, value));
+			public Builder Add(BarbadosKey key, string value) => _addValue(key, () => _builder.AddString(key.ValueSearchPrefix, value));
 
-			public Builder Add(BarbadosKey key, sbyte[] array) => _add(key, () => _builder.AddInt8Array(key.SearchPrefix, array));
-			public Builder Add(BarbadosKey key, short[] array) => _add(key, () => _builder.AddInt16Array(key.SearchPrefix, array));
-			public Builder Add(BarbadosKey key, int[] array) => _add(key, () => _builder.AddInt32Array(key.SearchPrefix, array));
-			public Builder Add(BarbadosKey key, long[] array) => _add(key, () => _builder.AddInt64Array(key.SearchPrefix, array));
-			public Builder Add(BarbadosKey key, byte[] array) => _add(key, () => _builder.AddUInt8Array(key.SearchPrefix, array));
-			public Builder Add(BarbadosKey key, ushort[] array) => _add(key, () => _builder.AddUInt16Array(key.SearchPrefix, array));
-			public Builder Add(BarbadosKey key, uint[] array) => _add(key, () => _builder.AddUInt32Array(key.SearchPrefix, array));
-			public Builder Add(BarbadosKey key, ulong[] array) => _add(key, () => _builder.AddUInt64Array(key.SearchPrefix, array));
-			public Builder Add(BarbadosKey key, float[] array) => _add(key, () => _builder.AddFloat32Array(key.SearchPrefix, array));
-			public Builder Add(BarbadosKey key, double[] array) => _add(key, () => _builder.AddFloat64Array(key.SearchPrefix, array));
-			public Builder Add(BarbadosKey key, bool[] array) => _add(key, () => _builder.AddBooleanArray(key.SearchPrefix, array));
-			public Builder Add(BarbadosKey key, DateTime[] array) => _add(key, () => _builder.AddDateTimeArray(key.SearchPrefix, array));
-			public Builder Add(BarbadosKey key, string[] array) => _add(key, () => _builder.AddStringArray(key.SearchPrefix, array));
+			public Builder Add(BarbadosKey key, sbyte[] array) => _addValue(key, () => _builder.AddInt8Array(key.ValueSearchPrefix, array));
+			public Builder Add(BarbadosKey key, short[] array) => _addValue(key, () => _builder.AddInt16Array(key.ValueSearchPrefix, array));
+			public Builder Add(BarbadosKey key, int[] array) => _addValue(key, () => _builder.AddInt32Array(key.ValueSearchPrefix, array));
+			public Builder Add(BarbadosKey key, long[] array) => _addValue(key, () => _builder.AddInt64Array(key.ValueSearchPrefix, array));
+			public Builder Add(BarbadosKey key, byte[] array) => _addValue(key, () => _builder.AddUInt8Array(key.ValueSearchPrefix, array));
+			public Builder Add(BarbadosKey key, ushort[] array) => _addValue(key, () => _builder.AddUInt16Array(key.ValueSearchPrefix, array));
+			public Builder Add(BarbadosKey key, uint[] array) => _addValue(key, () => _builder.AddUInt32Array(key.ValueSearchPrefix, array));
+			public Builder Add(BarbadosKey key, ulong[] array) => _addValue(key, () => _builder.AddUInt64Array(key.ValueSearchPrefix, array));
+			public Builder Add(BarbadosKey key, float[] array) => _addValue(key, () => _builder.AddFloat32Array(key.ValueSearchPrefix, array));
+			public Builder Add(BarbadosKey key, double[] array) => _addValue(key, () => _builder.AddFloat64Array(key.ValueSearchPrefix, array));
+			public Builder Add(BarbadosKey key, bool[] array) => _addValue(key, () => _builder.AddBooleanArray(key.ValueSearchPrefix, array));
+			public Builder Add(BarbadosKey key, DateTime[] array) => _addValue(key, () => _builder.AddDateTimeArray(key.ValueSearchPrefix, array));
+			public Builder Add(BarbadosKey key, string[] array) => _addValue(key, () => _builder.AddStringArray(key.ValueSearchPrefix, array));
 
 			public Builder Add(BarbadosKey key, BarbadosDocument document)
 			{
-				if (!key.IsDocument)
-				{
-					key = key.GetDocumentKey();
-				}
-
 				if (document.Count() == 0)
 				{
 					throw new ArgumentException("Cannot add an empty document", nameof(document));
 				}
 
-				var sb = new StringBuilder(key.ToString());
-				var startLength = sb.Length;
-				var e = document.GetFlatKeyStringEnumerator();
-				while (e.MoveNext())
+				if (_builder.PrefixExists(key.ValueSearchPrefix) || _builder.PrefixExists(key.DocumentSearchPrefix))
 				{
-					sb.Append(e.Current);
-					var nf = sb.ToString();
-					sb.Length = startLength;
-					Add(nf, document.Get(e.Current));
+					BarbadosArgumentExceptionHelpers.ThrowKeyAlreadyExists(key.ToString(), nameof(key));
 				}
 
+				var sb = new StringBuilder(key.ToString());
+				var startLength = sb.Length;
+				var e = document.GetKeyEnumerator(flat: true);
+				while (e.MoveNext())
+				{
+					var current = e.GetCurrent();
+					sb.Append(BarbadosKey.NestingSeparator);
+					sb.Append(current);
+					var nf = sb.ToString();
+					sb.Length = startLength;
+					Add(nf, document.Get(current));
+				}
+
+				_ensureNestingPathAddressable(key.DocumentSearchPrefix);
+				return this;
+			}
+
+			public Builder Add(BarbadosKey key, params BarbadosDocument[] array)
+			{
+				if (array.Length == 0)
+				{
+					throw new ArgumentException("Cannot add an empty array", nameof(array));
+				}
+
+				if (array.Any(e => e.Count() == 0))
+				{
+					throw new ArgumentException(
+						"An array of documents cannot contain empty documents", nameof(array)
+					);
+				}
+
+				if (_builder.PrefixExists(key.ValueSearchPrefix) || _builder.PrefixExists(key.DocumentSearchPrefix))
+				{
+					BarbadosArgumentExceptionHelpers.ThrowKeyAlreadyExists(key.ToString(), nameof(key));
+				}
+
+				var sb = new StringBuilder(key.ToString());
+				sb.Append(BarbadosKey.NestingSeparator);
+				var startLength = sb.Length;
+				for (int i = 0; i < array.Length; ++i)
+				{
+					var document = array[i];
+					sb.Append(i);
+
+					BarbadosKey nf = sb.ToString();
+					sb.Length = startLength;
+
+					Add(nf, document);
+					_ensureNestingPathAddressable(nf.DocumentSearchPrefix);
+				}
+
+				_ensureNestingPathAddressable(key.DocumentSearchPrefix);
+				return this;
+			}
+
+			internal Builder Add(RadixTreePrefixSpan prefix, IValueBuffer buffer)
+			{
+				_ensureNestingPathAddressable(prefix);
+				_builder.AddBuffer(prefix, buffer);
+				return this;
+			}
+
+			private Builder _addValue(BarbadosKey key, Action add)
+			{
+				if (_builder.PrefixExists(key.DocumentSearchPrefix))
+				{
+					BarbadosArgumentExceptionHelpers.ThrowKeyAlreadyExists(key.ToString(), nameof(key));
+				}
+
+
+				try
+				{
+					add();
+				}
+
+				catch (RadixTreeDuplicateKeyException ex)
+				{
+					BarbadosArgumentExceptionHelpers.ThrowKeyAlreadyExists(key.ToString(), nameof(key), ex);
+				}
+
+				_ensureNestingPathAddressable(key.ValueSearchPrefix);
+				return this;
+			}
+
+			private void _ensureNestingPathAddressable(RadixTreePrefixSpan prefix)
+			{
 				// Underlying radix tree has no concept of nested documents, as it only operates
-				// on prefixes. 'BarbadosDocument' adds document semantincs by enforcing specific
+				// on prefixes. 'BarbadosDocument' adds document semantics by enforcing specific
 				// naming conventions. For example, key 'pet' refers to a key, key 'pet.nickname'
 				// refers to a key 'nickname' inside of the 'pet' document and so on.
 				//
@@ -156,80 +235,59 @@ namespace Barbados.Documents
 				//     "nickname": "Fluffy"
 				//   }
 				// }
-				// 
+				//
 				// Disregarding specific serialisation details, the radix tree will contain a single
 				// node with prefix 'pet.nickname'. Retrieving 'pet.nickname' works as expected. Now,
 				// if we were to retrieve the whole document, we would try document.GetDocument("pet")
 				// or document.GetDocument("pet.") and both of these would fail, as there is no node
 				// path corresponding to strings "pet" or "pet.", so the root for breadth-first
-				// traversal cannot be established. 
-				// 
+				// traversal cannot be established.
+				//
 				// In fact, any sequence of keys, where each next key contains the previous, would
 				// make it impossible to extract the whole document, while each individual key would
 				// be accessibile as usual: pet.nickname, pet.nicknamenickname,
 				// pet.nicknamenicknamenickname, pet.nicknamenicknamenicknamenickname, etc
-				// 
+				//
 				// To enforce desired behaviour, we explicitly insert a prefix corresponding to the
 				// document key with no value. This will ensure the document key is addressable and
 				// can serve as a root for extract operations.
-				// 
+				//
 				// This trick simply exploits the fact that the radix tree keeps any added prefix
 				// addressable, regardless of whether it has a value. Added overhead is currently
 				// 4 bytes for the prefix descriptor, the prefix chain itself remains unchanged
-				if (!_builder.PrefixExists(key.SearchPrefix))
+
+				var kbytes = prefix.AsBytes();
+				var nestSepBytes = BarbadosKey.NestingSeparatorAsPrefix.AsBytes();
+				var nestSepLength = BarbadosKey.NestingSeparatorAsPrefix.Length;
+				if (kbytes.IndexOf(nestSepBytes) < 0)
 				{
-					_builder.AddPrefix(key.SearchPrefix);
+					return;
 				}
 
-				return this;
-			}
-
-			public Builder Add(BarbadosKey key, BarbadosDocument[] array)
-			{
-				if (!key.IsDocument)
+				var split = kbytes.Split(nestSepBytes);
+				foreach (var subKeyRange in split)
 				{
-					key = key.GetDocumentKey();
-				}
+					var subKey = new RadixTreePrefixSpan(kbytes[0..subKeyRange.End]);
 
-				if (array.Length == 0)
-				{
-					throw new ArgumentException("Cannot add an empty array", nameof(array));
-				}
-
-				var sb = new StringBuilder(key.ToString());
-				var startLength = sb.Length;
-				for (int i = 0; i < array.Length; ++i)
-				{
-					var document = array[i];
-					if (document.Count() == 0)
+					// A key cannot be both a value and a document.
+					// Check any ancestor prefix already holds a value
+					if (subKey.Length < kbytes.Length && _builder.PrefixHasValue(subKey))
 					{
-						throw new ArgumentException(
-							"An array of documents cannot contain empty documents", nameof(array)
+						BarbadosArgumentExceptionHelpers.ThrowKeyConflictsWithAncestor(
+							prefix.ToString(), subKey.ToString(), "key"
 						);
 					}
 
-					sb.Append(i);
-					sb.Append(BarbadosKey.NestingSeparator);
-					var nf = sb.ToString();
-					sb.Length = startLength;
+					if (subKey.Length + nestSepLength < kbytes.Length)
+					{
+						subKey = new RadixTreePrefixSpan(kbytes[0..(subKeyRange.End.Value + nestSepLength)]);
+					}
 
-					Add(nf, document);
+					if (!_builder.PrefixExists(subKey))
+					{
+						_builder.AddPrefix(subKey);
+					}
 				}
-
-				// See 'Add(BarbadosKey, BarbadosDocument)'
-				if (!_builder.PrefixExists(key.SearchPrefix))
-				{
-					_builder.AddPrefix(key.SearchPrefix);
-				}
-
-				return this;
-			}
-
-			private Builder _add(BarbadosKey key, Action add)
-			{
-				BarbadosArgumentException.ThrowDocumentKeyWhenValueExpected(key, nameof(key));
-				add();
-				return this;
 			}
 		}
 	}

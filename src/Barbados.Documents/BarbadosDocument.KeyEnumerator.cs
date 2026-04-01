@@ -8,55 +8,73 @@ namespace Barbados.Documents
 	{
 		public ref struct KeyEnumerator
 		{
-			public BarbadosKey Current { get; private set; }
-
 			private readonly bool _flat;
-			private readonly RadixTreeBuffer.PrefixValueEnumerator _enum;
-			private ReadOnlySpan<byte> _previousKeyRootDocumentPortion;
+			private RadixTreeBuffer.FullPrefixHasValueEnumerator _enum;
+
+			private RadixTreePrefix _current;
+			// Initially contains an invalid prefix
+			private RadixTreePrefixSpan _previousTrimmedPrefix;
 
 			public KeyEnumerator(BarbadosDocument document, bool flat)
 			{
 				_flat = flat;
-				_enum = document._buffer.GetPrefixValueEnumerator();
-				_previousKeyRootDocumentPortion = [];
+				_enum = new RadixTreeBuffer.FullPrefixHasValueEnumerator(document._buffer);
+				_current = new(Array.Empty<byte>());
+				_previousTrimmedPrefix = BarbadosKey.NestingSeparatorAsPrefix;
+			}
+
+			public KeyEnumerator(BarbadosDocument document, bool flat, BarbadosKey documentKey)
+			{
+				_flat = flat;
+				_enum = new RadixTreeBuffer.FullPrefixHasValueEnumerator(document._buffer.AsSpan(), documentKey.DocumentSearchPrefix);
+				_current = new(Array.Empty<byte>());
+				_previousTrimmedPrefix = BarbadosKey.NestingSeparatorAsPrefix;
+			}
+
+			public readonly BarbadosKey GetCurrent()
+			{
+				return new(_current);
 			}
 
 			public bool MoveNext()
 			{
 				while (true)
 				{
-					if (!_enum.TryGetNext(out var key))
+					if (!_enum.MoveNext())
 					{
 						return false;
 					}
 
+					_current = _enum.GetCurrentPrefix();
 					if (_flat)
 					{
-						Current = new(key);
 						break;
 					}
 
-					// We know that prefix enumerators will return prefixes with the same root
+					// We know that prefix enumerators will group prefixes with the same root
 					// together, because internally they enumerate nodes in depth-first order.
 					// We can take advantage of that and skip duplicates by remembering the
 					// previous prefix root.
 					//
-					// In terms of document keys and values, sequences would look like this:
+					// In terms of document keys and values, sequences would look something like this:
 					//
-					// document.field1
-					// document.field2
-					// document.field3
-					// secondDocument.field1
-					// secondDocument.field2
-					// thirdDocument.field1
+					// doc1.field11
+					// doc1.field22
+					// doc1.doc22.field111
+					// doc1.doc22.field222
+					// doc1.doc22.field333
+					// doc2.field11
+					// doc2.field22
+					// field1
+					// field2
 					//
-					// Thus, we only need to remember the previous root (top level document name) in order
-					// to avoid duplicate top level keys
-					var rdp = BarbadosKey.GetRootDocumentPortion(key.AsSpan());
-					if (!_previousKeyRootDocumentPortion.StartsWith(rdp))
+					// Thus, we only need to remember the previous trimmed prefix in order to avoid duplicate top level keys
+
+					var trimmed = BarbadosKey.GetFirstNestingLevel(_current);
+					if (!_previousTrimmedPrefix.SequenceEqual(trimmed))
 					{
-						_previousKeyRootDocumentPortion = rdp;
-						Current = new(new RadixTreePrefix(rdp.ToArray()));
+						_current = new(trimmed);
+						_previousTrimmedPrefix = trimmed;
 						break;
 					}
 				}

@@ -40,6 +40,11 @@ namespace Barbados.Documents.RadixTree
 			_buffer = buffer;
 		}
 
+		public bool PrefixExists(RadixTreePrefixSpan prefix)
+		{
+			return _getNodeOffset(_buffer, prefix.AsBytes()) >= PrefixTableOffset;
+		}
+
 		public bool ValueExists(RadixTreePrefixSpan prefix)
 		{
 			return ValueExists(prefix, out _);
@@ -63,14 +68,9 @@ namespace Barbados.Documents.RadixTree
 			return false;
 		}
 
-		public bool PrefixExists(RadixTreePrefixSpan prefix)
-		{
-			return _getNodeOffset(_buffer, prefix.AsBytes()) >= 0;
-		}
-
 		public int Count()
 		{
-			var bfnenr = new BreadthFirstNoRootNodeEnumerator(_buffer);
+			var bfnenr = new PrivateEnums.BreadthFirstNodesNoRoot(_buffer);
 			var count = 0;
 			while (bfnenr.TryGetNext(out var info))
 			{
@@ -83,19 +83,9 @@ namespace Barbados.Documents.RadixTree
 			return count;
 		}
 
-		public PrefixValueEnumerator GetPrefixValueEnumerator()
-		{
-			return new PrefixValueEnumerator(this);
-		}
-
-		public PrefixStringValueEnumerator GetPrefixStringValueEnumerator()
-		{
-			return new PrefixStringValueEnumerator(this);
-		}
-
 		public bool TryGetArrayBufferItemCount(RadixTreePrefixSpan prefix, out int count)
 		{
-			if (TryGetBufferRaw(prefix, out _, out var buffer))
+			if (TryGetBufferRaw(prefix, out var marker, out var buffer) && marker.IsArray())
 			{
 				count = ValueBufferRawHelpers.GetArrayBufferCount(buffer);
 				return true;
@@ -107,8 +97,14 @@ namespace Barbados.Documents.RadixTree
 
 		public bool TryExtract(RadixTreePrefixSpan prefix, out RadixTreeBuffer buffer)
 		{
+			if (IsEmpty(_buffer))
+			{
+				buffer = default!;
+				return false; 
+			}
+
 			buffer = ExtractWithPrefix(_buffer, prefix);
-			return !_isEmpty(buffer._buffer);
+			return !IsEmpty(buffer._buffer);
 		}
 
 		public bool TryGetBuffer(RadixTreePrefixSpan prefix, out IValueBuffer buffer)
