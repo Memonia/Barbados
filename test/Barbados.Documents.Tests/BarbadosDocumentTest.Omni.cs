@@ -24,6 +24,7 @@ namespace Barbados.Documents.Tests
 			{     "v-dt", DateTime.UnixEpoch.AddYears(8) },
 			{   "v-bool", true },
 			{    "v-str", "str" },
+			{  "v-str-u", "Μπαρμπάντος" },
 			{     "a-i8", new sbyte[] { -8, 16, -32 } },
 			{    "a-i16", new short[] { -16, 32, -64 } },
 			{    "a-i32", new int[] { -32, 64, -128 } },
@@ -36,10 +37,10 @@ namespace Barbados.Documents.Tests
 			{    "a-f64", new double[] { 64.64, -128.128, 256.256 } },
 			{     "a-dt", new DateTime[] { DateTime.UnixEpoch.AddYears(8), DateTime.UnixEpoch.AddYears(16), DateTime.UnixEpoch.AddYears(32) } },
 			{   "a-bool", new bool[] { true, false, true } },
-			{    "a-str", new string[] { "str1", "str2", "str3" } },
+			{    "a-str", new string[] { "Μπαρμπάντος", "巴巴多斯", "str3" } },
 			{  "v-str-e", "" },
 			{  "a-str-e", new string[] { "", "", "" } },
-			{ "a-str-1e", new string[] { "str", "", "str" } },
+			{ "a-str-1e", new string[] { "str", "", "Μπαρμπάντος" } },
 			{  "a-i32-e", Array.Empty<int>() },
 
 			{   "d1.v1",          11 },
@@ -58,6 +59,8 @@ namespace Barbados.Documents.Tests
 			{   "d2.arr.1.s", "s1" },
 			{   "d2.arr.2.i",    2 },
 			{   "d2.arr.2.s",   "" },
+
+			{  "巴巴多斯.str.Μπαρμπάντος", "unicode" },
 
 			{ _longKeyValue, "long-value" },
 			{ $"{_longKeyDocument}.v1", 1 },
@@ -92,9 +95,11 @@ namespace Barbados.Documents.Tests
 			.Add("a-bool", _omniDocumentKV["a-bool"])
 			.Add("a-str", _omniDocumentKV["a-str"])
 			.Add("v-str-e", _omniDocumentKV["v-str-e"])
+			.Add("v-str-u", _omniDocumentKV["v-str-u"])
 			.Add("a-str-e", _omniDocumentKV["a-str-e"])
 			.Add("a-str-1e", _omniDocumentKV["a-str-1e"])
 			.Add("a-i32-e", _omniDocumentKV["a-i32-e"])
+			.Add("巴巴多斯.str.Μπαρμπάντος", _omniDocumentKV["巴巴多斯.str.Μπαρμπάντος"])
 			.Add("d1", new BarbadosDocument.Builder()
 				.Add("v1", _omniDocumentKV["d1.v1"])
 				.Add("v2", _omniDocumentKV["d1.v2"])

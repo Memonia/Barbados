@@ -14,7 +14,7 @@ namespace Barbados.Documents.RadixTree
 		public static void Write(ReadOnlySpan<char> prefix, ReadOnlySpan<char> append, in Span<byte> destination)
 		{
 			Encoding.UTF8.GetBytes(prefix, destination);
-			Encoding.UTF8.GetBytes(append, destination[prefix.Length..]);
+			Encoding.UTF8.GetBytes(append, destination[GetLength(prefix)..]);
 		}
 
 		public static RadixTreePrefix Empty { get; } = new(string.Empty);
