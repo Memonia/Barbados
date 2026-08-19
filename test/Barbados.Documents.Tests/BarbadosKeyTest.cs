@@ -7,6 +7,19 @@ namespace Barbados.Documents.Tests
 		public sealed class Constructor
 		{
 			[Test]
+			[TestCase("str")]
+			[TestCase("str1.str2")]
+			[TestCase("Μπαρμπάντος")]
+			[TestCase("str.Μπαρμπάντος")]
+			[TestCase("Μπαρμπάντος.str")]
+			public void GivenString_CreatedCorrectly(string str)
+			{
+				var key = new BarbadosKey(str);
+				var skey = key.ToString();
+				Assert.That(skey, Is.EqualTo(str));
+			}
+
+			[Test]
 			public void GivenEmptyString_Throws()
 			{
 				var str = "";

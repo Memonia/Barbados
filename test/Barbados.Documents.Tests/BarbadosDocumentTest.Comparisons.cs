@@ -176,6 +176,7 @@ namespace Barbados.Documents.Tests
 				[TestCase("v-bool", true)]
 				[TestCase("v-str", true)]
 				[TestCase("v-str-e", true)]
+				[TestCase("v-str-u", true)]
 				[TestCase("a-i8", true)]
 				[TestCase("a-i16", true)]
 				[TestCase("a-i32", true)]
@@ -191,6 +192,7 @@ namespace Barbados.Documents.Tests
 				[TestCase("a-str", true)]
 				[TestCase("a-str-e", true)]
 				[TestCase("a-str-1e", true)]
+				[TestCase("巴巴多斯.str.Μπαρμπάντος", true)]
 				[TestCase("d1", false)]
 				[TestCase("d2", false)]
 				public void Omni_ReturnsCorrect_ResultEqual(string key, bool result)
