@@ -7,7 +7,7 @@ namespace Barbados.Documents.RadixTree.Values
 		public static FixedLengthTypeValueBuffer<sbyte> Create(sbyte value)
 		{
 			return new FixedLengthTypeValueBuffer<sbyte>(
-				value, 
+				value,
 				ValueTypeMarker.Int8,
 				(destination, value) => ValueBufferRawHelpers.WriteInt8(destination, value)
 			);
@@ -116,7 +116,7 @@ namespace Barbados.Documents.RadixTree.Values
 		{
 			return new VariableLengthTypeValueBuffer<string>(
 				value,
-				value.Length,
+				ValueBufferRawHelpers.GetLength(value),
 				ValueTypeMarker.String,
 				(destination, value) => ValueBufferRawHelpers.WriteStringValue(destination, value)
 			);
