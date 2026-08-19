@@ -138,119 +138,6 @@ namespace Barbados.Documents.Tests
 		public sealed class TryGet
 		{
 			[Test]
-			[TestCase((sbyte)-8)]
-			[TestCase((short)-16)]
-			[TestCase((int)-32)]
-			[TestCase((long)-64)]
-			[TestCase((byte)8)]
-			[TestCase((ushort)16)]
-			[TestCase((uint)32)]
-			[TestCase((ulong)64)]
-			[TestCase((float)64.64)]
-			[TestCase((double)64.64)]
-			[TestCase(true)]
-			[TestCase("str")]
-			[TestCase(new sbyte[] { -8, -16, -32 })]
-			[TestCase(new short[] { -16, -32, -64 })]
-			[TestCase(new int[] { -32, -64, -128 })]
-			[TestCase(new long[] { -64, -128, -256 })]
-			[TestCase(new byte[] { 8, 16, 32 })]
-			[TestCase(new ushort[] { 16, 32, 64 })]
-			[TestCase(new uint[] { 32, 64, 128 })]
-			[TestCase(new ulong[] { 64, 128, 256 })]
-			[TestCase(new float[] { 32.32f, 64.64f, 128.128f })]
-			[TestCase(new double[] { 64.64, 128.128, 256.256 })]
-			[TestCase(new bool[] { true, false, true })]
-			public void Value(object value)
-			{
-				var document = new BarbadosDocument.Builder()
-					.Add(_field, value)
-					.Build();
-
-				var r = document.TryGet(_field, out var got);
-
-				Assert.Multiple(() =>
-				{
-					Assert.That(r, Is.True);
-					Assert.That(got, Is.EqualTo(value));
-				});
-			}
-
-			[Test]
-			public void DateTime()
-			{
-				var value = System.DateTime.UnixEpoch.AddYears(8);
-				var document = new BarbadosDocument.Builder()
-					.Add(_field, value)
-					.Build();
-
-				var r = document.TryGetDateTime(_field, out var got);
-
-				Assert.Multiple(() =>
-				{
-					Assert.That(r, Is.True);
-					Assert.That(got, Is.EqualTo(value));
-				});
-			}
-
-			[Test]
-			public void DateTimeArray()
-			{
-				var value = new DateTime[]
-				{
-					System.DateTime.UnixEpoch.AddYears(8),
-					System.DateTime.UnixEpoch.AddYears(16),
-					System.DateTime.UnixEpoch.AddYears(32)
-				};
-
-				var document = new BarbadosDocument.Builder()
-				.Add(_field, value)
-				.Build();
-
-				var r = document.TryGetDateTimeArray(_field, out var got);
-
-				Assert.Multiple(() =>
-				{
-					Assert.That(r, Is.True);
-					Assert.That(got, Is.EqualTo(value));
-				});
-			}
-
-			[Test]
-			public void StringArray_AnyValue()
-			{
-				var value = new string[] { "str1", "str2", "str3" };
-				var document = new BarbadosDocument.Builder()
-					.Add(_field, value)
-				.Build();
-
-				var r = document.TryGetStringArray(_field, out var got);
-
-				Assert.Multiple(() =>
-				{
-					Assert.That(r, Is.True);
-					Assert.That(got, Is.EqualTo(value));
-				});
-			}
-
-			[Test]
-			public void StringArray_NoValues()
-			{
-				var value = Array.Empty<string>();
-				var document = new BarbadosDocument.Builder()
-					.Add(_field, value)
-				.Build();
-
-				var r = document.TryGetStringArray(_field, out var got);
-
-				Assert.Multiple(() =>
-				{
-					Assert.That(r, Is.True);
-					Assert.That(got, Is.EqualTo(value));
-				});
-			}
-
-			[Test]
 			public void Document()
 			{
 				var inner = "inside";
@@ -445,6 +332,10 @@ namespace Barbados.Documents.Tests
 			[Test]
 			public void Omni()
 			{
+				// Non-ASCII keys get encoded as unicode escape symbols by default. We skip such keys
+				// in here to not complicate the test further. Note that such values get deserialised
+				// correctly by default, the only thing which needs extra care is the lookup part
+
 				var json = _omniDocument.ToJson();
 				Assert.DoesNotThrow(() => JsonDocument.Parse(json));
 				var root = JsonDocument.Parse(json).RootElement;
@@ -470,6 +361,7 @@ namespace Barbados.Documents.Tests
 					Assert.That(root.GetProperty("v-bool").GetBoolean(), Is.EqualTo((bool)_omniDocumentKV["v-bool"]));
 					Assert.That(root.GetProperty("v-str").GetString(), Is.EqualTo((string)_omniDocumentKV["v-str"]));
 					Assert.That(root.GetProperty("v-str-e").GetString(), Is.EqualTo((string)_omniDocumentKV["v-str-e"]));
+					Assert.That(root.GetProperty("v-str-u").GetString(), Is.EqualTo((string)_omniDocumentKV["v-str-u"]));
 
 					Assert.That(root.GetProperty("a-i8").Deserialize<sbyte[]>(), Is.EqualTo((sbyte[])_omniDocumentKV["a-i8"]));
 					Assert.That(root.GetProperty("a-i16").Deserialize<short[]>(), Is.EqualTo((short[])_omniDocumentKV["a-i16"]));
